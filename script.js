@@ -173,8 +173,32 @@ class GameplayScreen {
     this.initEventListeners();
   }
 
+  /**
+   * Resevered for DEBUG location when the coordinate is not working (do not remove this function)
+   */
+  onCanvasClicked() {
+    const handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
+    // Set the input action for left-click
+    handler.setInputAction((click) =>{
+        // Pick the position in 3D space
+        const cartesian = this.viewer.scene.pickPosition(click.position);
+        
+        if (Cesium.defined(cartesian)) {
+            // Convert Cartesian3 world coordinates to Cartographic (longitude, latitude, height)
+            const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+            
+            // Convert radians to degrees
+            const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            
+            console.log('Clicked Coordinates: Longitude: ' + longitude.toFixed(4) + ', Latitude: ' + latitude.toFixed(4));
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+  }
+
   initEventListeners() {
     this.viewer.scene.postRender.addEventListener(this.positionPinPanel.bind(this));
+    this.onCanvasClicked();
 
     this.nextBtn.addEventListener("click", () => this.goNext());
     this.prevBtn.addEventListener("click", () => this.goPrev());
@@ -426,7 +450,7 @@ class GameplayScreen {
     const boundingSphere = new Cesium.BoundingSphere(target, 1);
     const cameraOffset = new Cesium.HeadingPitchRange(
       Cesium.Math.toRadians(loc.heading || 0),
-      Cesium.Math.toRadians(loc.pitch !== undefined ? loc.pitch : -45),
+      Cesium.Math.toRadians(-50),
       loc.height
     );
 
