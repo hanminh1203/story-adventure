@@ -10,7 +10,7 @@
  *   2. Replace terrainProvider below with: await Cesium.createWorldTerrainAsync()
  */
 
-const FLIGHT_DURATION_SECONDS = 3.5;
+const FLIGHT_DURATION_SECONDS = 2;
 const DUCK_IMAGE_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Cfilter id='s' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeDropShadow dx='0' dy='5' stdDeviation='4' flood-color='%23000' flood-opacity='.35'/%3E%3C/filter%3E%3Cg filter='url(%23s)'%3E%3Cellipse cx='48' cy='62' rx='31' ry='22' fill='%23ffd84d'/%3E%3Ccircle cx='62' cy='38' r='18' fill='%23ffe36b'/%3E%3Cpath d='M75 39h18L76 50z' fill='%23f58b1f'/%3E%3Ccircle cx='66' cy='33' r='3.5' fill='%23121a24'/%3E%3Cpath d='M22 55c9 9 20 10 30 5-11-1-19-6-24-15z' fill='%23f3bd2e' opacity='.8'/%3E%3Cpath d='M25 76h46' stroke='%23f58b1f' stroke-width='6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E";
 
 const COLLECTIBLE_LAYOUTS = [
@@ -61,6 +61,7 @@ let isFlying = false;
 let pin = null;
 let selectedPin = null;
 let score = 0;
+let gameStarted = false;
 const collectedItems = new Set();
 
 const scoreValue = document.getElementById("score-value");
@@ -76,6 +77,11 @@ const detailsCloseBtn = document.getElementById("details-close-btn");
 const detailsTitle = document.getElementById("details-title");
 const detailsDescription = document.getElementById("details-description");
 const detailsSlideshow = document.getElementById("details-slideshow");
+const startScreen = document.getElementById("start-screen");
+const startBtn = document.getElementById("start-btn");
+const finalScreen = document.getElementById("final-screen");
+const finalScore = document.getElementById("final-score");
+const restartBtn = document.getElementById("restart-btn");
 
 let slideshowLocation = null;
 let slideshowIndex = 0;
@@ -122,11 +128,25 @@ function updatePanel(index) {
   infoCounter.textContent = `Location ${index + 1} of ${LOCATIONS.length}`;
   infoTitle.textContent = loc.name;
   infoDescription.textContent = loc.description || "";
+  updateNavControls();
 }
 
 function setButtonsEnabled(enabled) {
-  prevBtn.disabled = !enabled;
+  prevBtn.disabled = !enabled || currentIndex === 0;
   nextBtn.disabled = !enabled;
+}
+
+function updateNavControls() {
+  const isFirstLocation = currentIndex === 0;
+  const isFinalLocation = currentIndex === LOCATIONS.length - 1;
+
+  prevBtn.classList.toggle("hidden", isFirstLocation);
+  prevBtn.disabled = isFirstLocation || isFlying;
+
+  nextBtn.classList.toggle("finalize-btn", isFinalLocation);
+  nextBtn.textContent = isFinalLocation ? "Finalize" : "\u2192";
+  nextBtn.setAttribute("aria-label", isFinalLocation ? "Finalize game" : "Next location");
+  nextBtn.title = isFinalLocation ? "Finalize" : "Next (right arrow)";
 }
 
 function showDetailsPopup(loc) {
@@ -245,6 +265,41 @@ function updateScore() {
   scoreValue.textContent = String(score);
 }
 
+function resetGame() {
+  currentIndex = 0;
+  score = 0;
+  gameStarted = false;
+  collectedItems.clear();
+  hideDetailsPopup();
+  hidePinPanel();
+  updateScore();
+  finalScreen.classList.add("hidden");
+  finalScreen.setAttribute("aria-hidden", "true");
+}
+
+function startGame() {
+  resetGame();
+  gameStarted = true;
+  startScreen.classList.add("hidden");
+  startScreen.setAttribute("aria-hidden", "true");
+  flyToLocation(currentIndex);
+}
+
+function finalizeGame() {
+  hideDetailsPopup();
+  hidePinPanel();
+  finalScore.textContent = String(score);
+  finalScreen.classList.remove("hidden");
+  finalScreen.setAttribute("aria-hidden", "false");
+  restartBtn.focus();
+}
+
+function restartGame() {
+  resetGame();
+  gameStarted = true;
+  flyToLocation(currentIndex);
+}
+
 function createSlideButton(direction, text, onClick) {
   const button = document.createElement("button");
   button.type = "button";
@@ -360,19 +415,30 @@ function flyToLocation(index, { instant = false } = {}) {
 }
 
 function goNext() {
+  if (!gameStarted || finalScreen.classList.contains("hidden") === false) return;
   if (isFlying) return;
-  currentIndex = (currentIndex + 1) % LOCATIONS.length;
+  if (currentIndex === LOCATIONS.length - 1) {
+    finalizeGame();
+    return;
+  }
+
+  currentIndex += 1;
   flyToLocation(currentIndex);
 }
 
 function goPrev() {
+  if (!gameStarted || finalScreen.classList.contains("hidden") === false) return;
   if (isFlying) return;
-  currentIndex = (currentIndex - 1 + LOCATIONS.length) % LOCATIONS.length;
+  if (currentIndex === 0) return;
+
+  currentIndex -= 1;
   flyToLocation(currentIndex);
 }
 
 nextBtn.addEventListener("click", goNext);
 prevBtn.addEventListener("click", goPrev);
+startBtn.addEventListener("click", startGame);
+restartBtn.addEventListener("click", restartGame);
 detailsCloseBtn.addEventListener("click", hideDetailsPopup);
 detailsModal.addEventListener("click", (event) => {
   if (event.target === detailsModal) {
@@ -399,5 +465,5 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") hideDetailsPopup();
 });
 
-// Land on the first location immediately on load (no flight on first paint).
-flyToLocation(currentIndex, { instant: true });
+updateScore();
+updateNavControls();

@@ -122,6 +122,20 @@ html, body {
   transition: transform 0.15s ease, background 0.15s ease;
 }
 
+#nav-controls button.hidden {
+  display: none;
+}
+
+#nav-controls button.finalize-btn {
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  height: 48px;
+  padding: 0 20px;
+  text-transform: uppercase;
+  width: auto;
+}
+
 #nav-controls button:hover {
   background: rgba(35, 45, 65, 0.85);
   transform: translateY(-2px);
@@ -424,6 +438,96 @@ html, body {
 .details-empty {
   color: #d4dae6;
   margin: 0;
+}
+
+.game-screen {
+  align-items: center;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(111, 168, 255, 0.28), transparent 30%),
+    radial-gradient(circle at 70% 70%, rgba(255, 216, 77, 0.22), transparent 28%),
+    rgba(4, 8, 14, 0.82);
+  color: #f2f4f8;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  text-align: center;
+  z-index: 30;
+}
+
+.game-screen.hidden {
+  display: none;
+}
+
+.game-screen-content {
+  animation: screenRise 0.8s ease both;
+  max-width: 620px;
+}
+
+.game-kicker {
+  color: #9fb3d9;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.game-screen h1 {
+  font-size: clamp(48px, 10vw, 104px);
+  letter-spacing: 0;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.game-screen p {
+  color: #d4dae6;
+  font-size: 18px;
+  line-height: 1.5;
+  margin: 20px auto 28px;
+  max-width: 520px;
+}
+
+.game-screen-btn {
+  background: #ffd84d;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+  color: #07111f;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 15px 34px;
+  text-transform: uppercase;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.game-screen-btn:hover {
+  background: #ffe679;
+  transform: translateY(-2px);
+}
+
+.game-screen-btn:focus-visible {
+  outline: 3px solid #6fa8ff;
+  outline-offset: 4px;
+}
+
+#final-score {
+  color: #ffd84d;
+}
+
+@keyframes screenRise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (max-width: 680px) {
