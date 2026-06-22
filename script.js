@@ -58,12 +58,16 @@ class StartScreen {
     this.isActive = true;
     this.screenElement.classList.remove("hidden");
     this.screenElement.setAttribute("aria-hidden", "false");
+    this.startBtn.focus();
   }
 
   hide() {
     this.isActive = false;
     this.screenElement.classList.add("hidden");
     this.screenElement.setAttribute("aria-hidden", "true");
+    if (document.activeElement === this.startBtn) {
+      document.activeElement.blur();
+    }
   }
 }
 
@@ -102,6 +106,9 @@ class FinalScreen {
     this.isActive = false;
     this.screenElement.classList.add("hidden");
     this.screenElement.setAttribute("aria-hidden", "true");
+    if (document.activeElement === this.restartBtn) {
+      document.activeElement.blur();
+    }
   }
 }
 
@@ -405,6 +412,9 @@ class GameplayScreen {
   hideDetailsPopup() {
     this.detailsModal.classList.remove("visible");
     this.detailsModal.setAttribute("aria-hidden", "true");
+    if (document.activeElement === this.detailsCloseBtn) {
+      document.activeElement.blur();
+    }
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
   }
