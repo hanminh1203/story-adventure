@@ -15,6 +15,36 @@ html, body {
   height: 100%;
 }
 
+#score-panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  min-width: 116px;
+  background: rgba(15, 20, 30, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #f2f4f8;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+}
+
+#score-label {
+  color: #9fb3d9;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+#score-value {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 /* ---------- Info popup, top-right ---------- */
 
 #info-panel {
@@ -266,6 +296,53 @@ html, body {
   width: 100%;
 }
 
+.collectibles-layer {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.collectible-item {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.18);
+  border: 2px solid rgba(255, 255, 255, 0.78);
+  border-radius: 50%;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.36);
+  cursor: pointer;
+  display: flex;
+  height: 56px;
+  justify-content: center;
+  padding: 5px;
+  pointer-events: auto;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  width: 56px;
+}
+
+.collectible-item:hover {
+  background: rgba(255, 216, 77, 0.38);
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+.collectible-item:focus-visible {
+  outline: 3px solid #6fa8ff;
+  outline-offset: 3px;
+}
+
+.collectible-item.collected {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.6) rotate(12deg);
+}
+
+.collectible-item img {
+  display: block;
+  height: 100%;
+  pointer-events: none;
+  width: 100%;
+}
+
 .slideshow-btn {
   align-items: center;
   background: rgba(7, 17, 31, 0.76);
@@ -365,6 +442,11 @@ html, body {
   .slideshow-btn {
     height: 40px;
     width: 40px;
+  }
+
+  .collectible-item {
+    height: 46px;
+    width: 46px;
   }
 
   .slideshow-thumbnails button {

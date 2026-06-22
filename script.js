@@ -11,6 +11,25 @@
  */
 
 const FLIGHT_DURATION_SECONDS = 3.5;
+const DUCK_IMAGE_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Cfilter id='s' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeDropShadow dx='0' dy='5' stdDeviation='4' flood-color='%23000' flood-opacity='.35'/%3E%3C/filter%3E%3Cg filter='url(%23s)'%3E%3Cellipse cx='48' cy='62' rx='31' ry='22' fill='%23ffd84d'/%3E%3Ccircle cx='62' cy='38' r='18' fill='%23ffe36b'/%3E%3Cpath d='M75 39h18L76 50z' fill='%23f58b1f'/%3E%3Ccircle cx='66' cy='33' r='3.5' fill='%23121a24'/%3E%3Cpath d='M22 55c9 9 20 10 30 5-11-1-19-6-24-15z' fill='%23f3bd2e' opacity='.8'/%3E%3Cpath d='M25 76h46' stroke='%23f58b1f' stroke-width='6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E";
+
+const COLLECTIBLE_LAYOUTS = [
+  [
+    { x: 22, y: 34 },
+    { x: 57, y: 52 },
+    { x: 78, y: 27 }
+  ],
+  [
+    { x: 18, y: 58 },
+    { x: 46, y: 30 },
+    { x: 73, y: 64 }
+  ],
+  [
+    { x: 31, y: 24 },
+    { x: 52, y: 68 },
+    { x: 82, y: 45 }
+  ]
+];
 
 const viewer = new Cesium.Viewer("cesiumContainer", {
   baseLayer: Cesium.ImageryLayer.fromProviderAsync(
@@ -41,7 +60,10 @@ let currentIndex = 0;
 let isFlying = false;
 let pin = null;
 let selectedPin = null;
+let score = 0;
+const collectedItems = new Set();
 
+const scoreValue = document.getElementById("score-value");
 const infoPanel = document.getElementById("info-panel");
 const infoCounter = document.getElementById("info-counter");
 const infoTitle = document.getElementById("info-title");
@@ -138,6 +160,7 @@ function renderSlideshow() {
   image.src = currentImage;
   image.alt = `${loc.name} image ${slideshowIndex + 1}`;
   frame.appendChild(image);
+  frame.appendChild(createCollectiblesLayer(loc));
 
   const prevSlideBtn = createSlideButton("previous", "&#8592;", () => changeSlide(-1));
   const nextSlideBtn = createSlideButton("next", "&#8594;", () => changeSlide(1));
@@ -169,6 +192,57 @@ function renderSlideshow() {
   });
 
   detailsSlideshow.replaceChildren(frame, meta, thumbnails);
+}
+
+function createCollectiblesLayer(loc) {
+  const layer = document.createElement("div");
+  layer.className = "collectibles-layer";
+
+  getCollectiblesForSlide(slideshowIndex).forEach((item, itemIndex) => {
+    const itemId = getCollectibleId(loc, slideshowIndex, itemIndex);
+    if (collectedItems.has(itemId)) return;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "collectible-item";
+    button.style.left = `${item.x}%`;
+    button.style.top = `${item.y}%`;
+    button.setAttribute("aria-label", "Collect duck for 1 point");
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      collectItem(itemId, button);
+    });
+
+    const duckImage = document.createElement("img");
+    duckImage.src = DUCK_IMAGE_URL;
+    duckImage.alt = "";
+    button.appendChild(duckImage);
+    layer.appendChild(button);
+  });
+
+  return layer;
+}
+
+function getCollectiblesForSlide(index) {
+  return COLLECTIBLE_LAYOUTS[index % COLLECTIBLE_LAYOUTS.length];
+}
+
+function getCollectibleId(loc, imageIndex, itemIndex) {
+  return `${loc.name}:${imageIndex}:${itemIndex}`;
+}
+
+function collectItem(itemId, button) {
+  if (collectedItems.has(itemId)) return;
+
+  collectedItems.add(itemId);
+  score += 1;
+  updateScore();
+  button.classList.add("collected");
+  window.setTimeout(() => button.remove(), 220);
+}
+
+function updateScore() {
+  scoreValue.textContent = String(score);
 }
 
 function createSlideButton(direction, text, onClick) {
