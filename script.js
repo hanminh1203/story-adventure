@@ -114,6 +114,7 @@ class FinalScreen {
 
 class GameplayScreen {
   constructor(onFinalize) {
+    this.gameplayScreen = document.getElementById("gameplay-screen");
     this.onFinalize = onFinalize;
 
     this.viewer = new Cesium.Viewer("cesiumContainer", {
@@ -208,6 +209,7 @@ class GameplayScreen {
   }
 
   start() {
+    this.gameplayScreen.classList.add('active');
     this.isActive = true;
     this.currentIndex = 0;
     this.score = 0;
@@ -219,6 +221,7 @@ class GameplayScreen {
   }
 
   hide() {
+    this.gameplayScreen.classList.remove('active');
     this.isActive = false;
     this.hideDetailsPopup();
     this.hidePinPanel();
