@@ -119,6 +119,28 @@ body {
   display: none;
 }
 
+.panel-label {
+  color: #9fb3d9;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.panel-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.panel-description {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #d4dae6;
+}
+
 /* ---------- Score panel (top-left) ---------- */
 #score-panel {
   position: absolute;
@@ -134,14 +156,6 @@ body {
   color: #f2f4f8;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   z-index: 10;
-}
-
-#score-label {
-  color: #9fb3d9;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  margin-bottom: 4px;
-  text-transform: uppercase;
 }
 
 #score-value {
@@ -176,27 +190,7 @@ body {
   transform: translateY(0);
 }
 
-#info-counter {
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #9fb3d9;
-  margin-bottom: 6px;
-}
 
-#info-title {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-#info-description {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: #d4dae6;
-}
 
 /* ---------- Navigation controls (bottom center) ---------- */
 #nav-controls {
@@ -424,7 +418,7 @@ body {
   color: #f2f4f8;
   cursor: pointer;
   display: flex;
-  font-size: 28px;
+  font-size: 20px;
   height: 48px;
   justify-content: center;
   line-height: 1;
@@ -582,6 +576,7 @@ body {
   .slideshow-btn {
     height: 40px;
     width: 40px;
+    font-size: 18px;
   }
 
   .collectible-item {
