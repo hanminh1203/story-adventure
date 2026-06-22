@@ -61,6 +61,55 @@
     </div>
   </div>
 
+  <!-- ── Reusable HTML templates (never rendered directly) ──────────────── -->
+
+  <!-- Pin panel: location label + title + description + "Show details" CTA -->
+  <template id="tpl-pin-panel">
+    <div>
+      <div class="panel-label"></div>
+      <h2 class="panel-title"></h2>
+      <p class="panel-description"></p>
+      <button type="button" class="pin-details-btn">Show details</button>
+    </div>
+  </template>
+
+  <!-- Slideshow frame: image, collectibles layer, prev/next slide buttons -->
+  <template id="tpl-slideshow-frame">
+    <div class="slideshow-frame">
+      <img alt="">
+      <div class="collectibles-layer"></div>
+      <button type="button" class="slideshow-btn slideshow-btn-previous" aria-label="previous image">&#8592;</button>
+      <button type="button" class="slideshow-btn slideshow-btn-next"      aria-label="next image">&#8594;</button>
+    </div>
+  </template>
+
+  <!-- Slideshow meta: "1 / 3" counter -->
+  <template id="tpl-slideshow-meta">
+    <div class="slideshow-meta"></div>
+  </template>
+
+  <!-- Slideshow thumbnail strip -->
+  <template id="tpl-slideshow-thumbnails">
+    <div class="slideshow-thumbnails"></div>
+  </template>
+
+  <!-- Single thumbnail button (cloned once per image) -->
+  <template id="tpl-thumbnail-btn">
+    <button type="button"><img alt="" loading="lazy"></button>
+  </template>
+
+  <!-- Single collectible duck button (cloned once per duck) -->
+  <template id="tpl-collectible">
+    <button type="button" class="collectible-item" aria-label="Collect duck for 1 point">
+      <img alt="">
+    </button>
+  </template>
+
+  <!-- Empty-state message shown when a location has no images -->
+  <template id="tpl-slideshow-empty">
+    <p class="details-empty">No images have been added for this location yet.</p>
+  </template>
+
   <script src="locations.js"></script>
   <script src="script.js"></script>
 </body>
