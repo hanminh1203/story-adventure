@@ -151,10 +151,6 @@ class GameplayScreen {
 
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
-    this.infoPanel = document.getElementById("info-panel");
-    this.infoCounter = document.getElementById("info-counter");
-    this.infoTitle = document.getElementById("info-title");
-    this.infoDescription = document.getElementById("info-description");
     this.prevBtn = document.getElementById("prev-btn");
     this.nextBtn = document.getElementById("next-btn");
     this.pinPanel = document.getElementById("pin-panel");
@@ -223,15 +219,17 @@ class GameplayScreen {
   hide() {
     this.gameplayScreen.classList.remove('active');
     this.isActive = false;
+    this.viewer.camera.flyHome();
     this.hideDetailsPopup();
     this.hidePinPanel();
   }
 
-  createPinPanelContent(loc) {
+  createPinPanelContent(index) {
+    const loc = LOCATIONS[index];
     const content = document.createElement("div");
-    content.appendChild(this.createElementWithText("strong", loc.name));
-    content.appendChild(document.createElement("br"));
-    content.appendChild(this.createElementWithText("span", loc.description || ""));
+    content.appendChild(this.createElementWithText("div", `Location ${index + 1} of ${LOCATIONS.length}`, "panel-label"));
+    content.appendChild(this.createElementWithText("h2", loc.name, "panel-title"));
+    content.appendChild(this.createElementWithText("p", loc.description || "", "panel-description"));
 
     const detailsButton = document.createElement("button");
     detailsButton.type = "button";
@@ -246,17 +244,14 @@ class GameplayScreen {
     return content;
   }
 
-  createElementWithText(tag, text) {
+  createElementWithText(tag, text, className = "") {
     const el = document.createElement(tag);
     el.appendChild(document.createTextNode(text));
+    el.className = className;
     return el;
   }
 
   updatePanel(index) {
-    const loc = LOCATIONS[index];
-    this.infoCounter.textContent = `Location ${index + 1} of ${LOCATIONS.length}`;
-    this.infoTitle.textContent = loc.name;
-    this.infoDescription.textContent = loc.description || "";
     this.updateNavControls();
   }
 
@@ -431,7 +426,7 @@ class GameplayScreen {
     if (!this.pin) return;
 
     this.selectedPin = this.pin;
-    this.pinPanel.replaceChildren(this.createPinPanelContent(LOCATIONS[this.pin.index]));
+    this.pinPanel.replaceChildren(this.createPinPanelContent(this.pin.index));
     this.pinPanel.style.display = "block";
     this.positionPinPanel();
   }
@@ -473,14 +468,10 @@ class GameplayScreen {
       loc.height
     );
 
-    // Fade the panel out while flying, back in once we arrive.
-    this.infoPanel.classList.remove("visible");
-
     if (instant) {
       this.viewer.camera.viewBoundingSphere(boundingSphere, cameraOffset);
       this.viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
       this.updatePanel(index);
-      requestAnimationFrame(() => this.infoPanel.classList.add("visible"));
       this.setPin(loc, index);
       this.showPinPanel();
       return;
@@ -500,7 +491,6 @@ class GameplayScreen {
         this.isFlying = false;
         this.setButtonsEnabled(true);
         this.updatePanel(index);
-        this.infoPanel.classList.add("visible");
         this.showPinPanel();
       },
       cancel: () => {
