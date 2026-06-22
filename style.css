@@ -15,12 +15,6 @@ html, body {
   height: 100%;
 }
 
-/* Hide Cesium's default credit/logo bar if it crowds a small embed.
-   Remove this rule if you'd rather keep attribution visible. */
-.cesium-viewer-bottom {
-  display: none;
-}
-
 /* ---------- Info popup, top-right ---------- */
 
 #info-panel {

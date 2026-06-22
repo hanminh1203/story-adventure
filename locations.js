@@ -1,5 +1,5 @@
 /**
- * LOCATIONS — the tour stops for the flythrough map.
+ * LOCATIONS - the tour stops for the flythrough map.
  *
  * Edit this array to use your own places. Each entry:
  *   name         - shown as the popup title
@@ -29,7 +29,7 @@ const LOCATIONS = [
   },
   {
     name: "Sydney Opera House",
-    description: "Jørn Utzon's sail-shaped performing arts venue on Sydney Harbour, opened in 1973.",
+    description: "Jorn Utzon's sail-shaped performing arts venue on Sydney Harbour, opened in 1973.",
     lat: -33.8568,
     lon: 151.2153,
     height: 3000,
