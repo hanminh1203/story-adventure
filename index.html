@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Location Flythrough Map</title>
+
+<!-- CesiumJS — free, open-source (Apache 2.0), no API key required for this setup -->
+<link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.142/Build/Cesium/Widgets/widgets.css" />
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.142/Build/Cesium/Cesium.js"></script>
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="cesiumContainer"></div>
+
+<div id="info-panel">
+  <div id="info-counter"></div>
+  <h2 id="info-title"></h2>
+  <p id="info-description"></p>
+</div>
+
+<div id="nav-controls">
+  <button id="prev-btn" aria-label="Previous location" title="Previous (←)">&#8592;</button>
+  <button id="next-btn" aria-label="Next location" title="Next (→)">&#8594;</button>
+</div>
+
+<div id="pin-panel" class="pin-panel">
+</div>
+
+<script src="locations.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

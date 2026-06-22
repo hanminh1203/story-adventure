@@ -1,0 +1,160 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+#cesiumContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Hide Cesium's default credit/logo bar if it crowds a small embed.
+   Remove this rule if you'd rather keep attribution visible. */
+.cesium-viewer-bottom {
+  display: none;
+}
+
+/* ---------- Info popup, top-right ---------- */
+
+#info-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  max-width: 320px;
+  background: rgba(15, 20, 30, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 16px 18px;
+  color: #f2f4f8;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#info-panel.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#info-counter {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9fb3d9;
+  margin-bottom: 6px;
+}
+
+#info-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+#info-description {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #d4dae6;
+}
+
+/* ---------- Next / Prev controls ---------- */
+
+#nav-controls {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  z-index: 10;
+}
+
+#nav-controls button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(15, 20, 30, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #f2f4f8;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+#nav-controls button:hover {
+  background: rgba(35, 45, 65, 0.85);
+  transform: translateY(-2px);
+}
+
+#nav-controls button:active {
+  transform: translateY(0) scale(0.95);
+}
+
+#nav-controls button:focus-visible {
+  outline: 2px solid #6fa8ff;
+  outline-offset: 2px;
+}
+
+#nav-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
+
+@media (max-width: 480px) {
+  #info-panel {
+    max-width: calc(100% - 32px);
+    top: 12px;
+    right: 12px;
+  }
+}
+
+.pin-panel {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 300px;
+  background: rgba(15, 20, 30, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 16px 18px;
+  color: #f2f4f8;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  opacity: 1;
+  transform: translateY(-6px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 10;
+}
+
+.pin-panel::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 20px solid rgba(15, 20, 30, 0.72);
+}
