@@ -21,7 +21,7 @@ Open `locations.js` and edit the `LOCATIONS` array. Each entry:
   description: "Short description shown in the popup.",
   lat: -31.9505,
   lon: 115.8605,
-  height: 20000,   // camera altitude in meters - lower = closer zoom
+  height: 20000,   // camera viewing range in meters - lower = closer zoom
   heading: 0,      // optional, compass direction in degrees
   pitch: -35       // optional, camera tilt, -90 = straight down
 }

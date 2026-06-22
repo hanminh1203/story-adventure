@@ -140,6 +140,29 @@ html, body {
   z-index: 10;
 }
 
+.pin-details-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: #6fa8ff;
+  color: #07111f;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 12px;
+}
+
+.pin-details-btn:hover {
+  background: #8cbaff;
+}
+
+.pin-details-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
 .pin-panel::after {
   content: '';
   position: absolute;
@@ -151,4 +174,201 @@ html, body {
   border-left: 10px solid transparent;
   border-right: 10px solid transparent;
   border-top: 20px solid rgba(15, 20, 30, 0.72);
+}
+
+.details-modal {
+  align-items: center;
+  background: rgba(4, 8, 14, 0.68);
+  display: none;
+  inset: 0;
+  justify-content: center;
+  padding: 22px;
+  position: fixed;
+  z-index: 20;
+}
+
+.details-modal.visible {
+  display: flex;
+}
+
+.details-dialog {
+  background: rgba(15, 20, 30, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  color: #f2f4f8;
+  max-height: min(920px, calc(100vh - 44px));
+  max-width: 1180px;
+  overflow: auto;
+  padding: 22px;
+  position: relative;
+  width: min(1180px, calc(100vw - 44px));
+}
+
+.details-close-btn {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  color: #f2f4f8;
+  cursor: pointer;
+  display: flex;
+  font-size: 24px;
+  height: 36px;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 36px;
+}
+
+.details-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.details-close-btn:focus-visible {
+  outline: 2px solid #6fa8ff;
+  outline-offset: 2px;
+}
+
+#details-title {
+  font-size: 24px;
+  line-height: 1.2;
+  margin: 0 48px 8px 0;
+}
+
+#details-description {
+  color: #d4dae6;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 48px 18px 0;
+}
+
+.details-slideshow {
+  display: grid;
+  gap: 12px;
+}
+
+.slideshow-frame {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  min-height: min(620px, 62vh);
+  overflow: hidden;
+  position: relative;
+}
+
+.slideshow-frame > img {
+  aspect-ratio: 16 / 9;
+  display: block;
+  height: min(620px, 62vh);
+  object-fit: cover;
+  width: 100%;
+}
+
+.slideshow-btn {
+  align-items: center;
+  background: rgba(7, 17, 31, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  color: #f2f4f8;
+  cursor: pointer;
+  display: flex;
+  font-size: 28px;
+  height: 48px;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+}
+
+.slideshow-btn:hover {
+  background: rgba(111, 168, 255, 0.88);
+  color: #07111f;
+}
+
+.slideshow-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.slideshow-btn-previous {
+  left: 18px;
+}
+
+.slideshow-btn-next {
+  right: 18px;
+}
+
+.slideshow-meta {
+  color: #9fb3d9;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.slideshow-thumbnails {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 4px 2px 2px;
+}
+
+.slideshow-thumbnails button {
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  flex: 0 0 92px;
+  height: 62px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.slideshow-thumbnails button.active {
+  border-color: #6fa8ff;
+}
+
+.slideshow-thumbnails button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.slideshow-thumbnails img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.details-empty {
+  color: #d4dae6;
+  margin: 0;
+}
+
+@media (max-width: 680px) {
+  .details-dialog {
+    padding: 16px;
+  }
+
+  .slideshow-frame {
+    min-height: min(420px, 54vh);
+  }
+
+  .slideshow-frame > img {
+    height: min(420px, 54vh);
+  }
+
+  .slideshow-btn {
+    height: 40px;
+    width: 40px;
+  }
+
+  .slideshow-thumbnails button {
+    flex-basis: 76px;
+    height: 52px;
+  }
 }
