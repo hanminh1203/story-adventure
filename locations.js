@@ -32,8 +32,8 @@ const LOCATIONS = [
     height: 8000,
     pitch: -30,
     images: [
-      "https://source.unsplash.com/900x600/?uluru,australia",
-      "https://source.unsplash.com/900x600/?australian-outback"
+      "https://images.unsplash.com/photo-1529108190281-9a4f620bc2d8?q=80&w=1139&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://images.unsplash.com/photo-1654692870756-ea1ebcb8be1d?q=80&w=1124&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     ]
   },
   {
@@ -44,8 +44,8 @@ const LOCATIONS = [
     height: 3000,
     pitch: -40,
     images: [
-      "https://source.unsplash.com/900x600/?sydney-opera-house",
-      "https://source.unsplash.com/900x600/?sydney-harbour"
+      "https://images.unsplash.com/photo-1624138784614-87fd1b6528f8?q=80&w=1633&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://images.unsplash.com/photo-1528072164453-f4e8ef0d475a?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     ]
   },
   {
@@ -56,8 +56,8 @@ const LOCATIONS = [
     height: 15000,
     pitch: -25,
     images: [
-      "https://source.unsplash.com/900x600/?mount-fuji,japan",
-      "https://source.unsplash.com/900x600/?fuji-mountain"
+      "https://images.unsplash.com/photo-1618278942403-e973260cc425?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://plus.unsplash.com/premium_photo-1661878091370-4ccb8763756a?q=80&w=1632&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     ]
   },
   {
@@ -68,8 +68,8 @@ const LOCATIONS = [
     height: 1500,
     pitch: -35,
     images: [
-      "https://source.unsplash.com/900x600/?eiffel-tower,paris",
-      "https://source.unsplash.com/900x600/?champ-de-mars"
+      "https://images.unsplash.com/photo-1679231926688-ef9cdab5ed2f?q=80&w=1691&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://plus.unsplash.com/premium_photo-1775742412601-ae289254efe5?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     ]
   },
   {
@@ -80,8 +80,8 @@ const LOCATIONS = [
     height: 12000,
     pitch: -30,
     images: [
-      "https://source.unsplash.com/900x600/?grand-canyon",
-      "https://source.unsplash.com/900x600/?colorado-river,canyon"
+      "https://images.unsplash.com/photo-1575527048208-6475b441e0a0?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     ]
   }
 ];

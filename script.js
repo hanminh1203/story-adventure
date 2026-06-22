@@ -38,18 +38,30 @@ class StartScreen {
     this.screenElement = document.getElementById("start-screen");
     this.startBtn = document.getElementById("start-btn");
     this.onStart = onStart;
+    this.isActive = true;
 
     this.startBtn.addEventListener("click", () => {
       this.onStart();
     });
+    this.initEventListeners();
+  }
+
+  initEventListeners() {
+    document.addEventListener("keydown", (e) => {
+      if (!this.isActive) return;
+
+      if (e.key === "Enter") this.onStart();
+    });
   }
 
   show() {
+    this.isActive = true;
     this.screenElement.classList.remove("hidden");
     this.screenElement.setAttribute("aria-hidden", "false");
   }
 
   hide() {
+    this.isActive = false;
     this.screenElement.classList.add("hidden");
     this.screenElement.setAttribute("aria-hidden", "true");
   }
@@ -61,13 +73,25 @@ class FinalScreen {
     this.finalScore = document.getElementById("final-score");
     this.restartBtn = document.getElementById("restart-btn");
     this.onRestart = onRestart;
+    this.isActive = false;
 
     this.restartBtn.addEventListener("click", () => {
       this.onRestart();
     });
+    this.initEventListeners();
+  }
+
+  initEventListeners() {
+    document.addEventListener("keydown", (e) => {
+      if (!this.isActive) return;
+
+      if (e.key === "Enter") this.onRestart();
+      console.log(e.key);
+    });
   }
 
   show(score) {
+    this.isActive = true;
     this.finalScore.textContent = String(score);
     this.screenElement.classList.remove("hidden");
     this.screenElement.setAttribute("aria-hidden", "false");
@@ -75,6 +99,7 @@ class FinalScreen {
   }
 
   hide() {
+    this.isActive = false;
     this.screenElement.classList.add("hidden");
     this.screenElement.setAttribute("aria-hidden", "true");
   }
@@ -153,7 +178,13 @@ class GameplayScreen {
       const isDetailsOpen = this.detailsModal.classList.contains("visible");
 
       if (isDetailsOpen && e.key === "ArrowRight") {
-        this.changeSlide(1);
+        const images = this.slideshowLocation ? this.slideshowLocation.images || [] : [];
+        if (images.length > 0 && this.slideshowIndex === images.length - 1) {
+          this.hideDetailsPopup();
+          this.goNext();
+        } else {
+          this.changeSlide(1);
+        }
         return;
       }
 
@@ -165,6 +196,7 @@ class GameplayScreen {
       if (e.key === "ArrowRight") this.goNext();
       if (e.key === "ArrowLeft") this.goPrev();
       if (e.key === "Escape") this.hideDetailsPopup();
+      if (e.key === " " && this.selectedPin) this.showDetailsPopup(LOCATIONS[this.selectedPin.index]);
     });
   }
 
