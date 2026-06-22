@@ -88,6 +88,9 @@ let slideshowIndex = 0;
 
 viewer.scene.postRender.addEventListener(positionPinPanel);
 
+// We do not need the click handler to show/hide the pin panel anymore since the pin billboard is removed
+// and the panel is shown automatically after flying.
+/*
 handler.setInputAction((movement) => {
   const pickedObject = viewer.scene.pick(movement.position);
 
@@ -97,6 +100,7 @@ handler.setInputAction((movement) => {
     hidePinPanel();
   }
 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+*/
 
 function createPinPanelContent(loc) {
   const content = document.createElement("div");
@@ -362,13 +366,8 @@ function setPin(loc, index) {
   pin = viewer.entities.add({
     name: loc.name,
     index,
-    position: Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0),
-    billboard: {
-      image: pinBuilder.fromText(String(index + 1), Cesium.Color.RED, 48).toDataURL(),
-      verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-    }
+    position: Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0)
   });
-  showPinPanel();
 }
 
 function flyToLocation(index, { instant = false } = {}) {
@@ -390,11 +389,13 @@ function flyToLocation(index, { instant = false } = {}) {
     updatePanel(index);
     requestAnimationFrame(() => infoPanel.classList.add("visible"));
     setPin(loc, index);
+    showPinPanel();
     return;
   }
 
   isFlying = true;
   setButtonsEnabled(false);
+  hidePinPanel(); // Hide pin panel when flight starts
 
   viewer.camera.flyToBoundingSphere(boundingSphere, {
     duration: FLIGHT_DURATION_SECONDS,
@@ -405,6 +406,7 @@ function flyToLocation(index, { instant = false } = {}) {
       setButtonsEnabled(true);
       updatePanel(index);
       infoPanel.classList.add("visible");
+      showPinPanel(); // Show pin panel when flight finishes
     },
     cancel: () => {
       isFlying = false;
