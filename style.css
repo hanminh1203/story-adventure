@@ -47,7 +47,7 @@ body {
 
 .game-screen-content {
   animation: screenRise 0.8s ease both;
-  max-width: 620px;
+  max-width: clamp(620px, 80%, 1000px);
 }
 
 .game-kicker {
@@ -60,7 +60,7 @@ body {
 }
 
 .game-screen h1 {
-  font-size: clamp(48px, 10vw, 104px);
+  font-size: clamp(24px, 10vw, 80px);
   letter-spacing: 0;
   line-height: 0.95;
   margin: 0;
@@ -71,7 +71,6 @@ body {
   font-size: 18px;
   line-height: 1.5;
   margin: 20px auto 28px;
-  max-width: 520px;
 }
 
 .game-screen-btn {
@@ -111,6 +110,140 @@ body {
   }
 }
 
+.static-background {
+  background: url('assets/background.png') no-repeat center center;
+  background-size: cover;
+}
+
+.game-screen-overlay {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(111, 168, 255, 0.28), transparent 30%),
+    radial-gradient(circle at 70% 70%, rgba(255, 216, 77, 0.22), transparent 28%),
+    rgba(4, 8, 14, 0.82);
+}
+
+.go-back-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 10px 18px;
+  font-size: 14px;
+}
+
+/* ==========================================================================
+   2.5. CHARACTER SELECT SCREEN
+   ========================================================================== */
+
+.character-select-content {
+  max-width: 1200px;
+  width: 100%;
+  animation: screenRise 0.8s ease both;
+}
+
+.character-select-content h1 {
+  font-size: clamp(36px, 8vw, 56px);
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 28px;
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.character-card {
+  background: rgba(15, 20, 30, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.character-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(255, 216, 77, 0.4);
+  box-shadow: 0 16px 40px rgba(255, 216, 77, 0.2);
+}
+
+.character-video {
+  width: 100%;
+  aspect-ratio: 9 / 12;
+  background: #000;
+  overflow: hidden;
+}
+
+.character-video iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.character-name {
+  padding: 16px 12px 8px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  color: #f2f4f8;
+}
+
+.character-title {
+  padding: 0 12px 12px;
+  font-size: 14px;
+  font-weight: 400;
+  text-align: center;
+  color: #9fb3d9;
+}
+
+.character-select-btn {
+  margin: 0 12px 12px;
+  padding: 12px 20px;
+  background: #ffd84d;
+  border: 0;
+  border-radius: 8px;
+  color: #07111f;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.character-select-btn:hover {
+  background: #ffe679;
+  transform: translateY(-2px);
+}
+
+.character-select-btn:focus-visible {
+  outline: 3px solid #6fa8ff;
+  outline-offset: 4px;
+}
+
+.character-select-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .character-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+  }
+  
+  .character-select-content h1 {
+    margin-bottom: 24px;
+  }
+}
 
 /* ==========================================================================
    3. GAMEPLAY SCREEN - HUD & CONTROLS

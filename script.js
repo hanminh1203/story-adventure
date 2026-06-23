@@ -39,9 +39,39 @@ const COLLECTIBLE_LAYOUTS = [
   ]
 ];
 
-class StartScreen {
+/**
+ * AbstractScreen - Base class for all screens
+ */
+class AbstractScreen {
+  constructor(screenElementId) {
+    this.screenElement = document.getElementById(screenElementId);
+    this.isActive = false;
+  }
+
+  /**
+   * Show the screen
+   * @abstract
+   */
+  show() {
+    this.isActive = true;
+    this.screenElement.classList.remove("hidden");
+    this.screenElement.setAttribute("aria-hidden", "false");
+  }
+
+  /**
+   * Hide the screen
+   * @abstract
+   */
+  hide() {
+    this.isActive = false;
+    this.screenElement.classList.add("hidden");
+    this.screenElement.setAttribute("aria-hidden", "true");
+  }
+}
+
+class StartScreen extends AbstractScreen {
   constructor(onStart) {
-    this.screenElement = document.getElementById("start-screen");
+    super("start-screen");
     this.startBtn = document.getElementById("start-btn");
     this.onStart = onStart;
     this.isActive = true;
@@ -61,29 +91,24 @@ class StartScreen {
   }
 
   show() {
-    this.isActive = true;
-    this.screenElement.classList.remove("hidden");
-    this.screenElement.setAttribute("aria-hidden", "false");
+    super.show();
     this.startBtn.focus();
   }
 
   hide() {
-    this.isActive = false;
-    this.screenElement.classList.add("hidden");
-    this.screenElement.setAttribute("aria-hidden", "true");
+    super.hide();
     if (document.activeElement === this.startBtn) {
       document.activeElement.blur();
     }
   }
 }
 
-class FinalScreen {
+class FinalScreen extends AbstractScreen {
   constructor(onRestart) {
-    this.screenElement = document.getElementById("final-screen");
+    super("final-screen");
     this.finalScore = document.getElementById("final-score");
     this.restartBtn = document.getElementById("restart-btn");
     this.onRestart = onRestart;
-    this.isActive = false;
 
     this.restartBtn.addEventListener("click", () => {
       this.onRestart();
@@ -96,22 +121,17 @@ class FinalScreen {
       if (!this.isActive) return;
 
       if (e.key === "Enter") this.onRestart();
-      console.log(e.key);
     });
   }
 
   show(score) {
-    this.isActive = true;
+    super.show();
     this.finalScore.textContent = String(score);
-    this.screenElement.classList.remove("hidden");
-    this.screenElement.setAttribute("aria-hidden", "false");
     this.restartBtn.focus();
   }
 
   hide() {
-    this.isActive = false;
-    this.screenElement.classList.add("hidden");
-    this.screenElement.setAttribute("aria-hidden", "true");
+    super.hide();
     if (document.activeElement === this.restartBtn) {
       document.activeElement.blur();
     }
@@ -220,10 +240,201 @@ class GuideCharacter {
   }
 }
 
-class GameplayScreen {
+class GuideCharacter {
+  constructor() {
+    this.panel = document.getElementById("guide-panel");
+    this.avatarEl = document.getElementById("guide-avatar");
+    this.nameEl = document.getElementById("guide-name");
+    this.titleEl = document.getElementById("guide-title");
+    this.textEl = document.getElementById("guide-text");
+    this.questionWrap = document.getElementById("guide-question-wrap");
+    this.questionEl = document.getElementById("guide-question");
+    this.optionsEl = document.getElementById("guide-options");
+    this.feedbackEl = document.getElementById("guide-feedback");
+    this.continueBtn = document.getElementById("guide-continue-btn");
+
+    this.completedLessons = new Set();
+    this.currentLoc = null;
+    this.onLessonCompleted = null;
+
+    const avatarImg = document.createElement("img");
+    avatarImg.src = GUIDE_AVATAR_URL;
+    avatarImg.alt = `${GUIDE.name} ${GUIDE.species}`;
+    this.avatarEl.replaceChildren(avatarImg);
+    this.nameEl.textContent = `${GUIDE.name} ${GUIDE.species}`;
+
+    this.continueBtn.addEventListener("click", () => this.collapse());
+    this.avatarEl.addEventListener("click", () => this.expand());
+  }
+
+  reset() {
+    this.completedLessons.clear();
+    this.currentLoc = null;
+    this.panel.classList.remove("visible", "collapsed");
+  }
+
+  showForLocation(loc) {
+    this.currentLoc = loc;
+    const lesson = loc.lesson;
+
+    this.panel.classList.add("visible");
+    this.panel.classList.remove("collapsed");
+    this.feedbackEl.textContent = "";
+    this.feedbackEl.className = "guide-feedback";
+
+    if (!lesson) {
+      this.titleEl.textContent = loc.name;
+      this.textEl.textContent = "Let's explore this stop together!";
+      this.questionWrap.style.display = "none";
+      return;
+    }
+
+    this.titleEl.textContent = lesson.title;
+    this.textEl.textContent = lesson.text;
+    this.questionWrap.style.display = "block";
+    this.questionEl.textContent = lesson.question;
+    this.renderOptions(loc, lesson);
+  }
+
+  renderOptions(loc, lesson) {
+    this.optionsEl.replaceChildren();
+
+    lesson.options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "guide-option-btn";
+      btn.textContent = opt.text;
+      btn.addEventListener("click", () => this.selectOption(loc, lesson, opt));
+      this.optionsEl.appendChild(btn);
+    });
+
+    if (this.completedLessons.has(loc.name)) {
+      this.feedbackEl.textContent = "You already got this one - tap Got it! to keep going, or try again below.";
+      this.feedbackEl.classList.add("visible", "info");
+    }
+  }
+
+  selectOption(loc, lesson, opt) {
+    this.feedbackEl.textContent = opt.feedback;
+    this.feedbackEl.classList.remove("info");
+    this.feedbackEl.classList.add("visible", opt.correct ? "correct" : "incorrect");
+
+    Array.from(this.optionsEl.children).forEach((btn) => {
+      btn.disabled = true;
+    });
+
+    if (opt.correct && !this.completedLessons.has(loc.name)) {
+      this.completedLessons.add(loc.name);
+      if (this.onLessonCompleted) this.onLessonCompleted(this.completedLessons.size);
+    }
+  }
+
+  collapse() {
+    this.panel.classList.add("collapsed");
+  }
+
+  expand() {
+    this.panel.classList.remove("collapsed");
+  }
+
+  hide() {
+    this.panel.classList.remove("visible", "collapsed");
+  }
+}
+
+class CharacterSelectScreen extends AbstractScreen {
+  constructor(characters, onCharacterSelected, onGoBack) {
+    super("character-select-screen");
+    this.characterGrid = document.getElementById("character-grid");
+    this.characters = characters;
+    this.onCharacterSelected = onCharacterSelected;
+    this.selectedCharacter = null;
+    this.selectButtons = [];
+    this.goBackButton = document.getElementById('character-select-go-back-btn');
+    this.goBackButton.addEventListener('click', (event) => {
+      onGoBack();
+    })
+
+    this.renderCharacters();
+  }
+
+  renderCharacters() {
+    // Clear any existing content
+    this.characterGrid.innerHTML = "";
+
+    // Create a card for each character
+    this.characters.forEach((character) => {
+      const card = document.createElement("div");
+      card.className = "character-card";
+
+      const videoContainer = document.createElement("div");
+      videoContainer.className = "character-video";
+
+      const iframe = document.createElement("iframe");
+      iframe.width = "100%";
+      iframe.height = "100%";
+      iframe.src = `https://www.youtube.com/embed/${character.youtubeId}`;
+      iframe.title = character.name;
+      iframe.frameBorder = "0";
+      iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      iframe.allowFullscreen = true;
+
+      videoContainer.appendChild(iframe);
+
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "character-name";
+      nameDiv.textContent = character.name;
+
+      const titleDiv = document.createElement("div");
+      titleDiv.className = "character-title";
+      titleDiv.textContent = character.title;
+
+      const selectBtn = document.createElement("button");
+      selectBtn.className = "character-select-btn";
+      selectBtn.type = "button";
+      selectBtn.dataset.character = character.id;
+      selectBtn.textContent = "SELECT";
+
+      selectBtn.addEventListener("click", (e) => {
+        const characterId = e.target.dataset.character;
+        this.selectCharacter(characterId);
+      });
+
+      this.selectButtons.push(selectBtn);
+
+      card.appendChild(videoContainer);
+      card.appendChild(nameDiv);
+      card.appendChild(titleDiv);
+      card.appendChild(selectBtn);
+
+      this.characterGrid.appendChild(card);
+    });
+  }
+
+  selectCharacter(characterId) {
+    this.selectedCharacter = characterId;
+    this.hide();
+    this.onCharacterSelected(characterId);
+  }
+
+  show() {
+    super.show();
+    // Focus first button
+    if (this.selectButtons.length > 0) {
+      this.selectButtons[0].focus();
+    }
+  }
+
+  hide() {
+    super.hide();
+  }
+}
+
+class GameplayScreen extends AbstractScreen {
   constructor(onFinalize) {
-    this.gameplayScreen = document.getElementById("gameplay-screen");
+    super("gameplay-screen");
     this.onFinalize = onFinalize;
+    this.selectedCharacter = null;
 
     this.viewer = new Cesium.Viewer("cesiumContainer", {
       baseLayer: Cesium.ImageryLayer.fromProviderAsync(
@@ -256,6 +467,7 @@ class GameplayScreen {
     this.collectedItems = new Set();
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
+    this.locations = [];
 
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
@@ -312,12 +524,12 @@ class GameplayScreen {
       if (e.key === "ArrowRight") this.goNext();
       if (e.key === "ArrowLeft") this.goPrev();
       if (e.key === "Escape") this.hideDetailsPopup();
-      if (e.key === " " && this.selectedPin) this.showDetailsPopup(LOCATIONS[this.selectedPin.index]);
+      if (e.key === " " && this.selectedPin) this.showDetailsPopup(this.locations[this.selectedPin.index]);
     });
   }
 
   start() {
-    this.gameplayScreen.classList.add('active');
+    this.screenElement.classList.add('active');
     this.isActive = true;
     this.currentIndex = 0;
     this.score = 0;
@@ -325,14 +537,16 @@ class GameplayScreen {
     this.hideDetailsPopup();
     this.hidePinPanel();
     this.guide.reset();
+    // Get locations from the selected character
+    const character = CHARACTERS.find(c => c.id === this.selectedCharacter);
+    this.locations = character ? character.locations : [];
     this.updateScore();
     this.updateLessonsCount(0);
     this.flyToLocation(this.currentIndex);
   }
 
   hide() {
-    this.gameplayScreen.classList.remove('active');
-    this.isActive = false;
+    this.screenElement.classList.remove('active');
     this.viewer.camera.flyHome();
     this.hideDetailsPopup();
     this.hidePinPanel();
@@ -344,9 +558,9 @@ class GameplayScreen {
   }
 
   createPinPanelContent(index) {
-    const loc = LOCATIONS[index];
+    const loc = this.locations[index];
     const content = document.createElement("div");
-    content.appendChild(this.createElementWithText("div", `Location ${index + 1} of ${LOCATIONS.length}`, "panel-label"));
+    content.appendChild(this.createElementWithText("div", `Location ${index + 1} of ${this.locations.length}`, "panel-label"));
     content.appendChild(this.createElementWithText("h2", loc.name, "panel-title"));
     content.appendChild(this.createElementWithText("p", loc.description || "", "panel-description"));
 
@@ -381,7 +595,7 @@ class GameplayScreen {
 
   updateNavControls() {
     const isFirstLocation = this.currentIndex === 0;
-    const isFinalLocation = this.currentIndex === LOCATIONS.length - 1;
+    const isFinalLocation = this.currentIndex === this.locations.length - 1;
 
     this.prevBtn.classList.toggle("hidden", isFirstLocation);
     this.prevBtn.disabled = isFirstLocation || this.isFlying;
@@ -578,7 +792,7 @@ class GameplayScreen {
   }
 
   flyToLocation(index, { instant = false } = {}) {
-    const loc = LOCATIONS[index];
+    const loc = this.locations[index];
     const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
     const boundingSphere = new Cesium.BoundingSphere(target, 1);
     const cameraOffset = new Cesium.HeadingPitchRange(
@@ -624,7 +838,7 @@ class GameplayScreen {
 
   goNext() {
     if (!this.isActive || this.isFlying) return;
-    if (this.currentIndex === LOCATIONS.length - 1) {
+    if (this.currentIndex === this.locations.length - 1) {
       this.onFinalize(this.score);
       return;
     }
@@ -643,25 +857,77 @@ class GameplayScreen {
 }
 
 class GameController {
+  score = 0;
+  selectedCharacter = null;
+  currentState = "start";
   constructor() {
-    this.startScreen = new StartScreen(() => this.startGame());
-    this.gameplayScreen = new GameplayScreen((score) => this.finalizeGame(score));
-    this.finalScreen = new FinalScreen(() => this.restartGame());
+    // Initialize screens
+    this.startScreen = new StartScreen(() => this.transitionTo("characterSelect"));
+    this.characterSelectScreen = new CharacterSelectScreen(
+      CHARACTERS,
+      (character) => this.onCharacterSelected(character),
+      () => this.transitionTo("start")
+    );
+    this.gameplayScreen = new GameplayScreen((score) => this.onGameFinalized(score));
+    this.finalScreen = new FinalScreen(() => this.transitionTo("start"));
+
+    // Start with the initial screen
+    this.transitionTo("start");
   }
 
-  startGame() {
-    this.startScreen.hide();
-    this.gameplayScreen.start();
+  /**
+   * Transition to a new screen state
+   */
+  transitionTo(state) {
+    // Hide current screen
+    switch (this.currentState) {
+      case "start":
+        this.startScreen.hide();
+        break;
+      case "characterSelect":
+        this.characterSelectScreen.hide();
+        break;
+      case "gameplay":
+        this.gameplayScreen.hide();
+        break;
+      case "final":
+        this.finalScreen.hide();
+        break;
+    }
+
+    // Show new screen
+    this.currentState = state;
+    switch (this.currentState) {
+      case "start":
+        this.startScreen.show();
+        break;
+      case "characterSelect":
+        this.characterSelectScreen.show();
+        break;
+      case "gameplay":
+        this.gameplayScreen.selectedCharacter = this.selectedCharacter;
+        this.gameplayScreen.start();
+        break;
+      case "final":
+        this.finalScreen.show(this.score);
+        break;
+    }
   }
 
-  finalizeGame(score) {
-    this.gameplayScreen.hide();
-    this.finalScreen.show(score);
+  /**
+   * Handle character selection
+   */
+  onCharacterSelected(characterId) {
+    this.selectedCharacter = characterId;
+    this.transitionTo("gameplay");
   }
 
-  restartGame() {
-    this.finalScreen.hide();
-    this.gameplayScreen.start();
+  /**
+   * Handle game finalization
+   */
+  onGameFinalized(score) {
+    this.score = score;
+    this.transitionTo("final");
   }
 }
 
