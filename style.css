@@ -47,7 +47,7 @@ body {
 
 .game-screen-content {
   animation: screenRise 0.8s ease both;
-  max-width: 620px;
+  max-width: clamp(620px, 80%, 1000px);
 }
 
 .game-kicker {
@@ -60,7 +60,7 @@ body {
 }
 
 .game-screen h1 {
-  font-size: clamp(48px, 10vw, 104px);
+  font-size: clamp(24px, 10vw, 80px);
   letter-spacing: 0;
   line-height: 0.95;
   margin: 0;
@@ -71,7 +71,6 @@ body {
   font-size: 18px;
   line-height: 1.5;
   margin: 20px auto 28px;
-  max-width: 520px;
 }
 
 .game-screen-btn {

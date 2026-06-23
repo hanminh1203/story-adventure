@@ -263,6 +263,7 @@ class GameplayScreen extends AbstractScreen {
     this.collectedItems = new Set();
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
+    this.locations = [];
 
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
@@ -339,7 +340,7 @@ class GameplayScreen extends AbstractScreen {
       if (e.key === "ArrowRight") this.goNext();
       if (e.key === "ArrowLeft") this.goPrev();
       if (e.key === "Escape") this.hideDetailsPopup();
-      if (e.key === " " && this.selectedPin) this.showDetailsPopup(LOCATIONS[this.selectedPin.index]);
+      if (e.key === " " && this.selectedPin) this.showDetailsPopup(this.locations[this.selectedPin.index]);
     });
   }
 
@@ -351,6 +352,9 @@ class GameplayScreen extends AbstractScreen {
     this.collectedItems.clear();
     this.hideDetailsPopup();
     this.hidePinPanel();
+    // Get locations from the selected character
+    const character = CHARACTERS.find(c => c.id === this.selectedCharacter);
+    this.locations = character ? character.locations : [];
     this.updateScore();
     this.flyToLocation(this.currentIndex);
   }
@@ -364,9 +368,9 @@ class GameplayScreen extends AbstractScreen {
   }
 
   createPinPanelContent(index) {
-    const loc = LOCATIONS[index];
+    const loc = this.locations[index];
     const content = cloneTemplate("tpl-pin-panel");
-    content.querySelector(".panel-label").textContent = `Location ${index + 1} of ${LOCATIONS.length}`;
+    content.querySelector(".panel-label").textContent = `Location ${index + 1} of ${this.locations.length}`;
     content.querySelector(".panel-title").textContent = loc.name;
     content.querySelector(".panel-description").textContent = loc.description || "";
     content.querySelector(".pin-details-btn").addEventListener("click", (event) => {
@@ -387,7 +391,7 @@ class GameplayScreen extends AbstractScreen {
 
   updateNavControls() {
     const isFirstLocation = this.currentIndex === 0;
-    const isFinalLocation = this.currentIndex === LOCATIONS.length - 1;
+    const isFinalLocation = this.currentIndex === this.locations.length - 1;
 
     this.prevBtn.classList.toggle("hidden", isFirstLocation);
     this.prevBtn.disabled = isFirstLocation || this.isFlying;
@@ -550,7 +554,7 @@ class GameplayScreen extends AbstractScreen {
   }
 
   flyToLocation(index, { instant = false } = {}) {
-    const loc = LOCATIONS[index];
+    const loc = this.locations[index];
     const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
     const boundingSphere = new Cesium.BoundingSphere(target, 1);
     const cameraOffset = new Cesium.HeadingPitchRange(
@@ -615,7 +619,7 @@ class GameplayScreen extends AbstractScreen {
 
   goNext() {
     if (!this.isActive || this.isFlying) return;
-    if (this.currentIndex === LOCATIONS.length - 1) {
+    if (this.currentIndex === this.locations.length - 1) {
       this.onFinalize(this.score);
       return;
     }
