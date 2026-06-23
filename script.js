@@ -143,13 +143,17 @@ class FinalScreen extends AbstractScreen {
 }
 
 class CharacterSelectScreen extends AbstractScreen {
-  constructor(characters, onCharacterSelected) {
+  constructor(characters, onCharacterSelected, onGoBack) {
     super("character-select-screen");
     this.characterGrid = document.getElementById("character-grid");
     this.characters = characters;
     this.onCharacterSelected = onCharacterSelected;
     this.selectedCharacter = null;
     this.selectButtons = [];
+    this.goBackButton = document.getElementById('character-select-go-back-btn');
+    this.goBackButton.addEventListener('click', (event) => {
+      onGoBack();
+    })
 
     this.renderCharacters();
   }
@@ -646,7 +650,8 @@ class GameController {
     this.startScreen = new StartScreen(() => this.transitionTo("characterSelect"));
     this.characterSelectScreen = new CharacterSelectScreen(
       CHARACTERS,
-      (character) => this.onCharacterSelected(character)
+      (character) => this.onCharacterSelected(character),
+      () => this.transitionTo("start")
     );
     this.gameplayScreen = new GameplayScreen((score) => this.onGameFinalized(score));
     this.finalScreen = new FinalScreen(() => this.transitionTo("start"));

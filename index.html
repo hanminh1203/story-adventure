@@ -8,6 +8,7 @@
 
   <!-- CesiumJS - free, open-source (Apache 2.0), no API key required for this setup -->
   <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.142/Build/Cesium/Widgets/widgets.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.142/Build/Cesium/Cesium.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
 
@@ -55,6 +56,11 @@
 
   <div id="character-select-screen" class="game-screen hidden static-background" aria-hidden="true">
     <div class="game-screen-overlay"></div>
+    <div class="game-screen-ui position-absolute w-100 h-100">
+      <button id="character-select-go-back-btn" class="game-screen-btn go-back-btn">
+        &#8592; <span class="d-sm-inline-block d-none">Go back</span>
+      </button>
+    </div>
     <div class="game-screen-content character-select-content">
       <h1>Meet your guides</h1>
       <div class="character-grid" id="character-grid"></div>
