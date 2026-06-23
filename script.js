@@ -176,7 +176,7 @@ class CharacterSelectScreen extends AbstractScreen {
       iframe.src = `https://www.youtube.com/embed/${character.youtubeId}`;
       iframe.title = character.name;
       iframe.frameBorder = "0";
-      iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      iframe.allow = "autoplay;";
       iframe.allowFullscreen = true;
 
       videoContainer.appendChild(iframe);
