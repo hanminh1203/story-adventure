@@ -254,7 +254,7 @@ class GameplayScreen extends AbstractScreen {
   constructor(onFinalize) {
     super("gameplay-screen");
     this.onFinalize = onFinalize;
-    this.selectedCharacter = null;
+    this.selectedCharacterId = null;
 
     this.viewer = new Cesium.Viewer("cesiumContainer", {
       baseLayer: Cesium.ImageryLayer.fromProviderAsync(
@@ -291,6 +291,7 @@ class GameplayScreen extends AbstractScreen {
 
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
+    this.avatar = document.getElementById("avatar");
     this.prevBtn = document.getElementById("prev-btn");
     this.nextBtn = document.getElementById("next-btn");
     this.pinPanel = document.getElementById("pin-panel");
@@ -377,8 +378,8 @@ class GameplayScreen extends AbstractScreen {
     this.hideDetailsPopup();
     this.hidePinPanel();
     // Get locations from the selected character
-    const character = CHARACTERS.find(c => c.id === this.selectedCharacter);
-    this.locations = character ? character.locations : [];
+    this.character = CHARACTERS.find(c => c.id === this.selectedCharacterId);
+    this.locations = this.character ? this.character.locations : [];
     this.updateScore();
     this.flyToLocation(this.currentIndex);
   }
@@ -516,6 +517,7 @@ class GameplayScreen extends AbstractScreen {
 
   updateScore() {
     this.scoreValue.textContent = String(this.score);
+    this.avatar.src = this.character ? this.character.avatarUrl : "";
   }
 
   changeSlide(delta) {
@@ -710,7 +712,7 @@ class GameController {
         this.characterSelectScreen.show();
         break;
       case "gameplay":
-        this.gameplayScreen.selectedCharacter = this.selectedCharacter;
+        this.gameplayScreen.selectedCharacterId = this.selectedCharacter;
         this.gameplayScreen.start();
         break;
       case "final":

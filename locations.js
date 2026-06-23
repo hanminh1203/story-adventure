@@ -13,6 +13,7 @@ const CHARACTERS = [
     id: "1",
     name: "Tjingeling",
     title: "The Latern Traveller",
+    avatarUrl: "/assets/avatar-tjingeling.png",
     youtubeId: "y_92xI5zY8g",
     locations: [
       {
@@ -59,6 +60,7 @@ const CHARACTERS = [
     id: "2",
     name: "Little Red Riding Hood",
     title: "The Kind-Hearted Adventurer",
+    avatarUrl: "/assets/avatar-red-hood.png",
     youtubeId: "qumpgqKRE3M",
     locations: [
       {
@@ -104,6 +106,7 @@ const CHARACTERS = [
     id: "3",
     name: "Phantom of the Opera",
     title: "The Music Keeper",
+    avatarUrl: "/assets/avatar-phantom.png",
     youtubeId: "iU5ZjeFRA8o",
     locations: [
       {
@@ -149,6 +152,7 @@ const CHARACTERS = [
     id: "4",
     name: "Alice in Wonderland",
     title: "The Curious Dreamer",
+    avatarUrl: "/assets/avatar-alice.png",
     youtubeId: "uAyYzYcDpz0",
     locations: [
       {

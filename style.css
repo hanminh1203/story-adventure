@@ -323,6 +323,13 @@ body {
 /* ==========================================================================
    3. GAMEPLAY SCREEN - HUD & CONTROLS
    ========================================================================== */
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 #gameplay-screen:not(.active) .ui {
   display: none;
 }
