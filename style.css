@@ -184,7 +184,7 @@ body {
 
 .character-name {
   padding: 16px 12px 8px;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   text-align: center;
   color: #f2f4f8;
@@ -192,7 +192,7 @@ body {
 
 .character-title {
   padding: 0 12px 12px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
   text-align: center;
   color: #9fb3d9;

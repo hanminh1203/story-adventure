@@ -43,9 +43,39 @@ const COLLECTIBLE_LAYOUTS = [
   ]
 ];
 
-class StartScreen {
+/**
+ * AbstractScreen - Base class for all screens
+ */
+class AbstractScreen {
+  constructor(screenElementId) {
+    this.screenElement = document.getElementById(screenElementId);
+    this.isActive = false;
+  }
+
+  /**
+   * Show the screen
+   * @abstract
+   */
+  show() {
+    this.isActive = true;
+    this.screenElement.classList.remove("hidden");
+    this.screenElement.setAttribute("aria-hidden", "false");
+  }
+
+  /**
+   * Hide the screen
+   * @abstract
+   */
+  hide() {
+    this.isActive = false;
+    this.screenElement.classList.add("hidden");
+    this.screenElement.setAttribute("aria-hidden", "true");
+  }
+}
+
+class StartScreen extends AbstractScreen {
   constructor(onStart) {
-    this.screenElement = document.getElementById("start-screen");
+    super("start-screen");
     this.startBtn = document.getElementById("start-btn");
     this.onStart = onStart;
     this.isActive = true;
@@ -65,29 +95,24 @@ class StartScreen {
   }
 
   show() {
-    this.isActive = true;
-    this.screenElement.classList.remove("hidden");
-    this.screenElement.setAttribute("aria-hidden", "false");
+    super.show();
     this.startBtn.focus();
   }
 
   hide() {
-    this.isActive = false;
-    this.screenElement.classList.add("hidden");
-    this.screenElement.setAttribute("aria-hidden", "true");
+    super.hide();
     if (document.activeElement === this.startBtn) {
       document.activeElement.blur();
     }
   }
 }
 
-class FinalScreen {
+class FinalScreen extends AbstractScreen {
   constructor(onRestart) {
-    this.screenElement = document.getElementById("final-screen");
+    super("final-screen");
     this.finalScore = document.getElementById("final-score");
     this.restartBtn = document.getElementById("restart-btn");
     this.onRestart = onRestart;
-    this.isActive = false;
 
     this.restartBtn.addEventListener("click", () => {
       this.onRestart();
@@ -100,35 +125,29 @@ class FinalScreen {
       if (!this.isActive) return;
 
       if (e.key === "Enter") this.onRestart();
-      console.log(e.key);
     });
   }
 
   show(score) {
-    this.isActive = true;
+    super.show();
     this.finalScore.textContent = String(score);
-    this.screenElement.classList.remove("hidden");
-    this.screenElement.setAttribute("aria-hidden", "false");
     this.restartBtn.focus();
   }
 
   hide() {
-    this.isActive = false;
-    this.screenElement.classList.add("hidden");
-    this.screenElement.setAttribute("aria-hidden", "true");
+    super.hide();
     if (document.activeElement === this.restartBtn) {
       document.activeElement.blur();
     }
   }
 }
 
-class CharacterSelectScreen {
+class CharacterSelectScreen extends AbstractScreen {
   constructor(characters, onCharacterSelected) {
-    this.screenElement = document.getElementById("character-select-screen");
+    super("character-select-screen");
     this.characterGrid = document.getElementById("character-grid");
     this.characters = characters;
     this.onCharacterSelected = onCharacterSelected;
-    this.isActive = false;
     this.selectedCharacter = null;
     this.selectButtons = [];
 
@@ -195,9 +214,7 @@ class CharacterSelectScreen {
   }
 
   show() {
-    this.isActive = true;
-    this.screenElement.classList.remove("hidden");
-    this.screenElement.setAttribute("aria-hidden", "false");
+    super.show();
     // Focus first button
     if (this.selectButtons.length > 0) {
       this.selectButtons[0].focus();
@@ -205,15 +222,13 @@ class CharacterSelectScreen {
   }
 
   hide() {
-    this.isActive = false;
-    this.screenElement.classList.add("hidden");
-    this.screenElement.setAttribute("aria-hidden", "true");
+    super.hide();
   }
 }
 
-class GameplayScreen {
+class GameplayScreen extends AbstractScreen {
   constructor(onFinalize) {
-    this.gameplayScreen = document.getElementById("gameplay-screen");
+    super("gameplay-screen");
     this.onFinalize = onFinalize;
     this.selectedCharacter = null;
 
@@ -329,7 +344,7 @@ class GameplayScreen {
   }
 
   start() {
-    this.gameplayScreen.classList.add('active');
+    this.screenElement.classList.add('active');
     this.isActive = true;
     this.currentIndex = 0;
     this.score = 0;
@@ -341,11 +356,11 @@ class GameplayScreen {
   }
 
   hide() {
-    this.gameplayScreen.classList.remove('active');
-    this.isActive = false;
+    this.screenElement.classList.remove('active');
     this.viewer.camera.flyHome();
     this.hideDetailsPopup();
     this.hidePinPanel();
+    super.hide();
   }
 
   createPinPanelContent(index) {
@@ -619,31 +634,76 @@ class GameplayScreen {
 }
 
 class GameController {
+  score = 0;
+  selectedCharacter = null;
+  currentState = "start";
   constructor() {
-    this.startScreen = new StartScreen(() => this.showCharacterSelect());
-    this.characterSelectScreen = new CharacterSelectScreen(CHARACTERS, (character) => this.startGame(character));
-    this.gameplayScreen = new GameplayScreen((score) => this.finalizeGame(score));
-    this.finalScreen = new FinalScreen(() => this.restartGame());
+    // Initialize screens
+    this.startScreen = new StartScreen(() => this.transitionTo("characterSelect"));
+    this.characterSelectScreen = new CharacterSelectScreen(
+      CHARACTERS,
+      (character) => this.onCharacterSelected(character)
+    );
+    this.gameplayScreen = new GameplayScreen((score) => this.onGameFinalized(score));
+    this.finalScreen = new FinalScreen(() => this.transitionTo("start"));
+
+    // Start with the initial screen
+    this.transitionTo("start");
   }
 
-  showCharacterSelect() {
-    this.startScreen.hide();
-    this.characterSelectScreen.show();
+  /**
+   * Transition to a new screen state
+   */
+  transitionTo(state) {
+    // Hide current screen
+    switch (this.currentState) {
+      case "start":
+        this.startScreen.hide();
+        break;
+      case "characterSelect":
+        this.characterSelectScreen.hide();
+        break;
+      case "gameplay":
+        this.gameplayScreen.hide();
+        break;
+      case "final":
+        this.finalScreen.hide();
+        break;
+    }
+
+    // Show new screen
+    this.currentState = state;
+    switch (this.currentState) {
+      case "start":
+        this.startScreen.show();
+        break;
+      case "characterSelect":
+        this.characterSelectScreen.show();
+        break;
+      case "gameplay":
+        this.gameplayScreen.selectedCharacter = this.selectedCharacter;
+        this.gameplayScreen.start();
+        break;
+      case "final":
+        this.finalScreen.show(this.score);
+        break;
+    }
   }
 
-  startGame(character) {
-    this.gameplayScreen.selectedCharacter = character;
-    this.gameplayScreen.start();
+  /**
+   * Handle character selection
+   */
+  onCharacterSelected(characterId) {
+    this.selectedCharacter = characterId;
+    this.transitionTo("gameplay");
   }
 
-  finalizeGame(score) {
-    this.gameplayScreen.hide();
-    this.finalScreen.show(score);
-  }
-
-  restartGame() {
-    this.finalScreen.hide();
-    this.startScreen.show();
+  /**
+   * Handle game finalization
+   */
+  onGameFinalized(score) {
+    this.score = score;
+    this.transitionTo("final");
   }
 }
 
