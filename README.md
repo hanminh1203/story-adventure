@@ -1,17 +1,19 @@
-# Location Flythrough Map
+# Duck Quest - Flythrough Safety Lessons
 
 A 3D map (CesiumJS) with Next/Prev buttons that fly the camera between a list
-of locations, plane-style, with a location-info popup top-right. Free,
-no API key required.
+of locations, plane-style. At every stop, Red Riding Hood (a simple guide
+character) shares a short, age-appropriate personal-safety lesson with a
+quick comprehension check, while kids also hunt for hidden ducks in each
+location's photo slideshow. Free, no API key required.
 
 ## Files
 
 - `index.html` - page structure, loads Cesium from CDN
-- `locations.js` - your list of tour stops (edit this)
-- `script.js` - camera flyTo logic, popup updates, button handlers
-- `style.css` - popup + button styling
+- `locations.js` - your list of tour stops, including Red's lesson at each one (edit this)
+- `script.js` - camera flyTo logic, popup updates, guide character logic, button handlers
+- `style.css` - popup, guide bubble, and button styling
 
-## Customizing locations
+## Customizing locations & lessons
 
 Open `locations.js` and edit the `LOCATIONS` array. Each entry:
 
@@ -23,13 +25,40 @@ Open `locations.js` and edit the `LOCATIONS` array. Each entry:
   lon: 115.8605,
   height: 20000,   // camera viewing range in meters - lower = closer zoom
   heading: 0,      // optional, compass direction in degrees
-  pitch: -35       // optional, camera tilt, -90 = straight down
+  pitch: -35,      // optional, camera tilt, -90 = straight down
+  lesson: {
+    title: "Your Body Belongs to You",
+    text: "What Red says - keep it short, simple, and reassuring.",
+    question: "A yes/no style comprehension check.",
+    options: [
+      { text: "Right answer", correct: true, feedback: "Why it's right." },
+      { text: "Wrong answer", correct: false, feedback: "Gentle correction." }
+    ]
+  }
 }
 ```
+
+`lesson` is optional - if a stop doesn't have one, Red just shows a friendly
+generic greeting instead. The `GUIDE` object near the top of `locations.js`
+controls the character's name/species shown in the bubble; the avatar
+artwork itself is an inline SVG (`GUIDE_AVATAR_URL`) near the top of
+`script.js` if you want to restyle the character.
 
 Order in the array = order Next/Prev moves through. It wraps around (last to
 first, first to last). To get coordinates for a place, right-click it in
 Google Maps and copy the lat/lon shown.
+
+## How the lesson flow works
+
+- Red's speech bubble pops up automatically at each stop, alongside the
+  existing location info panel.
+- Tapping an answer shows instant, gentle feedback - never a hard "wrong",
+  just an encouraging correction.
+- Hitting "Got it!" collapses the bubble down to just Red's avatar (tap it
+  again to reopen); this never blocks navigation, so a child can always
+  move on with Next/Prev.
+- A "Lessons" counter (top-left, next to duck Points) tracks how many of the
+  stops have been answered correctly at least once per playthrough.
 
 ## Running it locally
 
