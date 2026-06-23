@@ -155,7 +155,23 @@ class CharacterSelectScreen extends AbstractScreen {
       onGoBack();
     })
 
+    // Carousel arrows: only visible/needed below the row-of-4 breakpoint
+    // (see .carousel-arrow / max-width: 899px in style.css), but wiring the
+    // listeners unconditionally is harmless since scrollBy is a no-op when
+    // the grid has no horizontal overflow (row-of-4 mode).
+    this.prevButton = document.getElementById('character-prev-btn');
+    this.nextButton = document.getElementById('character-next-btn');
+    this.prevButton.addEventListener('click', () => this.scrollCharacters(-1));
+    this.nextButton.addEventListener('click', () => this.scrollCharacters(1));
+
     this.renderCharacters();
+  }
+
+  scrollCharacters(direction) {
+    this.characterGrid.scrollBy({
+      left: direction * this.characterGrid.clientWidth,
+      behavior: 'smooth',
+    });
   }
 
   renderCharacters() {

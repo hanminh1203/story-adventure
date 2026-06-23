@@ -147,16 +147,62 @@ body {
   text-align: center;
 }
 
-.character-grid {
+/* Carousel breakpoint: above this width, all characters fit in one row with
+   no scrolling. Below it, the grid becomes a swipeable/arrow-driven carousel.
+   Change ONLY this number if 900px doesn't fit your cards. */
+.character-carousel {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: ce nter;
-  gap: 28px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 24px;
+  margin: 0 auto;
+}
+
+.carousel-arrow {
+  display: none; /* shown only in carousel mode, see breakpoint media query below */
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(15, 20, 30, 0.6);
+  color: #f2f4f8;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.carousel-arrow:hover {
+  background: rgba(255, 216, 77, 0.25);
+}
+
+.carousel-arrow:focus-visible {
+  outline: 3px solid #6fa8ff;
+  outline-offset: 2px;
+}
+
+.carousel-arrow:active {
+  transform: scale(0.92);
+}
+
 .character-card {
-  min-width: 260px;
+  width: 100%;
+  max-width: 280px;
+  min-width: 0;
+  margin: 0 auto;
   background: rgba(15, 20, 30, 0.6);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -231,6 +277,33 @@ body {
 
 .character-select-btn:active {
   transform: translateY(0);
+}
+
+@media (max-width: 899px) {
+  .character-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .character-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .character-card {
+    flex: 0 0 100%;
+    max-width: 320px;
+    margin-left: 160px;
+    margin-right: 160px;
+    scroll-snap-align: center;
+  }
+
+  .carousel-arrow {
+    display: flex;
+  }
 }
 
 @media (max-width: 768px) {
