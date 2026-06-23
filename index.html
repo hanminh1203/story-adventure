@@ -9,6 +9,7 @@
   <!-- CesiumJS - free, open-source (Apache 2.0), no API key required for this setup -->
   <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.142/Build/Cesium/Widgets/widgets.css" />
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.142/Build/Cesium/Cesium.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
 
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -43,12 +44,21 @@
     </div>
   </div>
 
-  <div id="start-screen" class="game-screen active">
+  <div id="start-screen" class="game-screen active static-background">
+    <div class="game-screen-overlay"></div>
     <div class="game-screen-content start-content">
       <div class="game-kicker">Flythrough Hunt</div>
       <h1>Duck Quest</h1>
       <p>Travel the map, open each location, and collect hidden ducks in the photo slideshow.</p>
       <button id="start-btn" class="game-screen-btn" type="button">START</button>
+    </div>
+  </div>
+
+  <div id="character-select-screen" class="game-screen hidden static-background" aria-hidden="true">
+    <div class="game-screen-overlay"></div>
+    <div class="game-screen-content character-select-content">
+      <h1>Meet your guides</h1>
+      <div class="character-grid" id="character-grid"></div>
     </div>
   </div>
 

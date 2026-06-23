@@ -122,10 +122,100 @@ class FinalScreen {
   }
 }
 
+class CharacterSelectScreen {
+  constructor(characters, onCharacterSelected) {
+    this.screenElement = document.getElementById("character-select-screen");
+    this.characterGrid = document.getElementById("character-grid");
+    this.characters = characters;
+    this.onCharacterSelected = onCharacterSelected;
+    this.isActive = false;
+    this.selectedCharacter = null;
+    this.selectButtons = [];
+
+    this.renderCharacters();
+  }
+
+  renderCharacters() {
+    // Clear any existing content
+    this.characterGrid.innerHTML = "";
+
+    // Create a card for each character
+    this.characters.forEach((character) => {
+      const card = document.createElement("div");
+      card.className = "character-card";
+
+      const videoContainer = document.createElement("div");
+      videoContainer.className = "character-video";
+
+      const iframe = document.createElement("iframe");
+      iframe.width = "100%";
+      iframe.height = "100%";
+      iframe.src = `https://www.youtube.com/embed/${character.youtubeId}`;
+      iframe.title = character.name;
+      iframe.frameBorder = "0";
+      iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      iframe.allowFullscreen = true;
+
+      videoContainer.appendChild(iframe);
+
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "character-name";
+      nameDiv.textContent = character.name;
+
+      const titleDiv = document.createElement("div");
+      titleDiv.className = "character-title";
+      titleDiv.textContent = character.title;
+
+      const selectBtn = document.createElement("button");
+      selectBtn.className = "character-select-btn";
+      selectBtn.type = "button";
+      selectBtn.dataset.character = character.id;
+      selectBtn.textContent = "SELECT";
+
+      selectBtn.addEventListener("click", (e) => {
+        const characterId = e.target.dataset.character;
+        this.selectCharacter(characterId);
+      });
+
+      this.selectButtons.push(selectBtn);
+
+      card.appendChild(videoContainer);
+      card.appendChild(nameDiv);
+      card.appendChild(titleDiv);
+      card.appendChild(selectBtn);
+
+      this.characterGrid.appendChild(card);
+    });
+  }
+
+  selectCharacter(characterId) {
+    this.selectedCharacter = characterId;
+    this.hide();
+    this.onCharacterSelected(characterId);
+  }
+
+  show() {
+    this.isActive = true;
+    this.screenElement.classList.remove("hidden");
+    this.screenElement.setAttribute("aria-hidden", "false");
+    // Focus first button
+    if (this.selectButtons.length > 0) {
+      this.selectButtons[0].focus();
+    }
+  }
+
+  hide() {
+    this.isActive = false;
+    this.screenElement.classList.add("hidden");
+    this.screenElement.setAttribute("aria-hidden", "true");
+  }
+}
+
 class GameplayScreen {
   constructor(onFinalize) {
     this.gameplayScreen = document.getElementById("gameplay-screen");
     this.onFinalize = onFinalize;
+    this.selectedCharacter = null;
 
     this.viewer = new Cesium.Viewer("cesiumContainer", {
       baseLayer: Cesium.ImageryLayer.fromProviderAsync(
@@ -530,13 +620,19 @@ class GameplayScreen {
 
 class GameController {
   constructor() {
-    this.startScreen = new StartScreen(() => this.startGame());
+    this.startScreen = new StartScreen(() => this.showCharacterSelect());
+    this.characterSelectScreen = new CharacterSelectScreen(CHARACTERS, (character) => this.startGame(character));
     this.gameplayScreen = new GameplayScreen((score) => this.finalizeGame(score));
     this.finalScreen = new FinalScreen(() => this.restartGame());
   }
 
-  startGame() {
+  showCharacterSelect() {
     this.startScreen.hide();
+    this.characterSelectScreen.show();
+  }
+
+  startGame(character) {
+    this.gameplayScreen.selectedCharacter = character;
     this.gameplayScreen.start();
   }
 
@@ -547,7 +643,7 @@ class GameController {
 
   restartGame() {
     this.finalScreen.hide();
-    this.gameplayScreen.start();
+    this.startScreen.show();
   }
 }
 

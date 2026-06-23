@@ -1,4 +1,39 @@
 /**
+ * CHARACTERS - the character guides available for selection.
+ *
+ * Edit this array to add/modify character guides. Each entry:
+ *   id           - unique identifier (number or string)
+ *   name         - character name displayed in the UI
+ *   youtubeId    - YouTube video ID (the part after ?v= in a YouTube URL)
+ */
+const CHARACTERS = [
+  {
+    id: 1,
+    name: "Tjingeling",
+    title: "The Latern Traveller",
+    youtubeId: "y_92xI5zY8g"
+  },
+  {
+    id: 2,
+    name: "Little Red Riding Hood",
+    title: "The Kind-Hearted Adventurer",
+    youtubeId: "qumpgqKRE3M"
+  },
+  {
+    id: 3,
+    name: "Phantom of the Opera",
+    title: "The Music Keeper",
+    youtubeId: "iU5ZjeFRA8o"
+  },
+  {
+    id: 4,
+    name: "Alice in Wonderland",
+    title: "The Curious Dreamer",
+    youtubeId: "uAyYzYcDpz0"
+  }
+];
+
+/**
  * LOCATIONS - the tour stops for the flythrough map.
  *
  * Edit this array to use your own places. Each entry:
