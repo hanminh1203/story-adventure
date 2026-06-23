@@ -197,13 +197,18 @@ class CharacterSelectScreen extends AbstractScreen {
 
       videoContainer.appendChild(iframe);
 
+      const characterInfoDiv = document.createElement("div");
+      characterInfoDiv.className = "character-info";
+
       const nameDiv = document.createElement("div");
       nameDiv.className = "character-name";
       nameDiv.textContent = character.name;
+      characterInfoDiv.appendChild(nameDiv);
 
       const titleDiv = document.createElement("div");
       titleDiv.className = "character-title";
       titleDiv.textContent = character.title;
+      characterInfoDiv.appendChild(titleDiv);
 
       const selectBtn = document.createElement("button");
       selectBtn.className = "character-select-btn";
@@ -219,8 +224,7 @@ class CharacterSelectScreen extends AbstractScreen {
       this.selectButtons.push(selectBtn);
 
       card.appendChild(videoContainer);
-      card.appendChild(nameDiv);
-      card.appendChild(titleDiv);
+      card.appendChild(characterInfoDiv);
       card.appendChild(selectBtn);
 
       this.characterGrid.appendChild(card);
