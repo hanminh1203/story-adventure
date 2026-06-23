@@ -47,7 +47,6 @@ body {
 
 .game-screen-content {
   animation: screenRise 0.8s ease both;
-  max-width: clamp(620px, 80%, 1000px);
 }
 
 .game-kicker {
@@ -138,7 +137,6 @@ body {
    ========================================================================== */
 
 .character-select-content {
-  max-width: 1200px;
   width: 100%;
   animation: screenRise 0.8s ease both;
 }
@@ -150,14 +148,15 @@ body {
 }
 
 .character-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: ce nter;
   gap: 28px;
   margin: 0 auto;
-  max-width: 1100px;
 }
 
 .character-card {
+  min-width: 260px;
   background: rgba(15, 20, 30, 0.6);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -236,7 +235,6 @@ body {
 
 @media (max-width: 768px) {
   .character-grid {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 16px;
   }
   
