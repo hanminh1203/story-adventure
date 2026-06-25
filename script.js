@@ -386,6 +386,9 @@ class CharacterSelectScreen extends AbstractScreen {
 
   hide() {
     super.hide();
+    if (document.activeElement) {
+      document.activeElement.blur();
+    }
   }
 }
 
