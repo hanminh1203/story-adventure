@@ -560,8 +560,23 @@ class GameplayScreen extends AbstractScreen {
     this.collectedItems.add(itemId);
     this.score += 1;
     this.updateScore();
+    this.showCollectFeedback(button);
     button.classList.add("collected");
     window.setTimeout(() => button.remove(), 220);
+  }
+
+  showCollectFeedback(button) {
+    const layer = button.parentElement;
+    if (!layer) return;
+
+    const feedback = document.createElement("span");
+    feedback.className = "collect-feedback";
+    feedback.textContent = "+1";
+    feedback.setAttribute("aria-hidden", "true");
+    feedback.style.left = button.style.left;
+    feedback.style.top = button.style.top;
+    layer.appendChild(feedback);
+    feedback.addEventListener("animationend", () => feedback.remove(), { once: true });
   }
 
   updateScore() {
