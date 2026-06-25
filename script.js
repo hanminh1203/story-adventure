@@ -12,6 +12,7 @@
 
 // Shared constants
 const FLIGHT_DURATION_SECONDS = 2;
+const DETAIL_FLIGHT_DURATION_SECONDS = 1;
 const MAX_FLIGHT_HEIGHT_METERS = 3000000;
 const TARGET_SCREEN_POSITION_FROM_BOTTOM = 0.3;
 const DUCK_IMAGE_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Cfilter id='s' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeDropShadow dx='0' dy='5' stdDeviation='4' flood-color='%23000' flood-opacity='.35'/%3E%3C/filter%3E%3Cg filter='url(%23s)'%3E%3Cellipse cx='48' cy='62' rx='31' ry='22' fill='%23ffd84d'/%3E%3Ccircle cx='62' cy='38' r='18' fill='%23ffe36b'/%3E%3Cpath d='M75 39h18L76 50z' fill='%23f58b1f'/%3E%3Ccircle cx='66' cy='33' r='3.5' fill='%23121a24'/%3E%3Cpath d='M22 55c9 9 20 10 30 5-11-1-19-6-24-15z' fill='%23f3bd2e' opacity='.8'/%3E%3Cpath d='M25 76h46' stroke='%23f58b1f' stroke-width='6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E";
@@ -290,6 +291,8 @@ class GameplayScreen extends AbstractScreen {
     this.slideshowIndex = 0;
     this.locations = [];
     this.pinPanelOpen = false;
+    this.overviewCameraState = null;
+    this.isDetailViewActive = false;
 
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
@@ -374,7 +377,7 @@ class GameplayScreen extends AbstractScreen {
       if (isDetailsOpen && e.key === "ArrowRight") {
         const images = this.slideshowLocation ? this.slideshowLocation.images || [] : [];
         if (images.length > 0 && this.slideshowIndex === images.length - 1) {
-          this.hideDetailsPopup();
+          this.hideDetailsPopup({ restoreCamera: false });
           this.goNext();
         } else {
           this.changeSlide(1);
@@ -401,7 +404,8 @@ class GameplayScreen extends AbstractScreen {
     this.score = 0;
     this.collectedItems.clear();
     this.hideExitConfirm();
-    this.hideDetailsPopup();
+    this.hideDetailsPopup({ restoreCamera: false });
+    this.clearOverviewCamera();
     this.hidePinPanel();
     // Get locations from the selected character
     this.character = CHARACTERS.find(c => c.id === this.selectedCharacterId);
@@ -414,15 +418,16 @@ class GameplayScreen extends AbstractScreen {
     this.screenElement.classList.remove('active');
     this.viewer.camera.cancelFlight();
     this.isFlying = false;
+    this.clearOverviewCamera();
     this.viewer.camera.flyHome();
     this.hideExitConfirm();
-    this.hideDetailsPopup();
+    this.hideDetailsPopup({ restoreCamera: false });
     this.hidePinPanel();
     super.hide();
   }
 
   showExitConfirm() {
-    this.hideDetailsPopup();
+    this.hideDetailsPopup({ restoreCamera: false });
     this.exitConfirmModal.classList.add("visible");
     this.exitConfirmModal.setAttribute("aria-hidden", "false");
     this.exitCancelBtn.focus();
@@ -477,6 +482,36 @@ class GameplayScreen extends AbstractScreen {
   }
 
   showDetailsPopup(loc) {
+    if (
+      this.isFlying ||
+      this.isDetailViewActive ||
+      this.detailsModal.classList.contains("visible")
+    ) {
+      return;
+    }
+
+    this.saveOverviewCamera();
+    this.hidePinPanel();
+    this.isFlying = true;
+    this.setButtonsEnabled(false);
+
+    this.flyToDetailView(loc, {
+      onComplete: () => {
+        this.isFlying = false;
+        this.openDetailsModal(loc);
+        this.isDetailViewActive = true;
+      },
+      onCancel: () => {
+        this.isFlying = false;
+        this.setButtonsEnabled(true);
+        if (!this.isDetailViewActive && !this.overviewCameraState) {
+          this.showPinPanel();
+        }
+      }
+    });
+  }
+
+  openDetailsModal(loc) {
     this.slideshowLocation = loc;
     this.slideshowIndex = 0;
     this.detailsTitle.textContent = loc.name;
@@ -592,7 +627,7 @@ class GameplayScreen extends AbstractScreen {
     this.renderSlideshow();
   }
 
-  hideDetailsPopup() {
+  hideDetailsPopup({ restoreCamera = true } = {}) {
     this.detailsModal.classList.remove("visible");
     this.detailsModal.setAttribute("aria-hidden", "true");
     if (document.activeElement === this.detailsCloseBtn) {
@@ -600,6 +635,124 @@ class GameplayScreen extends AbstractScreen {
     }
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
+
+    this.viewer.camera.cancelFlight();
+
+    if (!restoreCamera || !this.overviewCameraState) {
+      this.clearOverviewCamera();
+      return;
+    }
+
+    const saved = this.overviewCameraState;
+    this.isFlying = true;
+    this.setButtonsEnabled(false);
+    this.hidePinPanel();
+
+    const overviewHeight = Cesium.Cartographic.fromCartesian(saved.position).height;
+
+    this.viewer.camera.flyTo({
+      destination: saved.position,
+      orientation: {
+        heading: saved.heading,
+        pitch: saved.pitch,
+        roll: saved.roll
+      },
+      duration: DETAIL_FLIGHT_DURATION_SECONDS,
+      maximumHeight: overviewHeight,
+      easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+      complete: () => this.finishDetailFlyBack(),
+      cancel: () => this.finishDetailFlyBack()
+    });
+  }
+
+  finishDetailFlyBack() {
+    this.clearOverviewCamera();
+    this.isFlying = false;
+    this.setButtonsEnabled(true);
+    this.showPinPanel();
+  }
+
+  saveOverviewCamera() {
+    const camera = this.viewer.camera;
+    this.overviewCameraState = {
+      position: camera.position.clone(),
+      heading: camera.heading,
+      pitch: camera.pitch,
+      roll: camera.roll
+    };
+  }
+
+  clearOverviewCamera() {
+    this.overviewCameraState = null;
+    this.isDetailViewActive = false;
+  }
+
+  flyToDetailView(loc, { onComplete, onCancel } = {}) {
+    const camera = this.viewer.camera;
+    const saved = this.overviewCameraState;
+    if (!saved) return;
+
+    const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
+    const currentDistance = Cesium.Cartesian3.distance(camera.position, target);
+    const detailRange = 10;
+    const clampedRange = Math.min(detailRange, currentDistance * 0.95);
+
+    const direction = Cesium.Cartesian3.subtract(camera.position, target, new Cesium.Cartesian3());
+    Cesium.Cartesian3.normalize(direction, direction);
+    const endPosition = Cesium.Cartesian3.add(
+      target,
+      Cesium.Cartesian3.multiplyByScalar(direction, clampedRange, new Cesium.Cartesian3()),
+      new Cesium.Cartesian3()
+    );
+
+    camera.cancelFlight();
+    camera.flyTo({
+      destination: endPosition,
+      orientation: {
+        heading: saved.heading,
+        pitch: saved.pitch,
+        roll: saved.roll
+      },
+      duration: DETAIL_FLIGHT_DURATION_SECONDS,
+      maximumHeight: camera.positionCartographic.height,
+      easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+      complete: () => {
+        if (onComplete) onComplete();
+      },
+      cancel: () => {
+        if (onCancel) onCancel();
+      }
+    });
+  }
+
+  getCameraOffset(loc) {
+    return new Cesium.HeadingPitchRange(
+      Cesium.Math.toRadians(loc.heading || 0),
+      Cesium.Math.toRadians(-50),
+      loc.height
+    );
+  }
+
+  flyToCameraOffset(loc, { duration = FLIGHT_DURATION_SECONDS, onComplete, onCancel } = {}) {
+    const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
+    const boundingSphere = new Cesium.BoundingSphere(target, 1);
+    const cameraOffset = this.getCameraOffset(loc);
+
+    this.viewer.camera.cancelFlight();
+    this.viewer.camera.flyToBoundingSphere(boundingSphere, {
+      duration,
+      easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+      offset: cameraOffset,
+      maximumHeight: MAX_FLIGHT_HEIGHT_METERS,
+      pitchAdjustHeight: 10,
+      complete: () => {
+        this.applyTargetVerticalOffset(loc.height);
+        if (onComplete) onComplete();
+      },
+      cancel: () => {
+        if (onCancel) onCancel();
+      }
+    });
   }
 
   hidePinPanel() {
@@ -661,11 +814,12 @@ class GameplayScreen extends AbstractScreen {
     const loc = this.locations[index];
     const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
     const boundingSphere = new Cesium.BoundingSphere(target, 1);
-    const cameraOffset = new Cesium.HeadingPitchRange(
-      Cesium.Math.toRadians(loc.heading || 0),
-      Cesium.Math.toRadians(-50),
-      loc.height
-    );
+    const cameraOffset = this.getCameraOffset(loc);
+
+    if (this.isDetailViewActive || this.detailsModal.classList.contains("visible")) {
+      this.hideDetailsPopup({ restoreCamera: false });
+    }
+    this.clearOverviewCamera();
 
     if (instant) {
       this.viewer.camera.viewBoundingSphere(boundingSphere, cameraOffset);
@@ -681,6 +835,7 @@ class GameplayScreen extends AbstractScreen {
     this.setButtonsEnabled(false);
     this.hidePinPanel();
 
+    this.viewer.camera.cancelFlight();
     this.viewer.camera.flyToBoundingSphere(boundingSphere, {
       duration: FLIGHT_DURATION_SECONDS,
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
