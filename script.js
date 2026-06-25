@@ -15,7 +15,19 @@ const FLIGHT_DURATION_SECONDS = 2;
 const DETAIL_FLIGHT_DURATION_SECONDS = 1;
 const MAX_FLIGHT_HEIGHT_METERS = 3000000;
 const TARGET_SCREEN_POSITION_FROM_BOTTOM = 0.3;
-const DUCK_IMAGE_URL = "assets/duck.svg";
+const DEFAULT_COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got it!"];
+
+function formatCollectibleLabel(collectibleName) {
+  if (!collectibleName) return "Treasures found!";
+  return `${collectibleName.charAt(0).toUpperCase()}${collectibleName.slice(1)} found!`;
+}
+
+function getCollectibleSingular(collectibleName) {
+  if (!collectibleName) return "treasure";
+  if (collectibleName === "music notes") return "music note";
+  if (collectibleName.endsWith("s")) return collectibleName.slice(0, -1);
+  return collectibleName;
+}
 
 /**
  * Clones a <template> by id and returns its single root element.
@@ -44,7 +56,9 @@ const COLLECTIBLE_LAYOUTS = [
   ]
 ];
 
-const COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got a duck!"];
+function getCollectMessages(character) {
+  return character?.collectMessages || DEFAULT_COLLECT_MESSAGES;
+}
 
 function getDucksForSlide(slideIndex) {
   return COLLECTIBLE_LAYOUTS[slideIndex % COLLECTIBLE_LAYOUTS.length].length;
@@ -191,7 +205,8 @@ class FinalScreen extends AbstractScreen {
 
   show(summary) {
     super.show();
-    const { score, maxScore, character } = summary;
+    const { score, maxScore, character, collectibleName } = summary;
+    const itemsName = collectibleName || character?.collectibleName || "ducks";
 
     this.renderStars(getStarRating(score, maxScore));
     this.finalScore.textContent = String(score);
@@ -199,11 +214,11 @@ class FinalScreen extends AbstractScreen {
     void this.finalScore.offsetWidth;
     this.finalScore.classList.add("final-score-pop");
 
-    let ducksSummary = `You found ${score} of ${maxScore} ducks!`;
+    let itemsSummary = `You found ${score} of ${maxScore} ${itemsName}!`;
     if (maxScore > 0 && score === maxScore) {
-      ducksSummary += " Super Explorer!";
+      itemsSummary += " Super Explorer!";
     }
-    this.finalDucksSummary.textContent = ducksSummary;
+    this.finalDucksSummary.textContent = itemsSummary;
 
     const characterName = character ? character.name : "Your guide";
     this.finalCharacterMessage.textContent = `${characterName} is proud of your adventure!`;
@@ -297,6 +312,9 @@ class CharacterSelectScreen extends AbstractScreen {
     this.characters.forEach((character) => {
       const card = document.createElement("div");
       card.className = "character-card";
+      if (character.themeColor) {
+        card.style.setProperty("--guide-accent", character.themeColor);
+      }
 
       const videoContainer = document.createElement("div");
       videoContainer.className = "character-video";
@@ -329,7 +347,7 @@ class CharacterSelectScreen extends AbstractScreen {
       selectBtn.className = "character-select-btn";
       selectBtn.type = "button";
       selectBtn.dataset.character = character.id;
-      selectBtn.textContent = "SELECT";
+      selectBtn.textContent = character.selectButtonLabel || "Pick me!";
 
       selectBtn.addEventListener("click", (e) => {
         const characterId = e.target.dataset.character;
@@ -412,7 +430,10 @@ class GameplayScreen extends AbstractScreen {
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
     this.scorePanel = document.getElementById("score-panel");
+    this.scoreLabel = document.getElementById("score-label");
+    this.scoreCollectibleIcon = document.getElementById("score-collectible-icon");
     this.avatar = document.getElementById("avatar");
+    this.gameplayUi = document.querySelector("#gameplay-screen .ui");
     this.progressTrailLabel = document.getElementById("progress-trail-label");
     this.progressTrailDots = document.getElementById("progress-trail-dots");
     this.achievementToast = document.getElementById("achievement-toast");
@@ -531,6 +552,7 @@ class GameplayScreen extends AbstractScreen {
     // Get locations from the selected character
     this.character = CHARACTERS.find(c => c.id === this.selectedCharacterId);
     this.locations = this.character ? this.character.locations : [];
+    this.applyCharacterTheme();
     this.updateScore();
     this.renderProgressTrail();
     this.flyToLocation(this.currentIndex);
@@ -567,6 +589,18 @@ class GameplayScreen extends AbstractScreen {
   confirmExit() {
     this.hideExitConfirm();
     this.onExit();
+  }
+
+  applyCharacterTheme() {
+    if (!this.character) return;
+
+    const accent = this.character.themeColor || "#ffd84d";
+    if (this.gameplayUi) {
+      this.gameplayUi.style.setProperty("--guide-accent", accent);
+    }
+    if (this.scoreLabel) {
+      this.scoreLabel.textContent = formatCollectibleLabel(this.character.collectibleName);
+    }
   }
 
   createPinPanelContent(index) {
@@ -659,7 +693,8 @@ class GameplayScreen extends AbstractScreen {
     if (this.clearedLocations.has(loc.name)) return;
 
     this.clearedLocations.add(loc.name);
-    this.showAchievementToast(`All ducks found at ${loc.name}!`);
+    const itemsName = this.character?.collectibleName || "ducks";
+    this.showAchievementToast(`All ${itemsName} found at ${loc.name}!`);
   }
 
   buildFinalizeSummary() {
@@ -667,6 +702,7 @@ class GameplayScreen extends AbstractScreen {
       score: this.score,
       maxScore: countDucksForTour(this.locations),
       character: this.character,
+      collectibleName: this.character?.collectibleName || "ducks",
       locationsCleared: countFullyClearedLocations(this.locations, this.collectedItems)
     };
   }
@@ -772,6 +808,8 @@ class GameplayScreen extends AbstractScreen {
   /** Returns an array of collectible button elements for the current slide. */
   buildCollectibles(loc) {
     const buttons = [];
+    const imageUrl = this.character?.collectibleImage || "/assets/duck.svg";
+    const singular = getCollectibleSingular(this.character?.collectibleName);
     this.getCollectiblesForSlide(this.slideshowIndex).forEach((item, itemIndex) => {
       const itemId = this.getCollectibleId(loc, this.slideshowIndex, itemIndex);
       if (this.collectedItems.has(itemId)) return;
@@ -779,7 +817,8 @@ class GameplayScreen extends AbstractScreen {
       const btn = cloneTemplate("tpl-collectible");
       btn.style.left = `${item.x}%`;
       btn.style.top = `${item.y}%`;
-      btn.querySelector("img").src = DUCK_IMAGE_URL;
+      btn.setAttribute("aria-label", `Collect ${singular} for 1 point`);
+      btn.querySelector("img").src = imageUrl;
       btn.addEventListener("click", (event) => {
         event.stopPropagation();
         this.collectItem(itemId, btn);
@@ -819,7 +858,8 @@ class GameplayScreen extends AbstractScreen {
 
     const feedback = document.createElement("span");
     feedback.className = "collect-feedback";
-    feedback.textContent = COLLECT_MESSAGES[(this.score - 1) % COLLECT_MESSAGES.length];
+    const messages = getCollectMessages(this.character);
+    feedback.textContent = messages[(this.score - 1) % messages.length];
     feedback.setAttribute("aria-hidden", "true");
     feedback.style.left = button.style.left;
     feedback.style.top = button.style.top;
@@ -829,7 +869,12 @@ class GameplayScreen extends AbstractScreen {
 
   updateScore() {
     this.scoreValue.textContent = String(this.score);
-    this.avatar.src = this.character ? this.character.avatarUrl : "";
+    if (this.character) {
+      this.avatar.src = this.character.avatarUrl;
+      if (this.scoreCollectibleIcon) {
+        this.scoreCollectibleIcon.src = this.character.collectibleImage || "/assets/duck.svg";
+      }
+    }
   }
 
   changeSlide(delta) {

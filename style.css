@@ -369,22 +369,81 @@ body {
   max-width: 280px;
   min-width: 0;
   margin: 0 auto;
-  background: rgba(15, 20, 30, 0.6);
+  --guide-accent: var(--color-sunshine);
+  --guide-accent-deep: color-mix(in srgb, var(--guide-accent) 72%, black);
+  --guide-accent-shadow: 0 4px 0 var(--guide-accent-deep);
+  background: rgba(15, 20, 30, 0.72);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 3px solid rgba(255, 255, 255, 0.1);
+  border: 3px solid color-mix(in srgb, var(--guide-accent) 55%, rgba(255, 255, 255, 0.15));
   border-radius: var(--radius-panel);
   overflow: hidden;
   transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-panel);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--guide-accent) 25%, transparent), var(--shadow-panel);
+  position: relative;
+}
+
+.character-card::before,
+.character-card::after {
+  color: var(--guide-accent);
+  content: "✦";
+  font-size: 14px;
+  opacity: 0.65;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.character-card::before {
+  left: 10px;
+  top: 10px;
+}
+
+.character-card::after {
+  bottom: 10px;
+  right: 10px;
 }
 
 .character-card:hover {
   transform: translateY(-8px);
-  border-color: rgba(255, 216, 77, 0.4);
-  box-shadow: 0 16px 40px rgba(255, 216, 77, 0.2);
+  border-color: color-mix(in srgb, var(--guide-accent) 80%, white);
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--guide-accent) 35%, transparent);
+}
+
+.character-select-btn {
+  margin: 0 12px 12px;
+  padding: 12px 20px;
+  background: var(--guide-accent);
+  border: 0;
+  border-bottom: 4px solid var(--guide-accent-deep);
+  border-radius: 14px;
+  color: var(--color-text-dark);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--guide-accent-shadow);
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+.character-select-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+
+.character-select-btn:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+.character-select-btn:active {
+  animation: btnBounce 0.35s ease;
+  border-bottom-width: 2px;
+  transform: translateY(2px);
 }
 
 .character-video {
@@ -419,40 +478,6 @@ body {
   font-weight: 600;
   text-align: center;
   color: var(--color-label);
-}
-
-.character-select-btn {
-  margin: 0 12px 12px;
-  padding: 12px 20px;
-  background: var(--color-sunshine);
-  border: 0;
-  border-bottom: 4px solid var(--color-sunshine-dark);
-  border-radius: 14px;
-  color: var(--color-text-dark);
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: var(--shadow-sticker);
-  transition: transform 0.18s ease, background 0.18s ease;
-}
-
-.character-select-btn:hover {
-  background: #ffe679;
-  transform: translateY(-2px);
-}
-
-.character-select-btn:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 4px;
-}
-
-.character-select-btn:active {
-  animation: btnBounce 0.35s ease;
-  border-bottom-width: 2px;
-  transform: translateY(2px);
 }
 
 @media (max-width: 899px) {
@@ -518,6 +543,9 @@ body {
   inset: 0;
   z-index: 10;
   pointer-events: none;
+  --guide-accent: var(--color-panel-border);
+  --guide-accent-deep: color-mix(in srgb, var(--guide-accent) 72%, black);
+  --guide-accent-shadow: 0 4px 0 var(--guide-accent-deep);
 }
 
 #gameplay-screen .ui > * {
@@ -553,6 +581,7 @@ body {
   gap: 8px;
 }
 
+.score-collectible-icon,
 .score-duck-icon {
   display: block;
   flex: 0 0 auto;
@@ -566,7 +595,7 @@ body {
   right: 16px;
   z-index: 10;
   padding: 10px 18px;
-  border: 3px solid var(--color-panel-border);
+  border: 3px solid var(--guide-accent, var(--color-panel-border));
   border-radius: var(--radius-btn);
   background: var(--color-panel-bg);
   backdrop-filter: blur(10px);
@@ -608,7 +637,7 @@ body {
 
 .exit-confirm-dialog {
   background: var(--color-panel-bg-solid);
-  border: 3px solid var(--color-panel-border-light);
+  border: 3px solid var(--guide-accent, var(--color-panel-border-light));
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-panel);
   color: var(--color-text);
@@ -662,14 +691,16 @@ body {
 }
 
 .exit-confirm-btn-primary {
-  background: var(--color-sunshine);
+  background: var(--guide-accent);
   border: 0;
-  border-bottom: 4px solid var(--color-sunshine-dark);
-  box-shadow: var(--shadow-sticker);
+  border-bottom: 4px solid var(--guide-accent-deep);
+  box-shadow: var(--guide-accent-shadow);
+  color: var(--color-text-dark);
 }
 
 .exit-confirm-btn-primary:hover {
-  background: #ffe679;
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 
 #score-panel {
@@ -680,7 +711,7 @@ body {
   background: var(--color-panel-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 3px solid var(--color-panel-border);
+  border: 3px solid var(--guide-accent, var(--color-panel-border));
   border-radius: var(--radius-panel);
   padding: 14px 18px;
   color: var(--color-text);
@@ -701,7 +732,7 @@ body {
 
   50% {
     transform: scale(1.06);
-    box-shadow: 0 0 0 3px rgba(255, 216, 77, 0.55), var(--shadow-panel);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--guide-accent, #ffd84d) 55%, transparent), var(--shadow-panel);
   }
 }
 
@@ -721,7 +752,7 @@ body {
   background: var(--color-panel-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 3px solid var(--color-panel-border);
+  border: 3px solid var(--guide-accent, var(--color-panel-border));
   border-radius: var(--radius-panel);
   padding: 10px 14px;
   box-shadow: var(--shadow-panel);
@@ -778,7 +809,7 @@ body {
 
 .achievement-toast {
   background: var(--color-panel-bg-solid);
-  border: 3px solid var(--color-sunshine);
+  border: 3px solid var(--guide-accent, var(--color-sunshine));
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-panel);
   color: var(--color-text);
@@ -843,7 +874,7 @@ body {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 3px solid var(--color-panel-border);
+  border: 3px solid var(--guide-accent, var(--color-panel-border));
   background: var(--color-panel-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -902,7 +933,7 @@ body {
   background: var(--color-panel-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 3px solid var(--color-panel-border);
+  border: 3px solid var(--guide-accent, var(--color-panel-border));
   border-radius: var(--radius-panel);
   padding: 16px 18px;
   color: var(--color-text);
@@ -921,21 +952,21 @@ body {
   width: 100%;
   margin-top: 12px;
   border: 0;
-  border-bottom: 4px solid var(--color-sunshine-dark);
+  border-bottom: 4px solid var(--guide-accent-deep);
   border-radius: 14px;
-  background: var(--color-sunshine);
+  background: var(--guide-accent);
   color: var(--color-text-dark);
   cursor: pointer;
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 700;
   padding: 10px 12px;
-  box-shadow: var(--shadow-sticker);
-  transition: transform 0.18s ease, background 0.18s ease;
+  box-shadow: var(--guide-accent-shadow);
+  transition: transform 0.18s ease, filter 0.18s ease;
 }
 
 .pin-details-btn:hover {
-  background: #ffe679;
+  filter: brightness(1.08);
   transform: translateY(-2px);
 }
 
@@ -985,7 +1016,7 @@ body {
 
 .details-dialog {
   background: var(--color-panel-bg-solid);
-  border: 3px solid var(--color-panel-border-light);
+  border: 3px solid var(--guide-accent, var(--color-panel-border-light));
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-panel);
   color: var(--color-text);
@@ -1000,7 +1031,7 @@ body {
 .details-close-btn {
   align-items: center;
   background: rgba(255, 255, 255, 0.1);
-  border: 3px solid var(--color-panel-border-light);
+  border: 3px solid var(--guide-accent, var(--color-panel-border-light));
   border-radius: 50%;
   color: var(--color-text);
   cursor: pointer;
@@ -1412,6 +1443,7 @@ body {
     padding: 12px 14px;
   }
 
+  .score-collectible-icon,
   .score-duck-icon {
     height: 24px;
     width: 24px;
