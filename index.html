@@ -37,6 +37,13 @@
         </div>
       </div>
 
+      <div id="progress-trail" class="progress-trail" aria-label="Adventure progress">
+        <div id="progress-trail-label" class="progress-trail-label"></div>
+        <div id="progress-trail-dots" class="progress-trail-dots"></div>
+      </div>
+
+      <div id="achievement-toast" class="achievement-toast" aria-live="polite" hidden></div>
+
       <button id="exit-btn" class="exit-btn" type="button" aria-label="Exit game">Exit</button>
 
       <div id="location-ui" class="location-ui">
@@ -116,8 +123,11 @@
         <span class="sparkle sparkle-6"></span>
       </div>
       <div class="game-kicker">Final Score</div>
+      <div id="final-stars" class="final-stars" aria-label="Star rating"></div>
       <h1 id="final-score">0</h1>
-      <p>points collected</p>
+      <p id="final-ducks-summary">ducks found</p>
+      <p id="final-character-message"></p>
+      <div id="confetti-layer" class="confetti-layer" aria-hidden="true"></div>
       <button id="restart-btn" class="game-screen-btn" type="button">RESTART</button>
     </div>
   </div>

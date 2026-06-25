@@ -44,6 +44,61 @@ const COLLECTIBLE_LAYOUTS = [
   ]
 ];
 
+const COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got a duck!"];
+
+function getDucksForSlide(slideIndex) {
+  return COLLECTIBLE_LAYOUTS[slideIndex % COLLECTIBLE_LAYOUTS.length].length;
+}
+
+function makeCollectibleId(loc, imageIndex, itemIndex) {
+  return `${loc.name}:${imageIndex}:${itemIndex}`;
+}
+
+function countDucksForLocation(loc) {
+  const images = loc.images || [];
+  let total = 0;
+  for (let i = 0; i < images.length; i++) {
+    total += getDucksForSlide(i);
+  }
+  return total;
+}
+
+function countDucksForTour(locations) {
+  return locations.reduce((sum, loc) => sum + countDucksForLocation(loc), 0);
+}
+
+function countCollectedDucksForLocation(loc, collectedItems) {
+  const images = loc.images || [];
+  let count = 0;
+  for (let imageIndex = 0; imageIndex < images.length; imageIndex++) {
+    const ducks = COLLECTIBLE_LAYOUTS[imageIndex % COLLECTIBLE_LAYOUTS.length];
+    for (let itemIndex = 0; itemIndex < ducks.length; itemIndex++) {
+      if (collectedItems.has(makeCollectibleId(loc, imageIndex, itemIndex))) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+function isLocationFullyCollected(loc, collectedItems) {
+  const total = countDucksForLocation(loc);
+  if (total === 0) return false;
+  return countCollectedDucksForLocation(loc, collectedItems) === total;
+}
+
+function countFullyClearedLocations(locations, collectedItems) {
+  return locations.filter((loc) => isLocationFullyCollected(loc, collectedItems)).length;
+}
+
+function getStarRating(score, maxScore) {
+  if (maxScore === 0) return 1;
+  const ratio = score / maxScore;
+  if (ratio >= 0.8) return 3;
+  if (ratio >= 0.4) return 2;
+  return 1;
+}
+
 /**
  * AbstractScreen - Base class for all screens
  */
@@ -112,8 +167,13 @@ class FinalScreen extends AbstractScreen {
   constructor(onRestart) {
     super("final-screen");
     this.finalScore = document.getElementById("final-score");
+    this.finalStars = document.getElementById("final-stars");
+    this.finalDucksSummary = document.getElementById("final-ducks-summary");
+    this.finalCharacterMessage = document.getElementById("final-character-message");
+    this.confettiLayer = document.getElementById("confetti-layer");
     this.restartBtn = document.getElementById("restart-btn");
     this.onRestart = onRestart;
+    this.confettiHideTimer = null;
 
     this.restartBtn.addEventListener("click", () => {
       this.onRestart();
@@ -129,13 +189,67 @@ class FinalScreen extends AbstractScreen {
     });
   }
 
-  show(score) {
+  show(summary) {
     super.show();
+    const { score, maxScore, character } = summary;
+
+    this.renderStars(getStarRating(score, maxScore));
     this.finalScore.textContent = String(score);
+    this.finalScore.classList.remove("final-score-pop");
+    void this.finalScore.offsetWidth;
+    this.finalScore.classList.add("final-score-pop");
+
+    let ducksSummary = `You found ${score} of ${maxScore} ducks!`;
+    if (maxScore > 0 && score === maxScore) {
+      ducksSummary += " Super Explorer!";
+    }
+    this.finalDucksSummary.textContent = ducksSummary;
+
+    const characterName = character ? character.name : "Your guide";
+    this.finalCharacterMessage.textContent = `${characterName} is proud of your adventure!`;
+
+    this.spawnConfetti();
     this.restartBtn.focus();
   }
 
+  renderStars(rating) {
+    this.finalStars.replaceChildren();
+    for (let i = 1; i <= 3; i++) {
+      const star = document.createElement("span");
+      star.className = i <= rating ? "final-star filled" : "final-star";
+      star.textContent = "\u2605";
+      star.setAttribute("aria-hidden", "true");
+      this.finalStars.appendChild(star);
+    }
+  }
+
+  spawnConfetti() {
+    this.clearConfetti();
+    const colors = ["#ffd84d", "#6fa8ff", "#ff9a8b", "#6dd47e", "#ffe679"];
+    const pieceCount = 36;
+
+    for (let i = 0; i < pieceCount; i++) {
+      const piece = document.createElement("div");
+      piece.className = "confetti-piece";
+      piece.style.left = `${Math.random() * 100}%`;
+      piece.style.backgroundColor = colors[i % colors.length];
+      piece.style.animationDelay = `${Math.random() * 0.8}s`;
+      piece.style.animationDuration = `${2.2 + Math.random() * 1.2}s`;
+      this.confettiLayer.appendChild(piece);
+    }
+  }
+
+  clearConfetti() {
+    if (this.confettiHideTimer) {
+      window.clearTimeout(this.confettiHideTimer);
+      this.confettiHideTimer = null;
+    }
+    this.confettiLayer.replaceChildren();
+  }
+
   hide() {
+    this.clearConfetti();
+    this.finalScore.classList.remove("final-score-pop");
     super.hide();
     if (document.activeElement === this.restartBtn) {
       document.activeElement.blur();
@@ -287,6 +401,7 @@ class GameplayScreen extends AbstractScreen {
     this.score = 0;
     this.isActive = false;
     this.collectedItems = new Set();
+    this.clearedLocations = new Set();
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
     this.locations = [];
@@ -296,7 +411,11 @@ class GameplayScreen extends AbstractScreen {
 
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
+    this.scorePanel = document.getElementById("score-panel");
     this.avatar = document.getElementById("avatar");
+    this.progressTrailLabel = document.getElementById("progress-trail-label");
+    this.progressTrailDots = document.getElementById("progress-trail-dots");
+    this.achievementToast = document.getElementById("achievement-toast");
     this.prevBtn = document.getElementById("prev-btn");
     this.nextBtn = document.getElementById("next-btn");
     this.pinPanel = document.getElementById("pin-panel");
@@ -403,6 +522,8 @@ class GameplayScreen extends AbstractScreen {
     this.currentIndex = 0;
     this.score = 0;
     this.collectedItems.clear();
+    this.clearedLocations.clear();
+    this.hideAchievementToast();
     this.hideExitConfirm();
     this.hideDetailsPopup({ restoreCamera: false });
     this.clearOverviewCamera();
@@ -411,6 +532,7 @@ class GameplayScreen extends AbstractScreen {
     this.character = CHARACTERS.find(c => c.id === this.selectedCharacterId);
     this.locations = this.character ? this.character.locations : [];
     this.updateScore();
+    this.renderProgressTrail();
     this.flyToLocation(this.currentIndex);
   }
 
@@ -423,6 +545,7 @@ class GameplayScreen extends AbstractScreen {
     this.hideExitConfirm();
     this.hideDetailsPopup({ restoreCamera: false });
     this.hidePinPanel();
+    this.hideAchievementToast();
     super.hide();
   }
 
@@ -449,7 +572,7 @@ class GameplayScreen extends AbstractScreen {
   createPinPanelContent(index) {
     const loc = this.locations[index];
     const content = cloneTemplate("tpl-pin-panel");
-    content.querySelector(".panel-label").textContent = `Location ${index + 1} of ${this.locations.length}`;
+    content.querySelector(".panel-label").textContent = `Stop ${index + 1} of ${this.locations.length}`;
     content.querySelector(".panel-title").textContent = loc.name;
     content.querySelector(".panel-description").textContent = loc.description || "";
     content.querySelector(".pin-details-btn").addEventListener("click", (event) => {
@@ -460,7 +583,92 @@ class GameplayScreen extends AbstractScreen {
   }
 
   updatePanel(index) {
+    this.currentIndex = index;
     this.updateNavControls();
+    this.renderProgressTrail();
+  }
+
+  renderProgressTrail() {
+    if (!this.progressTrailLabel || !this.progressTrailDots) return;
+
+    const total = this.locations.length;
+    if (total === 0) {
+      this.progressTrailLabel.textContent = "";
+      this.progressTrailDots.replaceChildren();
+      return;
+    }
+
+    this.progressTrailLabel.textContent = `Stop ${this.currentIndex + 1} of ${total}`;
+    this.progressTrailDots.replaceChildren();
+
+    this.locations.forEach((loc, index) => {
+      const dot = document.createElement("span");
+      dot.className = "progress-dot";
+      if (index < this.currentIndex) {
+        dot.classList.add("done");
+      } else if (index === this.currentIndex) {
+        dot.classList.add("current");
+      } else {
+        dot.classList.add("upcoming");
+      }
+      dot.setAttribute("aria-label", loc.name);
+      this.progressTrailDots.appendChild(dot);
+    });
+  }
+
+  pulseScorePanel() {
+    if (!this.scorePanel) return;
+    this.scorePanel.classList.remove("score-pulse");
+    void this.scorePanel.offsetWidth;
+    this.scorePanel.classList.add("score-pulse");
+    this.scorePanel.addEventListener(
+      "animationend",
+      () => this.scorePanel.classList.remove("score-pulse"),
+      { once: true }
+    );
+  }
+
+  showAchievementToast(message) {
+    if (!this.achievementToast) return;
+
+    this.achievementToast.textContent = message;
+    this.achievementToast.hidden = false;
+    this.achievementToast.classList.add("visible");
+
+    if (this.achievementToastTimer) {
+      window.clearTimeout(this.achievementToastTimer);
+    }
+    this.achievementToastTimer = window.setTimeout(() => {
+      this.hideAchievementToast();
+    }, 3000);
+  }
+
+  hideAchievementToast() {
+    if (!this.achievementToast) return;
+
+    this.achievementToast.classList.remove("visible");
+    this.achievementToast.hidden = true;
+    if (this.achievementToastTimer) {
+      window.clearTimeout(this.achievementToastTimer);
+      this.achievementToastTimer = null;
+    }
+  }
+
+  checkLocationCompletion(loc) {
+    if (!loc || !isLocationFullyCollected(loc, this.collectedItems)) return;
+    if (this.clearedLocations.has(loc.name)) return;
+
+    this.clearedLocations.add(loc.name);
+    this.showAchievementToast(`All ducks found at ${loc.name}!`);
+  }
+
+  buildFinalizeSummary() {
+    return {
+      score: this.score,
+      maxScore: countDucksForTour(this.locations),
+      character: this.character,
+      locationsCleared: countFullyClearedLocations(this.locations, this.collectedItems)
+    };
   }
 
   setButtonsEnabled(enabled) {
@@ -586,7 +794,7 @@ class GameplayScreen extends AbstractScreen {
   }
 
   getCollectibleId(loc, imageIndex, itemIndex) {
-    return `${loc.name}:${imageIndex}:${itemIndex}`;
+    return makeCollectibleId(loc, imageIndex, itemIndex);
   }
 
   collectItem(itemId, button) {
@@ -596,8 +804,13 @@ class GameplayScreen extends AbstractScreen {
     this.score += 1;
     this.updateScore();
     this.showCollectFeedback(button);
+    this.pulseScorePanel();
     button.classList.add("collected");
     window.setTimeout(() => button.remove(), 220);
+
+    if (this.slideshowLocation) {
+      this.checkLocationCompletion(this.slideshowLocation);
+    }
   }
 
   showCollectFeedback(button) {
@@ -606,7 +819,7 @@ class GameplayScreen extends AbstractScreen {
 
     const feedback = document.createElement("span");
     feedback.className = "collect-feedback";
-    feedback.textContent = "+1";
+    feedback.textContent = COLLECT_MESSAGES[(this.score - 1) % COLLECT_MESSAGES.length];
     feedback.setAttribute("aria-hidden", "true");
     feedback.style.left = button.style.left;
     feedback.style.top = button.style.top;
@@ -825,6 +1038,7 @@ class GameplayScreen extends AbstractScreen {
       this.viewer.camera.viewBoundingSphere(boundingSphere, cameraOffset);
       this.viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
       this.applyTargetVerticalOffset(loc.height);
+      this.currentIndex = index;
       this.updatePanel(index);
       this.setPin(loc, index);
       this.showPinPanel();
@@ -846,6 +1060,7 @@ class GameplayScreen extends AbstractScreen {
         this.applyTargetVerticalOffset(loc.height);
         this.isFlying = false;
         this.setButtonsEnabled(true);
+        this.currentIndex = index;
         this.updatePanel(index);
         this.showPinPanel();
       },
@@ -879,7 +1094,7 @@ class GameplayScreen extends AbstractScreen {
   goNext() {
     if (!this.isActive || this.isFlying) return;
     if (this.currentIndex === this.locations.length - 1) {
-      this.onFinalize(this.score);
+      this.onFinalize(this.buildFinalizeSummary());
       return;
     }
 
@@ -897,7 +1112,7 @@ class GameplayScreen extends AbstractScreen {
 }
 
 class GameController {
-  score = 0;
+  gameSummary = null;
   selectedCharacter = null;
   currentState = "start";
   constructor() {
@@ -909,7 +1124,7 @@ class GameController {
       () => this.transitionTo("start")
     );
     this.gameplayScreen = new GameplayScreen(
-      (score) => this.onGameFinalized(score),
+      (summary) => this.onGameFinalized(summary),
       () => this.transitionTo("start")
     );
     this.finalScreen = new FinalScreen(() => this.transitionTo("start"));
@@ -952,7 +1167,7 @@ class GameController {
         this.gameplayScreen.start();
         break;
       case "final":
-        this.finalScreen.show(this.score);
+        this.finalScreen.show(this.gameSummary);
         break;
     }
   }
@@ -968,8 +1183,8 @@ class GameController {
   /**
    * Handle game finalization
    */
-  onGameFinalized(score) {
-    this.score = score;
+  onGameFinalized(summary) {
+    this.gameSummary = summary;
     this.transitionTo("final");
   }
 }

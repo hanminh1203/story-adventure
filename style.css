@@ -688,11 +688,119 @@ body {
   z-index: 10;
 }
 
+#score-panel.score-pulse {
+  animation: scorePulse 0.6s ease;
+}
+
+@keyframes scorePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: var(--shadow-panel);
+  }
+
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 3px rgba(255, 216, 77, 0.55), var(--shadow-panel);
+  }
+}
+
 #score-value {
   font-family: var(--font-display);
   font-size: 30px;
   font-weight: 700;
   line-height: 1;
+}
+
+.progress-trail {
+  position: absolute;
+  top: 88px;
+  left: 16px;
+  z-index: 10;
+  min-width: 140px;
+  background: var(--color-panel-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 3px solid var(--color-panel-border);
+  border-radius: var(--radius-panel);
+  padding: 10px 14px;
+  box-shadow: var(--shadow-panel);
+}
+
+.progress-trail-label {
+  color: var(--color-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.progress-trail-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-dot {
+  border-radius: 50%;
+  flex: 0 0 auto;
+  height: 12px;
+  width: 12px;
+}
+
+.progress-dot.done {
+  background: var(--color-sunshine);
+  box-shadow: 0 0 8px rgba(255, 216, 77, 0.5);
+}
+
+.progress-dot.current {
+  animation: dotPulse 1.4s ease-in-out infinite;
+  background: var(--color-sunshine);
+  box-shadow: 0 0 0 3px rgba(255, 216, 77, 0.35);
+}
+
+.progress-dot.upcoming {
+  background: rgba(159, 179, 217, 0.35);
+  border: 2px solid rgba(159, 179, 217, 0.5);
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.achievement-toast {
+  background: var(--color-panel-bg-solid);
+  border: 3px solid var(--color-sunshine);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  left: 50%;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 20px;
+  pointer-events: none;
+  position: fixed;
+  text-align: center;
+  top: 16px;
+  transform: translateX(-50%) translateY(-120%);
+  transition: transform 0.35s ease, opacity 0.35s ease;
+  z-index: 26;
+  opacity: 0;
+}
+
+.achievement-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 #info-panel {
@@ -1092,13 +1200,16 @@ body {
   position: absolute;
   color: var(--color-sunshine);
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1;
+  max-width: 120px;
   pointer-events: none;
+  text-align: center;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
   transform: translate(-50%, -50%);
+  white-space: nowrap;
   z-index: 3;
   animation: collectPop 0.85s ease forwards;
 }
@@ -1130,6 +1241,88 @@ body {
   font-family: var(--font-display);
 }
 
+#final-score.final-score-pop {
+  animation: finalScorePop 0.7s ease;
+}
+
+@keyframes finalScorePop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.final-stars {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.final-star {
+  color: rgba(159, 179, 217, 0.45);
+  font-size: 36px;
+  line-height: 1;
+}
+
+.final-star.filled {
+  color: var(--color-sunshine);
+  text-shadow: 0 0 12px rgba(255, 216, 77, 0.6);
+}
+
+#final-ducks-summary {
+  color: var(--color-text-muted);
+  font-size: 18px;
+  margin: 12px auto 8px;
+}
+
+#final-character-message {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 20px;
+  margin: 0 auto 24px;
+  max-width: 480px;
+}
+
+.confetti-layer {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+}
+
+.confetti-piece {
+  animation: confettiFall linear forwards;
+  border-radius: 2px;
+  height: 10px;
+  opacity: 0.9;
+  position: absolute;
+  top: -12px;
+  width: 8px;
+}
+
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) rotate(720deg);
+  }
+}
+
 
 /* ==========================================================================
    8. ACCESSIBILITY - REDUCED MOTION
@@ -1156,6 +1349,27 @@ body {
   .collect-feedback {
     animation: none;
     opacity: 0;
+  }
+
+  #score-panel.score-pulse {
+    animation: none;
+  }
+
+  .progress-dot.current {
+    animation: none;
+  }
+
+  #final-score.final-score-pop {
+    animation: none;
+  }
+
+  .confetti-piece {
+    animation: none;
+    display: none;
+  }
+
+  .achievement-toast {
+    transition: none;
   }
 }
 
@@ -1205,6 +1419,22 @@ body {
 
   #score-value {
     font-size: 26px;
+  }
+
+  .progress-trail {
+    top: 82px;
+    min-width: 120px;
+    padding: 8px 12px;
+  }
+
+  .progress-dot {
+    height: 10px;
+    width: 10px;
+  }
+
+  .achievement-toast {
+    font-size: 14px;
+    padding: 12px 16px;
   }
 }
 
