@@ -1,81 +1,122 @@
-# Location Flythrough Map
+# Magical Story Adventures
 
-A 3D map (CesiumJS) with Next/Prev buttons that fly the camera between a list
-of locations, plane-style, with a location-info popup top-right. Free,
-no API key required.
+An interactive educational game built with CesiumJS. Children pick a storybook guide, fly a 3D globe between real-world landmarks, explore photo slideshows, and collect hidden ducks for points — inspired by Google Earth-style exploration.
 
-## Files
+No API key required for the default setup.
 
-- `index.html` - page structure, loads Cesium from CDN
-- `locations.js` - your list of tour stops (edit this)
-- `script.js` - camera flyTo logic, popup updates, button handlers
-- `style.css` - popup + button styling
+## How it works
 
-## Customizing locations
+1. **Start screen** — intro and **LET'S GO!**
+2. **Character select** — choose one of four guides (each has a YouTube intro video)
+3. **Gameplay** — the camera flies between that character's locations on a 3D globe
+4. **Details & collectibles** — open **Show details** on a location pin to browse images; click hidden ducks for 1 point each
+5. **Final screen** — total score, then **RESTART** to play again
 
-Open `locations.js` and edit the `LOCATIONS` array. Each entry:
+Navigation does not wrap: **Previous** is hidden on the first stop, and **Next** becomes **Finalize** on the last.
+
+## Project structure
+
+| Path | Purpose |
+|------|---------|
+| `index.html` | Page layout, screen markup, HTML `<template>` elements |
+| `locations.js` | Character guides and their tour stops (`CHARACTERS`) |
+| `script.js` | Game flow, Cesium viewer, camera flights, slideshow, scoring |
+| `style.css` | Screens, HUD, pin panel, details modal, collectibles |
+| `assets/` | Character avatars and background images |
+
+## Customizing characters and locations
+
+Edit the `CHARACTERS` array in `locations.js`. Each character:
 
 ```js
 {
-  name: "Perth, Australia",
-  description: "Short description shown in the popup.",
-  lat: -31.9505,
-  lon: 115.8605,
-  height: 20000,   // camera viewing range in meters - lower = closer zoom
-  heading: 0,      // optional, compass direction in degrees
-  pitch: -35       // optional, camera tilt, -90 = straight down
+  id: "1",
+  name: "Tjingeling",
+  title: "The Latern Traveller",
+  avatarUrl: "/assets/avatar-tjingeling.png",
+  youtubeId: "y_92xI5zY8g",   // YouTube video ID (the part after ?v=)
+  locations: [ /* tour stops */ ]
 }
 ```
 
-Order in the array = order Next/Prev moves through. It wraps around (last to
-first, first to last). To get coordinates for a place, right-click it in
-Google Maps and copy the lat/lon shown.
+Each location:
 
-## Running it locally
+```js
+{
+  name: "Eiffel Tower",
+  description: "Short text shown in the pin panel and details modal.",
+  lat: 48.8584,
+  lon: 2.2945,
+  height: 1500,    // camera distance in meters — lower = closer
+  heading: 0,      // optional compass direction in degrees (default 0)
+  images: [        // slideshow URLs (3–4 recommended)
+    "https://example.com/photo1.jpg",
+    "https://example.com/photo2.jpg"
+  ]
+}
+```
 
-Just open `index.html` in a browser - no build step, no server required.
+Order in `locations` is the order **Next** / **Previous** follow. To find coordinates, right-click a place in Google Maps and copy lat/lon.
 
-## Real 3D terrain (optional upgrade)
+Collectible duck positions are preset per slide in `script.js` (`COLLECTIBLE_LAYOUTS`); each slide can have up to three ducks. Ducks already collected in a session are tracked and do not respawn until restart.
 
-Right now the globe is smooth (no elevation) so the whole thing works with
-zero signup. If you want actual terrain relief (mountains, canyons):
+## Running locally
 
-1. Free signup at https://cesium.com/ion
-2. Grab an access token from your ion dashboard
-3. In `script.js`, set `Cesium.Ion.defaultAccessToken = "<your token>";` near
-   the top, and replace the `terrainProvider` line with:
-   ```js
-   terrainProvider: await Cesium.createWorldTerrainAsync()
-   ```
-   (this makes `script.js` async - wrap the viewer setup in an `async function`
-   and call it, or use a top-level `await` if your hosting supports ES modules)
+No build step. Serve the folder over HTTP so root-relative asset paths (e.g. `/assets/avatar-tjingeling.png`) resolve correctly:
 
-The free ion tier has a monthly usage cap but it's generous for a
-personal/portfolio site.
+```bash
+# Python 3
+python -m http.server 8080
+
+# Node (npx)
+npx serve .
+```
+
+Then open `http://localhost:8080` (or the port shown). Opening `index.html` directly as a `file://` URL may break avatar images because they use absolute paths.
+
+## Controls
+
+| Input | Action |
+|-------|--------|
+| **← / →** | Previous / next location (gameplay) |
+| **← / →** | Previous / next slideshow image (details open); **→** on the last image closes details and advances |
+| **Space** | Open details for the current location |
+| **Escape** | Close details modal |
+| **Enter** | Activate focused button on start, character select, or final screen |
+
+Buttons disable during camera flights so animations cannot overlap.
+
+## Map and imagery
+
+- **Globe:** CesiumJS 1.142 (Apache 2.0)
+- **Imagery:** Esri World Imagery (free public service, no token)
+- **Terrain:** smooth ellipsoid (no Cesium ion account needed)
+
+### Real 3D terrain (optional)
+
+For elevation (mountains, valleys):
+
+1. Sign up at [cesium.com/ion](https://cesium.com/ion) and create an access token
+2. In `script.js`, set `Cesium.Ion.defaultAccessToken = "<your token>";`
+3. Replace `terrainProvider: new Cesium.EllipsoidTerrainProvider()` with `await Cesium.createWorldTerrainAsync()` (wrap viewer setup in an `async` function)
+
+The free ion tier has a monthly usage cap but is enough for personal or portfolio use.
 
 ## Embedding in Google Sites
 
-Google Sites can't run your own `<script>` tags directly on a page, so host
-this folder somewhere first, then embed it as an iframe.
+Google Sites cannot run custom scripts on a page directly, so host this project first and embed it in an iframe.
 
-**Easiest free host: GitHub Pages**
-1. Create a new GitHub repo, push these 4 files to it
-2. Repo Settings -> Pages -> Source: deploy from the `main` branch, root folder
-3. GitHub gives you a URL like `https://yourname.github.io/repo-name/`
-4. In Google Sites: Insert -> Embed -> "By URL" -> paste that URL -> Insert
+**GitHub Pages**
 
-That's it - the map renders inside Sites in an iframe, buttons and all.
+1. Push the repo to GitHub
+2. **Settings → Pages** — deploy from the `main` branch, root folder
+3. Use the URL GitHub provides (e.g. `https://yourname.github.io/flythrough-map/`)
+4. In Google Sites: **Insert → Embed → By URL** — paste that URL
 
-**Alternative:** Sites' Embed feature also lets you paste raw HTML code
-directly (Insert -> Embed -> "Embed code"), which sandboxes it into an iframe
-automatically - but external hosting is more reliable for anything beyond a
-single file, since `locations.js`/`script.js`/`style.css` need to load as
-separate resources.
+The map, character select, slideshows, and scoring all run inside the iframe.
 
 ## Notes
 
-- Arrow keys (left/right) also trigger Next/Prev, in addition to the buttons.
-- Buttons disable themselves mid-flight so clicks can't overlap/cancel an
-  in-progress animation.
-- CesiumJS is Apache 2.0 licensed - free for personal and commercial use:
-  https://github.com/CesiumGS/cesium
+- CesiumJS: [github.com/CesiumGS/cesium](https://github.com/CesiumGS/cesium) (Apache 2.0)
+- Slideshow images are loaded from external URLs configured in `locations.js`; host your own images if you need offline or long-term stability
+- A debug helper in `script.js` (`onCanvasClicked`) logs map click coordinates to the browser console when tuning `lat` / `lon`
