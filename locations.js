@@ -22,9 +22,9 @@ const CHARACTERS = [
     avatarUrl: "/assets/avatar-tjingeling.png",
     youtubeId: "y_92xI5zY8g",
     themeColor: "#ffd84d",
-    collectibleImage: "/assets/duck.svg",
-    collectibleName: "ducks",
-    collectMessages: ["Great find!", "Nice one!", "Got a duck!"],
+    collectibleImage: "/assets/collectible-lantern.svg",
+    collectibleName: "lanterns",
+    collectMessages: ["Great find!", "Nice one!", "Got a lantern!"],
     selectButtonLabel: "Pick me!",
     locations: [
       {

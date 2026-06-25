@@ -29,6 +29,12 @@ function getCollectibleSingular(collectibleName) {
   return collectibleName;
 }
 
+function formatCollectGoal(character) {
+  const count = getDucksForSlide(0);
+  const name = character?.collectibleName || "ducks";
+  return `Find ${count} hidden ${name} in these pictures!`;
+}
+
 /**
  * Clones a <template> by id and returns its single root element.
  * @param {string} id - The id of the <template> element.
@@ -445,6 +451,7 @@ class GameplayScreen extends AbstractScreen {
     this.detailsModal = document.getElementById("details-modal");
     this.detailsCloseBtn = document.getElementById("details-close-btn");
     this.detailsTitle = document.getElementById("details-title");
+    this.detailsCollectGoal = document.getElementById("details-collect-goal");
     this.detailsDescription = document.getElementById("details-description");
     this.detailsSlideshow = document.getElementById("details-slideshow");
     this.exitBtn = document.getElementById("exit-btn");
@@ -760,10 +767,25 @@ class GameplayScreen extends AbstractScreen {
     this.slideshowIndex = 0;
     this.detailsTitle.textContent = loc.name;
     this.detailsDescription.textContent = loc.description || "";
+    this.updateDetailsCollectGoal(loc);
     this.renderSlideshow();
     this.detailsModal.classList.add("visible");
     this.detailsModal.setAttribute("aria-hidden", "false");
     this.detailsCloseBtn.focus();
+  }
+
+  updateDetailsCollectGoal(loc) {
+    if (!this.detailsCollectGoal) return;
+
+    const images = loc ? loc.images || [] : [];
+    if (images.length === 0) {
+      this.detailsCollectGoal.hidden = true;
+      this.detailsCollectGoal.textContent = "";
+      return;
+    }
+
+    this.detailsCollectGoal.textContent = formatCollectGoal(this.character);
+    this.detailsCollectGoal.hidden = false;
   }
 
   renderSlideshow() {
@@ -771,6 +793,9 @@ class GameplayScreen extends AbstractScreen {
     const images = loc ? loc.images || [] : [];
 
     if (images.length === 0) {
+      if (this.detailsCollectGoal) {
+        this.detailsCollectGoal.hidden = true;
+      }
       this.detailsSlideshow.replaceChildren(cloneTemplate("tpl-slideshow-empty"));
       return;
     }

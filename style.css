@@ -1055,6 +1055,22 @@ body {
   outline-offset: 2px;
 }
 
+#details-collect-goal {
+  background: color-mix(in srgb, var(--guide-accent, var(--color-panel-border)) 14%, transparent);
+  border-left: 4px solid var(--guide-accent, var(--color-panel-border-light));
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0 48px 14px 0;
+  padding: 10px 14px;
+}
+
+#details-collect-goal[hidden] {
+  display: none;
+}
+
 #details-title {
   font-size: 28px;
   line-height: 1.2;
@@ -1076,7 +1092,7 @@ body {
 .slideshow-frame {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  min-height: min(620px, 62vh);
+  min-height: min(620px, 55vh);
   overflow: hidden;
   position: relative;
 }
@@ -1084,7 +1100,7 @@ body {
 .slideshow-frame>img {
   aspect-ratio: 16 / 9;
   display: block;
-  height: min(620px, 62vh);
+  height: min(620px, 55vh);
   object-fit: cover;
   width: 100%;
 }
