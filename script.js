@@ -12,9 +12,28 @@
 
 // Shared constants
 const FLIGHT_DURATION_SECONDS = 2;
+const DETAIL_FLIGHT_DURATION_SECONDS = 1;
 const MAX_FLIGHT_HEIGHT_METERS = 3000000;
 const TARGET_SCREEN_POSITION_FROM_BOTTOM = 0.3;
-const DUCK_IMAGE_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Cfilter id='s' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeDropShadow dx='0' dy='5' stdDeviation='4' flood-color='%23000' flood-opacity='.35'/%3E%3C/filter%3E%3Cg filter='url(%23s)'%3E%3Cellipse cx='48' cy='62' rx='31' ry='22' fill='%23ffd84d'/%3E%3Ccircle cx='62' cy='38' r='18' fill='%23ffe36b'/%3E%3Cpath d='M75 39h18L76 50z' fill='%23f58b1f'/%3E%3Ccircle cx='66' cy='33' r='3.5' fill='%23121a24'/%3E%3Cpath d='M22 55c9 9 20 10 30 5-11-1-19-6-24-15z' fill='%23f3bd2e' opacity='.8'/%3E%3Cpath d='M25 76h46' stroke='%23f58b1f' stroke-width='6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E";
+const DEFAULT_COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got it!"];
+
+function formatCollectibleLabel(collectibleName) {
+  if (!collectibleName) return "Treasures found!";
+  return `${collectibleName.charAt(0).toUpperCase()}${collectibleName.slice(1)} found!`;
+}
+
+function getCollectibleSingular(collectibleName) {
+  if (!collectibleName) return "treasure";
+  if (collectibleName === "music notes") return "music note";
+  if (collectibleName.endsWith("s")) return collectibleName.slice(0, -1);
+  return collectibleName;
+}
+
+function formatCollectGoal(character) {
+  const count = getDucksForSlide(0);
+  const name = character?.collectibleName || "ducks";
+  return `Find ${count} hidden ${name} in these pictures!`;
+}
 
 /**
  * Clones a <template> by id and returns its single root element.
@@ -43,9 +62,96 @@ const COLLECTIBLE_LAYOUTS = [
   ]
 ];
 
-class StartScreen {
+function getCollectMessages(character) {
+  return character?.collectMessages || DEFAULT_COLLECT_MESSAGES;
+}
+
+function getDucksForSlide(slideIndex) {
+  return COLLECTIBLE_LAYOUTS[slideIndex % COLLECTIBLE_LAYOUTS.length].length;
+}
+
+function makeCollectibleId(loc, imageIndex, itemIndex) {
+  return `${loc.name}:${imageIndex}:${itemIndex}`;
+}
+
+function countDucksForLocation(loc) {
+  const images = loc.images || [];
+  let total = 0;
+  for (let i = 0; i < images.length; i++) {
+    total += getDucksForSlide(i);
+  }
+  return total;
+}
+
+function countDucksForTour(locations) {
+  return locations.reduce((sum, loc) => sum + countDucksForLocation(loc), 0);
+}
+
+function countCollectedDucksForLocation(loc, collectedItems) {
+  const images = loc.images || [];
+  let count = 0;
+  for (let imageIndex = 0; imageIndex < images.length; imageIndex++) {
+    const ducks = COLLECTIBLE_LAYOUTS[imageIndex % COLLECTIBLE_LAYOUTS.length];
+    for (let itemIndex = 0; itemIndex < ducks.length; itemIndex++) {
+      if (collectedItems.has(makeCollectibleId(loc, imageIndex, itemIndex))) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+function isLocationFullyCollected(loc, collectedItems) {
+  const total = countDucksForLocation(loc);
+  if (total === 0) return false;
+  return countCollectedDucksForLocation(loc, collectedItems) === total;
+}
+
+function countFullyClearedLocations(locations, collectedItems) {
+  return locations.filter((loc) => isLocationFullyCollected(loc, collectedItems)).length;
+}
+
+function getStarRating(score, maxScore) {
+  if (maxScore === 0) return 1;
+  const ratio = score / maxScore;
+  if (ratio >= 0.8) return 3;
+  if (ratio >= 0.4) return 2;
+  return 1;
+}
+
+/**
+ * AbstractScreen - Base class for all screens
+ */
+class AbstractScreen {
+  constructor(screenElementId) {
+    this.screenElement = document.getElementById(screenElementId);
+    this.isActive = false;
+  }
+
+  /**
+   * Show the screen
+   * @abstract
+   */
+  show() {
+    this.isActive = true;
+    this.screenElement.classList.remove("hidden");
+    this.screenElement.setAttribute("aria-hidden", "false");
+  }
+
+  /**
+   * Hide the screen
+   * @abstract
+   */
+  hide() {
+    this.isActive = false;
+    this.screenElement.classList.add("hidden");
+    this.screenElement.setAttribute("aria-hidden", "true");
+  }
+}
+
+class StartScreen extends AbstractScreen {
   constructor(onStart) {
-    this.screenElement = document.getElementById("start-screen");
+    super("start-screen");
     this.startBtn = document.getElementById("start-btn");
     this.onStart = onStart;
     this.isActive = true;
@@ -65,29 +171,29 @@ class StartScreen {
   }
 
   show() {
-    this.isActive = true;
-    this.screenElement.classList.remove("hidden");
-    this.screenElement.setAttribute("aria-hidden", "false");
+    super.show();
     this.startBtn.focus();
   }
 
   hide() {
-    this.isActive = false;
-    this.screenElement.classList.add("hidden");
-    this.screenElement.setAttribute("aria-hidden", "true");
+    super.hide();
     if (document.activeElement === this.startBtn) {
       document.activeElement.blur();
     }
   }
 }
 
-class FinalScreen {
+class FinalScreen extends AbstractScreen {
   constructor(onRestart) {
-    this.screenElement = document.getElementById("final-screen");
+    super("final-screen");
     this.finalScore = document.getElementById("final-score");
+    this.finalStars = document.getElementById("final-stars");
+    this.finalDucksSummary = document.getElementById("final-ducks-summary");
+    this.finalCharacterMessage = document.getElementById("final-character-message");
+    this.confettiLayer = document.getElementById("confetti-layer");
     this.restartBtn = document.getElementById("restart-btn");
     this.onRestart = onRestart;
-    this.isActive = false;
+    this.confettiHideTimer = null;
 
     this.restartBtn.addEventListener("click", () => {
       this.onRestart();
@@ -100,32 +206,198 @@ class FinalScreen {
       if (!this.isActive) return;
 
       if (e.key === "Enter") this.onRestart();
-      console.log(e.key);
     });
   }
 
-  show(score) {
-    this.isActive = true;
+  show(summary) {
+    super.show();
+    const { score, maxScore, character, collectibleName } = summary;
+    const itemsName = collectibleName || character?.collectibleName || "ducks";
+
+    this.renderStars(getStarRating(score, maxScore));
     this.finalScore.textContent = String(score);
-    this.screenElement.classList.remove("hidden");
-    this.screenElement.setAttribute("aria-hidden", "false");
+    this.finalScore.classList.remove("final-score-pop");
+    void this.finalScore.offsetWidth;
+    this.finalScore.classList.add("final-score-pop");
+
+    let itemsSummary = `You found ${score} of ${maxScore} ${itemsName}!`;
+    if (maxScore > 0 && score === maxScore) {
+      itemsSummary += " Super Explorer!";
+    }
+    this.finalDucksSummary.textContent = itemsSummary;
+
+    const characterName = character ? character.name : "Your guide";
+    this.finalCharacterMessage.textContent = `${characterName} is proud of your adventure!`;
+
+    this.spawnConfetti();
     this.restartBtn.focus();
   }
 
+  renderStars(rating) {
+    this.finalStars.replaceChildren();
+    for (let i = 1; i <= 3; i++) {
+      const star = document.createElement("span");
+      star.className = i <= rating ? "final-star filled" : "final-star";
+      star.textContent = "\u2605";
+      star.setAttribute("aria-hidden", "true");
+      this.finalStars.appendChild(star);
+    }
+  }
+
+  spawnConfetti() {
+    this.clearConfetti();
+    const colors = ["#ffd84d", "#6fa8ff", "#ff9a8b", "#6dd47e", "#ffe679"];
+    const pieceCount = 36;
+
+    for (let i = 0; i < pieceCount; i++) {
+      const piece = document.createElement("div");
+      piece.className = "confetti-piece";
+      piece.style.left = `${Math.random() * 100}%`;
+      piece.style.backgroundColor = colors[i % colors.length];
+      piece.style.animationDelay = `${Math.random() * 0.8}s`;
+      piece.style.animationDuration = `${2.2 + Math.random() * 1.2}s`;
+      this.confettiLayer.appendChild(piece);
+    }
+  }
+
+  clearConfetti() {
+    if (this.confettiHideTimer) {
+      window.clearTimeout(this.confettiHideTimer);
+      this.confettiHideTimer = null;
+    }
+    this.confettiLayer.replaceChildren();
+  }
+
   hide() {
-    this.isActive = false;
-    this.screenElement.classList.add("hidden");
-    this.screenElement.setAttribute("aria-hidden", "true");
+    this.clearConfetti();
+    this.finalScore.classList.remove("final-score-pop");
+    super.hide();
     if (document.activeElement === this.restartBtn) {
       document.activeElement.blur();
     }
   }
 }
 
-class GameplayScreen {
-  constructor(onFinalize) {
-    this.gameplayScreen = document.getElementById("gameplay-screen");
+class CharacterSelectScreen extends AbstractScreen {
+  constructor(characters, onCharacterSelected, onGoBack) {
+    super("character-select-screen");
+    this.characterGrid = document.getElementById("character-grid");
+    this.characters = characters;
+    this.onCharacterSelected = onCharacterSelected;
+    this.selectedCharacter = null;
+    this.selectButtons = [];
+    this.goBackButton = document.getElementById('character-select-go-back-btn');
+    this.goBackButton.addEventListener('click', (event) => {
+      onGoBack();
+    })
+
+    // Carousel arrows: only visible/needed below the row-of-4 breakpoint
+    // (see .carousel-arrow / max-width: 899px in style.css), but wiring the
+    // listeners unconditionally is harmless since scrollBy is a no-op when
+    // the grid has no horizontal overflow (row-of-4 mode).
+    this.prevButton = document.getElementById('character-prev-btn');
+    this.nextButton = document.getElementById('character-next-btn');
+    this.prevButton.addEventListener('click', () => this.scrollCharacters(-1));
+    this.nextButton.addEventListener('click', () => this.scrollCharacters(1));
+
+    this.renderCharacters();
+  }
+
+  scrollCharacters(direction) {
+    this.characterGrid.scrollBy({
+      left: direction * this.characterGrid.clientWidth,
+      behavior: 'smooth',
+    });
+  }
+
+  renderCharacters() {
+    // Clear any existing content
+    this.characterGrid.innerHTML = "";
+
+    // Create a card for each character
+    this.characters.forEach((character) => {
+      const card = document.createElement("div");
+      card.className = "character-card";
+      if (character.themeColor) {
+        card.style.setProperty("--guide-accent", character.themeColor);
+      }
+
+      const videoContainer = document.createElement("div");
+      videoContainer.className = "character-video";
+
+      const iframe = document.createElement("iframe");
+      iframe.width = "100%";
+      iframe.height = "100%";
+      iframe.src = `https://www.youtube.com/embed/${character.youtubeId}`;
+      iframe.title = character.name;
+      iframe.frameBorder = "0";
+      iframe.allow = "autoplay;";
+      iframe.allowFullscreen = true;
+
+      videoContainer.appendChild(iframe);
+
+      const characterInfoDiv = document.createElement("div");
+      characterInfoDiv.className = "character-info";
+
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "character-name";
+      nameDiv.textContent = character.name;
+      characterInfoDiv.appendChild(nameDiv);
+
+      const titleDiv = document.createElement("div");
+      titleDiv.className = "character-title";
+      titleDiv.textContent = character.title;
+      characterInfoDiv.appendChild(titleDiv);
+
+      const selectBtn = document.createElement("button");
+      selectBtn.className = "character-select-btn";
+      selectBtn.type = "button";
+      selectBtn.dataset.character = character.id;
+      selectBtn.textContent = character.selectButtonLabel || "Pick me!";
+
+      selectBtn.addEventListener("click", (e) => {
+        const characterId = e.target.dataset.character;
+        this.selectCharacter(characterId);
+      });
+
+      this.selectButtons.push(selectBtn);
+
+      card.appendChild(videoContainer);
+      card.appendChild(characterInfoDiv);
+      card.appendChild(selectBtn);
+
+      this.characterGrid.appendChild(card);
+    });
+  }
+
+  selectCharacter(characterId) {
+    this.selectedCharacter = characterId;
+    this.hide();
+    this.onCharacterSelected(characterId);
+  }
+
+  show() {
+    super.show();
+    // Focus first button
+    if (this.selectButtons.length > 0) {
+      this.selectButtons[0].focus();
+    }
+  }
+
+  hide() {
+    super.hide();
+    if (document.activeElement) {
+      document.activeElement.blur();
+    }
+  }
+}
+
+class GameplayScreen extends AbstractScreen {
+  constructor(onFinalize, onExit) {
+    super("gameplay-screen");
     this.onFinalize = onFinalize;
+    this.onExit = onExit;
+    this.selectedCharacterId = null;
 
     this.viewer = new Cesium.Viewer("cesiumContainer", {
       baseLayer: Cesium.ImageryLayer.fromProviderAsync(
@@ -156,19 +428,39 @@ class GameplayScreen {
     this.score = 0;
     this.isActive = false;
     this.collectedItems = new Set();
+    this.clearedLocations = new Set();
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
+    this.locations = [];
+    this.pinPanelOpen = false;
+    this.overviewCameraState = null;
+    this.isDetailViewActive = false;
 
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
+    this.scorePanel = document.getElementById("score-panel");
+    this.scoreLabel = document.getElementById("score-label");
+    this.scoreCollectibleIcon = document.getElementById("score-collectible-icon");
+    this.avatar = document.getElementById("avatar");
+    this.gameplayUi = document.querySelector("#gameplay-screen .ui");
+    this.progressTrailLabel = document.getElementById("progress-trail-label");
+    this.progressTrailDots = document.getElementById("progress-trail-dots");
+    this.achievementToast = document.getElementById("achievement-toast");
     this.prevBtn = document.getElementById("prev-btn");
     this.nextBtn = document.getElementById("next-btn");
     this.pinPanel = document.getElementById("pin-panel");
+    this.pinPanelBody = document.getElementById("pin-panel-body");
+    this.locationUi = document.getElementById("location-ui");
     this.detailsModal = document.getElementById("details-modal");
     this.detailsCloseBtn = document.getElementById("details-close-btn");
     this.detailsTitle = document.getElementById("details-title");
+    this.detailsCollectGoal = document.getElementById("details-collect-goal");
     this.detailsDescription = document.getElementById("details-description");
     this.detailsSlideshow = document.getElementById("details-slideshow");
+    this.exitBtn = document.getElementById("exit-btn");
+    this.exitConfirmModal = document.getElementById("exit-confirm-modal");
+    this.exitConfirmBtn = document.getElementById("exit-confirm-btn");
+    this.exitCancelBtn = document.getElementById("exit-cancel-btn");
 
     this.initEventListeners();
   }
@@ -203,6 +495,9 @@ class GameplayScreen {
     this.nextBtn.addEventListener("click", () => this.goNext());
     this.prevBtn.addEventListener("click", () => this.goPrev());
     this.detailsCloseBtn.addEventListener("click", () => this.hideDetailsPopup());
+    this.exitBtn.addEventListener("click", () => this.showExitConfirm());
+    this.exitConfirmBtn.addEventListener("click", () => this.confirmExit());
+    this.exitCancelBtn.addEventListener("click", () => this.hideExitConfirm());
 
     this.detailsModal.addEventListener("click", (event) => {
       if (event.target === this.detailsModal) {
@@ -210,15 +505,29 @@ class GameplayScreen {
       }
     });
 
+    this.exitConfirmModal.addEventListener("click", (event) => {
+      if (event.target === this.exitConfirmModal) {
+        this.hideExitConfirm();
+      }
+    });
+
     document.addEventListener("keydown", (e) => {
       if (!this.isActive) return;
 
+      const isExitConfirmOpen = this.exitConfirmModal.classList.contains("visible");
       const isDetailsOpen = this.detailsModal.classList.contains("visible");
+
+      if (isExitConfirmOpen && e.key === "Escape") {
+        this.hideExitConfirm();
+        return;
+      }
+
+      if (isExitConfirmOpen) return;
 
       if (isDetailsOpen && e.key === "ArrowRight") {
         const images = this.slideshowLocation ? this.slideshowLocation.images || [] : [];
         if (images.length > 0 && this.slideshowIndex === images.length - 1) {
-          this.hideDetailsPopup();
+          this.hideDetailsPopup({ restoreCamera: false });
           this.goNext();
         } else {
           this.changeSlide(1);
@@ -234,34 +543,80 @@ class GameplayScreen {
       if (e.key === "ArrowRight") this.goNext();
       if (e.key === "ArrowLeft") this.goPrev();
       if (e.key === "Escape") this.hideDetailsPopup();
-      if (e.key === " " && this.selectedPin) this.showDetailsPopup(LOCATIONS[this.selectedPin.index]);
+      if (e.key === " " && this.selectedPin) this.showDetailsPopup(this.locations[this.selectedPin.index]);
     });
   }
 
   start() {
-    this.gameplayScreen.classList.add('active');
+    this.screenElement.classList.add('active');
     this.isActive = true;
     this.currentIndex = 0;
     this.score = 0;
     this.collectedItems.clear();
-    this.hideDetailsPopup();
+    this.clearedLocations.clear();
+    this.hideAchievementToast();
+    this.hideExitConfirm();
+    this.hideDetailsPopup({ restoreCamera: false });
+    this.clearOverviewCamera();
     this.hidePinPanel();
+    // Get locations from the selected character
+    this.character = CHARACTERS.find(c => c.id === this.selectedCharacterId);
+    this.locations = this.character ? this.character.locations : [];
+    this.applyCharacterTheme();
     this.updateScore();
+    this.renderProgressTrail();
     this.flyToLocation(this.currentIndex);
   }
 
   hide() {
-    this.gameplayScreen.classList.remove('active');
-    this.isActive = false;
+    this.screenElement.classList.remove('active');
+    this.viewer.camera.cancelFlight();
+    this.isFlying = false;
+    this.clearOverviewCamera();
     this.viewer.camera.flyHome();
-    this.hideDetailsPopup();
+    this.hideExitConfirm();
+    this.hideDetailsPopup({ restoreCamera: false });
     this.hidePinPanel();
+    this.hideAchievementToast();
+    super.hide();
+  }
+
+  showExitConfirm() {
+    this.hideDetailsPopup({ restoreCamera: false });
+    this.exitConfirmModal.classList.add("visible");
+    this.exitConfirmModal.setAttribute("aria-hidden", "false");
+    this.exitCancelBtn.focus();
+  }
+
+  hideExitConfirm() {
+    this.exitConfirmModal.classList.remove("visible");
+    this.exitConfirmModal.setAttribute("aria-hidden", "true");
+    if (document.activeElement === this.exitCancelBtn || document.activeElement === this.exitConfirmBtn) {
+      document.activeElement.blur();
+    }
+  }
+
+  confirmExit() {
+    this.hideExitConfirm();
+    this.onExit();
+  }
+
+  applyCharacterTheme() {
+    if (!this.character) return;
+
+    const accent = this.character.themeColor || "#ffd84d";
+    if (this.gameplayUi) {
+      this.gameplayUi.style.setProperty("--guide-accent", accent);
+    }
+    if (this.scoreLabel) {
+      this.scoreLabel.textContent = formatCollectibleLabel(this.character.collectibleName);
+    }
   }
 
   createPinPanelContent(index) {
-    const loc = LOCATIONS[index];
+    const loc = this.locations[index];
     const content = cloneTemplate("tpl-pin-panel");
-    content.querySelector(".panel-label").textContent = `Location ${index + 1} of ${LOCATIONS.length}`;
+    content.querySelector(".panel-label").textContent = `Stop ${index + 1} of ${this.locations.length}`;
     content.querySelector(".panel-title").textContent = loc.name;
     content.querySelector(".panel-description").textContent = loc.description || "";
     content.querySelector(".pin-details-btn").addEventListener("click", (event) => {
@@ -272,7 +627,94 @@ class GameplayScreen {
   }
 
   updatePanel(index) {
+    this.currentIndex = index;
     this.updateNavControls();
+    this.renderProgressTrail();
+  }
+
+  renderProgressTrail() {
+    if (!this.progressTrailLabel || !this.progressTrailDots) return;
+
+    const total = this.locations.length;
+    if (total === 0) {
+      this.progressTrailLabel.textContent = "";
+      this.progressTrailDots.replaceChildren();
+      return;
+    }
+
+    this.progressTrailLabel.textContent = `Stop ${this.currentIndex + 1} of ${total}`;
+    this.progressTrailDots.replaceChildren();
+
+    this.locations.forEach((loc, index) => {
+      const dot = document.createElement("span");
+      dot.className = "progress-dot";
+      if (index < this.currentIndex) {
+        dot.classList.add("done");
+      } else if (index === this.currentIndex) {
+        dot.classList.add("current");
+      } else {
+        dot.classList.add("upcoming");
+      }
+      dot.setAttribute("aria-label", loc.name);
+      this.progressTrailDots.appendChild(dot);
+    });
+  }
+
+  pulseScorePanel() {
+    if (!this.scorePanel) return;
+    this.scorePanel.classList.remove("score-pulse");
+    void this.scorePanel.offsetWidth;
+    this.scorePanel.classList.add("score-pulse");
+    this.scorePanel.addEventListener(
+      "animationend",
+      () => this.scorePanel.classList.remove("score-pulse"),
+      { once: true }
+    );
+  }
+
+  showAchievementToast(message) {
+    if (!this.achievementToast) return;
+
+    this.achievementToast.textContent = message;
+    this.achievementToast.hidden = false;
+    this.achievementToast.classList.add("visible");
+
+    if (this.achievementToastTimer) {
+      window.clearTimeout(this.achievementToastTimer);
+    }
+    this.achievementToastTimer = window.setTimeout(() => {
+      this.hideAchievementToast();
+    }, 3000);
+  }
+
+  hideAchievementToast() {
+    if (!this.achievementToast) return;
+
+    this.achievementToast.classList.remove("visible");
+    this.achievementToast.hidden = true;
+    if (this.achievementToastTimer) {
+      window.clearTimeout(this.achievementToastTimer);
+      this.achievementToastTimer = null;
+    }
+  }
+
+  checkLocationCompletion(loc) {
+    if (!loc || !isLocationFullyCollected(loc, this.collectedItems)) return;
+    if (this.clearedLocations.has(loc.name)) return;
+
+    this.clearedLocations.add(loc.name);
+    const itemsName = this.character?.collectibleName || "ducks";
+    this.showAchievementToast(`All ${itemsName} found at ${loc.name}!`);
+  }
+
+  buildFinalizeSummary() {
+    return {
+      score: this.score,
+      maxScore: countDucksForTour(this.locations),
+      character: this.character,
+      collectibleName: this.character?.collectibleName || "ducks",
+      locationsCleared: countFullyClearedLocations(this.locations, this.collectedItems)
+    };
   }
 
   setButtonsEnabled(enabled) {
@@ -282,7 +724,7 @@ class GameplayScreen {
 
   updateNavControls() {
     const isFirstLocation = this.currentIndex === 0;
-    const isFinalLocation = this.currentIndex === LOCATIONS.length - 1;
+    const isFinalLocation = this.currentIndex === this.locations.length - 1;
 
     this.prevBtn.classList.toggle("hidden", isFirstLocation);
     this.prevBtn.disabled = isFirstLocation || this.isFlying;
@@ -294,14 +736,59 @@ class GameplayScreen {
   }
 
   showDetailsPopup(loc) {
+    if (
+      this.isFlying ||
+      this.isDetailViewActive ||
+      this.detailsModal.classList.contains("visible")
+    ) {
+      return;
+    }
+
+    this.saveOverviewCamera();
+    this.hidePinPanel();
+    this.isFlying = true;
+    this.setButtonsEnabled(false);
+
+    this.flyToDetailView(loc, {
+      onComplete: () => {
+        this.isFlying = false;
+        this.openDetailsModal(loc);
+        this.isDetailViewActive = true;
+      },
+      onCancel: () => {
+        this.isFlying = false;
+        this.setButtonsEnabled(true);
+        if (!this.isDetailViewActive && !this.overviewCameraState) {
+          this.showPinPanel();
+        }
+      }
+    });
+  }
+
+  openDetailsModal(loc) {
     this.slideshowLocation = loc;
     this.slideshowIndex = 0;
     this.detailsTitle.textContent = loc.name;
     this.detailsDescription.textContent = loc.description || "";
+    this.updateDetailsCollectGoal(loc);
     this.renderSlideshow();
     this.detailsModal.classList.add("visible");
     this.detailsModal.setAttribute("aria-hidden", "false");
     this.detailsCloseBtn.focus();
+  }
+
+  updateDetailsCollectGoal(loc) {
+    if (!this.detailsCollectGoal) return;
+
+    const images = loc ? loc.images || [] : [];
+    if (images.length === 0) {
+      this.detailsCollectGoal.hidden = true;
+      this.detailsCollectGoal.textContent = "";
+      return;
+    }
+
+    this.detailsCollectGoal.textContent = formatCollectGoal(this.character);
+    this.detailsCollectGoal.hidden = false;
   }
 
   renderSlideshow() {
@@ -309,6 +796,9 @@ class GameplayScreen {
     const images = loc ? loc.images || [] : [];
 
     if (images.length === 0) {
+      if (this.detailsCollectGoal) {
+        this.detailsCollectGoal.hidden = true;
+      }
       this.detailsSlideshow.replaceChildren(cloneTemplate("tpl-slideshow-empty"));
       return;
     }
@@ -346,6 +836,8 @@ class GameplayScreen {
   /** Returns an array of collectible button elements for the current slide. */
   buildCollectibles(loc) {
     const buttons = [];
+    const imageUrl = this.character?.collectibleImage || "/assets/duck.svg";
+    const singular = getCollectibleSingular(this.character?.collectibleName);
     this.getCollectiblesForSlide(this.slideshowIndex).forEach((item, itemIndex) => {
       const itemId = this.getCollectibleId(loc, this.slideshowIndex, itemIndex);
       if (this.collectedItems.has(itemId)) return;
@@ -353,7 +845,8 @@ class GameplayScreen {
       const btn = cloneTemplate("tpl-collectible");
       btn.style.left = `${item.x}%`;
       btn.style.top = `${item.y}%`;
-      btn.querySelector("img").src = DUCK_IMAGE_URL;
+      btn.setAttribute("aria-label", `Collect ${singular} for 1 point`);
+      btn.querySelector("img").src = imageUrl;
       btn.addEventListener("click", (event) => {
         event.stopPropagation();
         this.collectItem(itemId, btn);
@@ -368,7 +861,7 @@ class GameplayScreen {
   }
 
   getCollectibleId(loc, imageIndex, itemIndex) {
-    return `${loc.name}:${imageIndex}:${itemIndex}`;
+    return makeCollectibleId(loc, imageIndex, itemIndex);
   }
 
   collectItem(itemId, button) {
@@ -377,12 +870,39 @@ class GameplayScreen {
     this.collectedItems.add(itemId);
     this.score += 1;
     this.updateScore();
+    this.showCollectFeedback(button);
+    this.pulseScorePanel();
     button.classList.add("collected");
     window.setTimeout(() => button.remove(), 220);
+
+    if (this.slideshowLocation) {
+      this.checkLocationCompletion(this.slideshowLocation);
+    }
+  }
+
+  showCollectFeedback(button) {
+    const layer = button.parentElement;
+    if (!layer) return;
+
+    const feedback = document.createElement("span");
+    feedback.className = "collect-feedback";
+    const messages = getCollectMessages(this.character);
+    feedback.textContent = messages[(this.score - 1) % messages.length];
+    feedback.setAttribute("aria-hidden", "true");
+    feedback.style.left = button.style.left;
+    feedback.style.top = button.style.top;
+    layer.appendChild(feedback);
+    feedback.addEventListener("animationend", () => feedback.remove(), { once: true });
   }
 
   updateScore() {
     this.scoreValue.textContent = String(this.score);
+    if (this.character) {
+      this.avatar.src = this.character.avatarUrl;
+      if (this.scoreCollectibleIcon) {
+        this.scoreCollectibleIcon.src = this.character.collectibleImage || "/assets/duck.svg";
+      }
+    }
   }
 
   changeSlide(delta) {
@@ -393,7 +913,7 @@ class GameplayScreen {
     this.renderSlideshow();
   }
 
-  hideDetailsPopup() {
+  hideDetailsPopup({ restoreCamera = true } = {}) {
     this.detailsModal.classList.remove("visible");
     this.detailsModal.setAttribute("aria-hidden", "true");
     if (document.activeElement === this.detailsCloseBtn) {
@@ -401,35 +921,167 @@ class GameplayScreen {
     }
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
+
+    this.viewer.camera.cancelFlight();
+
+    if (!restoreCamera || !this.overviewCameraState) {
+      this.clearOverviewCamera();
+      return;
+    }
+
+    const saved = this.overviewCameraState;
+    this.isFlying = true;
+    this.setButtonsEnabled(false);
+    this.hidePinPanel();
+
+    const overviewHeight = Cesium.Cartographic.fromCartesian(saved.position).height;
+
+    this.viewer.camera.flyTo({
+      destination: saved.position,
+      orientation: {
+        heading: saved.heading,
+        pitch: saved.pitch,
+        roll: saved.roll
+      },
+      duration: DETAIL_FLIGHT_DURATION_SECONDS,
+      maximumHeight: overviewHeight,
+      easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+      complete: () => this.finishDetailFlyBack(),
+      cancel: () => this.finishDetailFlyBack()
+    });
+  }
+
+  finishDetailFlyBack() {
+    this.clearOverviewCamera();
+    this.isFlying = false;
+    this.setButtonsEnabled(true);
+    this.showPinPanel();
+  }
+
+  saveOverviewCamera() {
+    const camera = this.viewer.camera;
+    this.overviewCameraState = {
+      position: camera.position.clone(),
+      heading: camera.heading,
+      pitch: camera.pitch,
+      roll: camera.roll
+    };
+  }
+
+  clearOverviewCamera() {
+    this.overviewCameraState = null;
+    this.isDetailViewActive = false;
+  }
+
+  flyToDetailView(loc, { onComplete, onCancel } = {}) {
+    const camera = this.viewer.camera;
+    const saved = this.overviewCameraState;
+    if (!saved) return;
+
+    const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
+    const currentDistance = Cesium.Cartesian3.distance(camera.position, target);
+    const detailRange = 10;
+    const clampedRange = Math.min(detailRange, currentDistance * 0.95);
+
+    const direction = Cesium.Cartesian3.subtract(camera.position, target, new Cesium.Cartesian3());
+    Cesium.Cartesian3.normalize(direction, direction);
+    const endPosition = Cesium.Cartesian3.add(
+      target,
+      Cesium.Cartesian3.multiplyByScalar(direction, clampedRange, new Cesium.Cartesian3()),
+      new Cesium.Cartesian3()
+    );
+
+    camera.cancelFlight();
+    camera.flyTo({
+      destination: endPosition,
+      orientation: {
+        heading: saved.heading,
+        pitch: saved.pitch,
+        roll: saved.roll
+      },
+      duration: DETAIL_FLIGHT_DURATION_SECONDS,
+      maximumHeight: camera.positionCartographic.height,
+      easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+      complete: () => {
+        if (onComplete) onComplete();
+      },
+      cancel: () => {
+        if (onCancel) onCancel();
+      }
+    });
+  }
+
+  getCameraOffset(loc) {
+    return new Cesium.HeadingPitchRange(
+      Cesium.Math.toRadians(loc.heading || 0),
+      Cesium.Math.toRadians(-50),
+      loc.height
+    );
+  }
+
+  flyToCameraOffset(loc, { duration = FLIGHT_DURATION_SECONDS, onComplete, onCancel } = {}) {
+    const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
+    const boundingSphere = new Cesium.BoundingSphere(target, 1);
+    const cameraOffset = this.getCameraOffset(loc);
+
+    this.viewer.camera.cancelFlight();
+    this.viewer.camera.flyToBoundingSphere(boundingSphere, {
+      duration,
+      easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
+      offset: cameraOffset,
+      maximumHeight: MAX_FLIGHT_HEIGHT_METERS,
+      pitchAdjustHeight: 10,
+      complete: () => {
+        this.applyTargetVerticalOffset(loc.height);
+        if (onComplete) onComplete();
+      },
+      cancel: () => {
+        if (onCancel) onCancel();
+      }
+    });
   }
 
   hidePinPanel() {
+    this.pinPanelOpen = false;
     this.selectedPin = null;
-    this.pinPanel.style.display = "none";
+    this.locationUi.style.display = "none";
+    this.locationUi.style.visibility = "hidden";
   }
 
   showPinPanel() {
     if (!this.pin) return;
 
+    this.pinPanelOpen = true;
     this.selectedPin = this.pin;
-    this.pinPanel.replaceChildren(this.createPinPanelContent(this.pin.index));
-    this.pinPanel.style.display = "block";
-    this.positionPinPanel();
+    this.pinPanelBody.replaceChildren(this.createPinPanelContent(this.pin.index));
+    this.locationUi.style.display = "flex";
+    this.locationUi.style.visibility = "visible";
+    requestAnimationFrame(() => {
+      if (this.pinPanelOpen) this.positionPinPanel();
+    });
   }
 
   positionPinPanel() {
-    if (!this.selectedPin || this.pinPanel.style.display === "none") return;
+    if (!this.pinPanelOpen || !this.selectedPin) return;
 
     const position = this.selectedPin.position.getValue(this.viewer.clock.currentTime);
     const canvasPosition = Cesium.SceneTransforms.worldToWindowCoordinates(this.viewer.scene, position);
 
     if (!canvasPosition) {
-      this.pinPanel.style.display = "none";
+      this.locationUi.style.visibility = "hidden";
       return;
     }
 
-    this.pinPanel.style.left = `${canvasPosition.x - this.pinPanel.offsetWidth / 2}px`;
-    this.pinPanel.style.top = `${canvasPosition.y - this.pinPanel.offsetHeight - 20}px`;
+    const canvasRect = this.viewer.scene.canvas.getBoundingClientRect();
+    const uiRect = this.locationUi.offsetParent
+      ? this.locationUi.offsetParent.getBoundingClientRect()
+      : { left: 0, top: 0 };
+    const x = canvasPosition.x + canvasRect.left - uiRect.left;
+    const y = canvasPosition.y + canvasRect.top - uiRect.top;
+
+    this.locationUi.style.visibility = "visible";
+    this.locationUi.style.left = `${x - this.locationUi.offsetWidth / 2}px`;
+    this.locationUi.style.top = `${y - this.locationUi.offsetHeight - 20}px`;
   }
 
   setPin(loc, index) {
@@ -445,19 +1097,21 @@ class GameplayScreen {
   }
 
   flyToLocation(index, { instant = false } = {}) {
-    const loc = LOCATIONS[index];
+    const loc = this.locations[index];
     const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
     const boundingSphere = new Cesium.BoundingSphere(target, 1);
-    const cameraOffset = new Cesium.HeadingPitchRange(
-      Cesium.Math.toRadians(loc.heading || 0),
-      Cesium.Math.toRadians(-50),
-      loc.height
-    );
+    const cameraOffset = this.getCameraOffset(loc);
+
+    if (this.isDetailViewActive || this.detailsModal.classList.contains("visible")) {
+      this.hideDetailsPopup({ restoreCamera: false });
+    }
+    this.clearOverviewCamera();
 
     if (instant) {
       this.viewer.camera.viewBoundingSphere(boundingSphere, cameraOffset);
       this.viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
       this.applyTargetVerticalOffset(loc.height);
+      this.currentIndex = index;
       this.updatePanel(index);
       this.setPin(loc, index);
       this.showPinPanel();
@@ -468,6 +1122,7 @@ class GameplayScreen {
     this.setButtonsEnabled(false);
     this.hidePinPanel();
 
+    this.viewer.camera.cancelFlight();
     this.viewer.camera.flyToBoundingSphere(boundingSphere, {
       duration: FLIGHT_DURATION_SECONDS,
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
@@ -478,6 +1133,7 @@ class GameplayScreen {
         this.applyTargetVerticalOffset(loc.height);
         this.isFlying = false;
         this.setButtonsEnabled(true);
+        this.currentIndex = index;
         this.updatePanel(index);
         this.showPinPanel();
       },
@@ -510,8 +1166,8 @@ class GameplayScreen {
 
   goNext() {
     if (!this.isActive || this.isFlying) return;
-    if (this.currentIndex === LOCATIONS.length - 1) {
-      this.onFinalize(this.score);
+    if (this.currentIndex === this.locations.length - 1) {
+      this.onFinalize(this.buildFinalizeSummary());
       return;
     }
 
@@ -529,25 +1185,80 @@ class GameplayScreen {
 }
 
 class GameController {
+  gameSummary = null;
+  selectedCharacter = null;
+  currentState = "start";
   constructor() {
-    this.startScreen = new StartScreen(() => this.startGame());
-    this.gameplayScreen = new GameplayScreen((score) => this.finalizeGame(score));
-    this.finalScreen = new FinalScreen(() => this.restartGame());
+    // Initialize screens
+    this.startScreen = new StartScreen(() => this.transitionTo("characterSelect"));
+    this.characterSelectScreen = new CharacterSelectScreen(
+      CHARACTERS,
+      (character) => this.onCharacterSelected(character),
+      () => this.transitionTo("start")
+    );
+    this.gameplayScreen = new GameplayScreen(
+      (summary) => this.onGameFinalized(summary),
+      () => this.transitionTo("start")
+    );
+    this.finalScreen = new FinalScreen(() => this.transitionTo("start"));
+
+    // Start with the initial screen
+    this.transitionTo("start");
   }
 
-  startGame() {
-    this.startScreen.hide();
-    this.gameplayScreen.start();
+  /**
+   * Transition to a new screen state
+   */
+  transitionTo(state) {
+    // Hide current screen
+    switch (this.currentState) {
+      case "start":
+        this.startScreen.hide();
+        break;
+      case "characterSelect":
+        this.characterSelectScreen.hide();
+        break;
+      case "gameplay":
+        this.gameplayScreen.hide();
+        break;
+      case "final":
+        this.finalScreen.hide();
+        break;
+    }
+
+    // Show new screen
+    this.currentState = state;
+    switch (this.currentState) {
+      case "start":
+        this.startScreen.show();
+        break;
+      case "characterSelect":
+        this.characterSelectScreen.show();
+        break;
+      case "gameplay":
+        this.gameplayScreen.selectedCharacterId = this.selectedCharacter;
+        this.gameplayScreen.start();
+        break;
+      case "final":
+        this.finalScreen.show(this.gameSummary);
+        break;
+    }
   }
 
-  finalizeGame(score) {
-    this.gameplayScreen.hide();
-    this.finalScreen.show(score);
+  /**
+   * Handle character selection
+   */
+  onCharacterSelected(characterId) {
+    this.selectedCharacter = characterId;
+    this.transitionTo("gameplay");
   }
 
-  restartGame() {
-    this.finalScreen.hide();
-    this.gameplayScreen.start();
+  /**
+   * Handle game finalization
+   */
+  onGameFinalized(summary) {
+    this.gameSummary = summary;
+    this.transitionTo("final");
   }
 }
 
