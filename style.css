@@ -330,8 +330,25 @@ body {
   border-radius: 50%;
   object-fit: cover;
 }
+#gameplay-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 #gameplay-screen:not(.active) .ui {
   display: none;
+}
+
+#gameplay-screen .ui {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#gameplay-screen .ui > * {
+  pointer-events: auto;
 }
 
 .panel-label {
@@ -354,6 +371,117 @@ body {
   font-size: 13.5px;
   line-height: 1.5;
   color: #d4dae6;
+}
+
+/* ---------- Exit button (top-right) ---------- */
+.exit-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  padding: 10px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(15, 20, 30, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #f2f4f8;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.exit-btn:hover {
+  background: rgba(35, 45, 65, 0.85);
+  transform: translateY(-2px);
+}
+
+.exit-btn:focus-visible {
+  outline: 2px solid #6fa8ff;
+  outline-offset: 2px;
+}
+
+/* ---------- Exit confirmation modal ---------- */
+.exit-confirm-modal {
+  align-items: center;
+  background: rgba(4, 8, 14, 0.68);
+  display: none;
+  inset: 0;
+  justify-content: center;
+  padding: 22px;
+  position: fixed;
+  z-index: 25;
+}
+
+.exit-confirm-modal.visible {
+  display: flex;
+}
+
+.exit-confirm-dialog {
+  background: rgba(15, 20, 30, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  color: #f2f4f8;
+  max-width: 420px;
+  padding: 28px 24px 24px;
+  text-align: center;
+  width: min(420px, calc(100vw - 44px));
+}
+
+.exit-confirm-dialog h2 {
+  font-size: 22px;
+  line-height: 1.25;
+  margin: 0 0 10px;
+}
+
+.exit-confirm-dialog p {
+  color: #d4dae6;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.exit-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.exit-confirm-btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f2f4f8;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 12px 22px;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.exit-confirm-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.exit-confirm-btn:focus-visible {
+  outline: 2px solid #6fa8ff;
+  outline-offset: 2px;
+}
+
+.exit-confirm-btn-primary {
+  background: #ffd84d;
+  border-color: transparent;
+  color: #07111f;
+}
+
+.exit-confirm-btn-primary:hover {
+  background: #ffe679;
 }
 
 /* ---------- Score panel (top-left) ---------- */
@@ -407,62 +535,63 @@ body {
 
 
 
-/* ---------- Navigation controls (bottom center) ---------- */
-#nav-controls {
+/* ---------- Location UI (pin panel + flanking nav) ---------- */
+.location-ui {
+  display: none;
   position: absolute;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 14px;
+  top: 0;
+  left: 0;
+  align-items: center;
+  gap: 12px;
   z-index: 10;
 }
 
-#nav-controls button {
-  width: 48px;
-  height: 48px;
+.nav-button {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(15, 20, 30, 0.72);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: #f2f4f8;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
   transition: transform 0.15s ease, background 0.15s ease;
 }
 
-#nav-controls button.hidden {
+.nav-button.hidden {
   display: none;
 }
 
-#nav-controls button.finalize-btn {
+.nav-button.finalize-btn {
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  height: 48px;
-  padding: 0 20px;
+  height: 44px;
+  padding: 0 18px;
   text-transform: uppercase;
   width: auto;
 }
 
-#nav-controls button:hover {
+.nav-button:hover {
   background: rgba(35, 45, 65, 0.85);
   transform: translateY(-2px);
 }
 
-#nav-controls button:active {
+.nav-button:active {
   transform: translateY(0) scale(0.95);
 }
 
-#nav-controls button:focus-visible {
+.nav-button:focus-visible {
   outline: 2px solid #6fa8ff;
   outline-offset: 2px;
 }
 
-#nav-controls button:disabled {
+.nav-button:disabled {
   opacity: 0.35;
   cursor: default;
   transform: none;
@@ -474,11 +603,9 @@ body {
    ========================================================================== */
 
 .pin-panel {
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  max-width: min(300px, calc(100% - 72px));
+  position: relative;
+  flex: 0 1 auto;
+  max-width: min(300px, calc(100vw - 72px));
   background: rgba(15, 20, 30, 0.72);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -490,30 +617,35 @@ body {
   opacity: 1;
   transform: translateY(-6px);
   transition: opacity 0.35s ease, transform 0.35s ease;
-  z-index: 10;
+}
+
+.pin-panel-body {
+  min-width: 0;
 }
 
 .pin-details-btn {
   display: block;
   width: 100%;
   margin-top: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 0;
   border-radius: 8px;
-  background: #6fa8ff;
+  background: #ffd84d;
   color: #07111f;
   cursor: pointer;
   font-size: 13px;
   font-weight: 700;
   padding: 9px 12px;
+  transition: transform 0.18s ease, background 0.18s ease;
 }
 
 .pin-details-btn:hover {
-  background: #8cbaff;
+  background: #ffe679;
+  transform: translateY(-2px);
 }
 
 .pin-details-btn:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: 2px;
+  outline: 3px solid #6fa8ff;
+  outline-offset: 4px;
 }
 
 .pin-panel::after {

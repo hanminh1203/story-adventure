@@ -251,9 +251,10 @@ class CharacterSelectScreen extends AbstractScreen {
 }
 
 class GameplayScreen extends AbstractScreen {
-  constructor(onFinalize) {
+  constructor(onFinalize, onExit) {
     super("gameplay-screen");
     this.onFinalize = onFinalize;
+    this.onExit = onExit;
     this.selectedCharacterId = null;
 
     this.viewer = new Cesium.Viewer("cesiumContainer", {
@@ -288,6 +289,7 @@ class GameplayScreen extends AbstractScreen {
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
     this.locations = [];
+    this.pinPanelOpen = false;
 
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
@@ -295,11 +297,17 @@ class GameplayScreen extends AbstractScreen {
     this.prevBtn = document.getElementById("prev-btn");
     this.nextBtn = document.getElementById("next-btn");
     this.pinPanel = document.getElementById("pin-panel");
+    this.pinPanelBody = document.getElementById("pin-panel-body");
+    this.locationUi = document.getElementById("location-ui");
     this.detailsModal = document.getElementById("details-modal");
     this.detailsCloseBtn = document.getElementById("details-close-btn");
     this.detailsTitle = document.getElementById("details-title");
     this.detailsDescription = document.getElementById("details-description");
     this.detailsSlideshow = document.getElementById("details-slideshow");
+    this.exitBtn = document.getElementById("exit-btn");
+    this.exitConfirmModal = document.getElementById("exit-confirm-modal");
+    this.exitConfirmBtn = document.getElementById("exit-confirm-btn");
+    this.exitCancelBtn = document.getElementById("exit-cancel-btn");
 
     this.initEventListeners();
   }
@@ -334,6 +342,9 @@ class GameplayScreen extends AbstractScreen {
     this.nextBtn.addEventListener("click", () => this.goNext());
     this.prevBtn.addEventListener("click", () => this.goPrev());
     this.detailsCloseBtn.addEventListener("click", () => this.hideDetailsPopup());
+    this.exitBtn.addEventListener("click", () => this.showExitConfirm());
+    this.exitConfirmBtn.addEventListener("click", () => this.confirmExit());
+    this.exitCancelBtn.addEventListener("click", () => this.hideExitConfirm());
 
     this.detailsModal.addEventListener("click", (event) => {
       if (event.target === this.detailsModal) {
@@ -341,10 +352,24 @@ class GameplayScreen extends AbstractScreen {
       }
     });
 
+    this.exitConfirmModal.addEventListener("click", (event) => {
+      if (event.target === this.exitConfirmModal) {
+        this.hideExitConfirm();
+      }
+    });
+
     document.addEventListener("keydown", (e) => {
       if (!this.isActive) return;
 
+      const isExitConfirmOpen = this.exitConfirmModal.classList.contains("visible");
       const isDetailsOpen = this.detailsModal.classList.contains("visible");
+
+      if (isExitConfirmOpen && e.key === "Escape") {
+        this.hideExitConfirm();
+        return;
+      }
+
+      if (isExitConfirmOpen) return;
 
       if (isDetailsOpen && e.key === "ArrowRight") {
         const images = this.slideshowLocation ? this.slideshowLocation.images || [] : [];
@@ -375,6 +400,7 @@ class GameplayScreen extends AbstractScreen {
     this.currentIndex = 0;
     this.score = 0;
     this.collectedItems.clear();
+    this.hideExitConfirm();
     this.hideDetailsPopup();
     this.hidePinPanel();
     // Get locations from the selected character
@@ -386,10 +412,33 @@ class GameplayScreen extends AbstractScreen {
 
   hide() {
     this.screenElement.classList.remove('active');
+    this.viewer.camera.cancelFlight();
+    this.isFlying = false;
     this.viewer.camera.flyHome();
+    this.hideExitConfirm();
     this.hideDetailsPopup();
     this.hidePinPanel();
     super.hide();
+  }
+
+  showExitConfirm() {
+    this.hideDetailsPopup();
+    this.exitConfirmModal.classList.add("visible");
+    this.exitConfirmModal.setAttribute("aria-hidden", "false");
+    this.exitCancelBtn.focus();
+  }
+
+  hideExitConfirm() {
+    this.exitConfirmModal.classList.remove("visible");
+    this.exitConfirmModal.setAttribute("aria-hidden", "true");
+    if (document.activeElement === this.exitCancelBtn || document.activeElement === this.exitConfirmBtn) {
+      document.activeElement.blur();
+    }
+  }
+
+  confirmExit() {
+    this.hideExitConfirm();
+    this.onExit();
   }
 
   createPinPanelContent(index) {
@@ -539,32 +588,46 @@ class GameplayScreen extends AbstractScreen {
   }
 
   hidePinPanel() {
+    this.pinPanelOpen = false;
     this.selectedPin = null;
-    this.pinPanel.style.display = "none";
+    this.locationUi.style.display = "none";
+    this.locationUi.style.visibility = "hidden";
   }
 
   showPinPanel() {
     if (!this.pin) return;
 
+    this.pinPanelOpen = true;
     this.selectedPin = this.pin;
-    this.pinPanel.replaceChildren(this.createPinPanelContent(this.pin.index));
-    this.pinPanel.style.display = "block";
-    this.positionPinPanel();
+    this.pinPanelBody.replaceChildren(this.createPinPanelContent(this.pin.index));
+    this.locationUi.style.display = "flex";
+    this.locationUi.style.visibility = "visible";
+    requestAnimationFrame(() => {
+      if (this.pinPanelOpen) this.positionPinPanel();
+    });
   }
 
   positionPinPanel() {
-    if (!this.selectedPin || this.pinPanel.style.display === "none") return;
+    if (!this.pinPanelOpen || !this.selectedPin) return;
 
     const position = this.selectedPin.position.getValue(this.viewer.clock.currentTime);
     const canvasPosition = Cesium.SceneTransforms.worldToWindowCoordinates(this.viewer.scene, position);
 
     if (!canvasPosition) {
-      this.pinPanel.style.display = "none";
+      this.locationUi.style.visibility = "hidden";
       return;
     }
 
-    this.pinPanel.style.left = `${canvasPosition.x - this.pinPanel.offsetWidth / 2}px`;
-    this.pinPanel.style.top = `${canvasPosition.y - this.pinPanel.offsetHeight - 20}px`;
+    const canvasRect = this.viewer.scene.canvas.getBoundingClientRect();
+    const uiRect = this.locationUi.offsetParent
+      ? this.locationUi.offsetParent.getBoundingClientRect()
+      : { left: 0, top: 0 };
+    const x = canvasPosition.x + canvasRect.left - uiRect.left;
+    const y = canvasPosition.y + canvasRect.top - uiRect.top;
+
+    this.locationUi.style.visibility = "visible";
+    this.locationUi.style.left = `${x - this.locationUi.offsetWidth / 2}px`;
+    this.locationUi.style.top = `${y - this.locationUi.offsetHeight - 20}px`;
   }
 
   setPin(loc, index) {
@@ -675,7 +738,10 @@ class GameController {
       (character) => this.onCharacterSelected(character),
       () => this.transitionTo("start")
     );
-    this.gameplayScreen = new GameplayScreen((score) => this.onGameFinalized(score));
+    this.gameplayScreen = new GameplayScreen(
+      (score) => this.onGameFinalized(score),
+      () => this.transitionTo("start")
+    );
     this.finalScreen = new FinalScreen(() => this.transitionTo("start"));
 
     // Start with the initial screen

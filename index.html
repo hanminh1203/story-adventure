@@ -31,12 +31,15 @@
         </div>
       </div>
 
-      <div id="nav-controls">
+      <button id="exit-btn" class="exit-btn" type="button" aria-label="Exit game">Exit</button>
+
+      <div id="location-ui" class="location-ui">
         <button id="prev-btn" class="nav-button" aria-label="Previous location" title="Previous (left arrow)">&#8592;</button>
+        <div id="pin-panel" class="pin-panel">
+          <div id="pin-panel-body" class="pin-panel-body"></div>
+        </div>
         <button id="next-btn" class="nav-button" aria-label="Next location" title="Next (right arrow)">&#8594;</button>
       </div>
-
-      <div id="pin-panel" class="pin-panel"></div>
 
       <div id="details-modal" class="details-modal" aria-hidden="true">
         <div class="details-dialog" role="dialog" aria-modal="true" aria-labelledby="details-title">
@@ -45,6 +48,17 @@
           <h2 id="details-title"></h2>
           <p id="details-description"></p>
           <div id="details-slideshow" class="details-slideshow"></div>
+        </div>
+      </div>
+
+      <div id="exit-confirm-modal" class="exit-confirm-modal" aria-hidden="true">
+        <div class="exit-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="exit-confirm-title">
+          <h2 id="exit-confirm-title">Leave adventure?</h2>
+          <p>Your progress will be lost. Are you sure you want to exit?</p>
+          <div class="exit-confirm-actions">
+            <button id="exit-cancel-btn" type="button" class="exit-confirm-btn">Keep playing</button>
+            <button id="exit-confirm-btn" type="button" class="exit-confirm-btn exit-confirm-btn-primary">Exit</button>
+          </div>
         </div>
       </div>
     </div>
