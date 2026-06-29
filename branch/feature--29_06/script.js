@@ -119,6 +119,17 @@ function isLocationFullyCollected(loc, collectedItems) {
   return countCollectedCollectiblesForLocation(loc, collectedItems) === total;
 }
 
+function areAllCollectiblesCollectedForSlide(loc, slideIndex, collectedItems) {
+  const layout = COLLECTIBLE_LAYOUTS[slideIndex % COLLECTIBLE_LAYOUTS.length];
+  if (!layout || layout.length === 0) return false;
+  for (let itemIndex = 0; itemIndex < layout.length; itemIndex++) {
+    if (!collectedItems.has(makeCollectibleId(loc, slideIndex, itemIndex))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function getStarRating(score, maxScore) {
   if (maxScore === 0) return 1;
   const ratio = score / maxScore;
@@ -221,6 +232,12 @@ class FinalScreen extends AbstractScreen {
     super.show();
     const { score, maxScore, character, collectibleName } = summary;
     const itemsName = collectibleName || getCharacterCollectibleName(character);
+
+    if (character && character.themeColor) {
+      this.screenElement.style.setProperty("--guide-accent", character.themeColor);
+    } else {
+      this.screenElement.style.removeProperty("--guide-accent");
+    }
 
     this.renderStars(getStarRating(score, maxScore));
     this.finalScore.textContent = String(score);
@@ -358,7 +375,7 @@ class CharacterSelectScreen extends AbstractScreen {
       characterInfoDiv.appendChild(titleDiv);
 
       const selectBtn = document.createElement("button");
-      selectBtn.className = "character-select-btn";
+      selectBtn.className = "btn-accent character-select-btn";
       selectBtn.type = "button";
       selectBtn.dataset.character = character.id;
       selectBtn.textContent = character.selectButtonLabel || "Pick me!";
@@ -437,6 +454,7 @@ class GameplayScreen extends AbstractScreen {
     this.isActive = false;
     this.collectedItems = new Set();
     this.clearedLocations = new Set();
+    this.visitedLocations = new Set();
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
     this.locations = [];
@@ -565,6 +583,7 @@ class GameplayScreen extends AbstractScreen {
     this.score = 0;
     this.collectedItems.clear();
     this.clearedLocations.clear();
+    this.visitedLocations.clear();
     this.hideAchievementToast();
     this.hideExitConfirm();
     this.hideDetailsPopup({ restoreCamera: false });
@@ -665,6 +684,15 @@ class GameplayScreen extends AbstractScreen {
         dot.classList.add("current");
       } else {
         dot.classList.add("upcoming");
+      }
+      if (isLocationFullyCollected(loc, this.collectedItems)) {
+        dot.classList.add("collected-all");
+      } else if (countCollectedCollectiblesForLocation(loc, this.collectedItems) > 0) {
+        dot.classList.add("collected-some");
+      } else if (index === this.currentIndex) {
+        dot.classList.add("visiting-empty");
+      } else if (this.visitedLocations.has(loc.name)) {
+        dot.classList.add("visited-empty");
       }
       dot.setAttribute("aria-label", loc.name);
       this.progressTrailDots.appendChild(dot);
@@ -838,6 +866,41 @@ class GameplayScreen extends AbstractScreen {
     });
 
     this.detailsSlideshow.replaceChildren(frame, meta, thumbnails);
+    this.renderSlideComplete(frame);
+  }
+
+  renderSlideComplete(frame) {
+    if (!frame) {
+      frame = this.detailsSlideshow.querySelector(".slideshow-frame");
+    }
+    if (!frame) return;
+
+    const existing = frame.querySelector(".slide-complete");
+    if (existing) existing.remove();
+
+    const loc = this.slideshowLocation;
+    const images = loc ? loc.images || [] : [];
+    if (images.length === 0) return;
+    if (!areAllCollectiblesCollectedForSlide(loc, this.slideshowIndex, this.collectedItems)) {
+      return;
+    }
+
+    const overlay = cloneTemplate("tpl-slide-complete");
+    const btn = overlay.querySelector(".slide-complete-btn");
+    const isLastImage = this.slideshowIndex === images.length - 1;
+
+    if (isLastImage) {
+      btn.textContent = "On to the next stop!";
+      btn.addEventListener("click", () => {
+        this.hideDetailsPopup({ restoreCamera: false });
+        this.goNext();
+      });
+    } else {
+      btn.textContent = "See the next picture!";
+      btn.addEventListener("click", () => this.changeSlide(1));
+    }
+
+    frame.appendChild(overlay);
   }
 
   /** Returns an array of collectible button elements for the current slide. */
@@ -884,6 +947,14 @@ class GameplayScreen extends AbstractScreen {
 
     if (this.slideshowLocation) {
       this.checkLocationCompletion(this.slideshowLocation);
+      this.renderProgressTrail();
+      if (areAllCollectiblesCollectedForSlide(
+        this.slideshowLocation,
+        this.slideshowIndex,
+        this.collectedItems
+      )) {
+        this.renderSlideComplete();
+      }
     }
   }
 
@@ -1059,6 +1130,7 @@ class GameplayScreen extends AbstractScreen {
 
   finishLocationArrival(loc, index) {
     this.currentIndex = index;
+    if (loc) this.visitedLocations.add(loc.name);
     this.updatePanel(index);
     this.showPinPanel();
   }
