@@ -479,19 +479,60 @@ class GameplayScreen extends AbstractScreen {
     this.exitConfirmModal = document.getElementById("exit-confirm-modal");
     this.exitConfirmBtn = document.getElementById("exit-confirm-btn");
     this.exitCancelBtn = document.getElementById("exit-cancel-btn");
+    this.loadingScreen = document.getElementById("loading-screen");
 
     this.initEventListeners();
+  }
+
+  showLoading() {
+    if (!this.loadingScreen) return;
+    this.loadingScreen.classList.remove("hidden");
+    this.loadingScreen.setAttribute("aria-hidden", "false");
+  }
+
+  hideLoading() {
+    if (!this.loadingScreen) return;
+    this.loadingScreen.classList.add("hidden");
+    this.loadingScreen.setAttribute("aria-hidden", "true");
+  }
+
+  whenMapReady(onReady) {
+    const globe = this.viewer.scene.globe;
+    let done = false;
+    let removeListener = null;
+
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (removeListener) removeListener();
+      window.clearTimeout(timer);
+      onReady();
+    };
+
+    const timer = window.setTimeout(finish, 15000);
+
+    Promise.resolve(this.imageryProviderPromise).catch(() => {}).then(() => {
+      if (done) return;
+      if (globe.tilesLoaded) {
+        finish();
+        return;
+      }
+      removeListener = globe.tileLoadProgressEvent.addEventListener((queued) => {
+        if (queued === 0 && globe.tilesLoaded) finish();
+      });
+    });
   }
 
   ensureViewer() {
     if (this.viewer) return;
 
+    const imageryProviderPromise = Cesium.ArcGisMapServerImageryProvider.fromUrl(
+      "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
+    );
+    this.imageryProviderPromise = imageryProviderPromise;
+
     this.viewer = new Cesium.Viewer("cesiumContainer", {
-      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-        Cesium.ArcGisMapServerImageryProvider.fromUrl(
-          "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
-        )
-      ),
+      baseLayer: Cesium.ImageryLayer.fromProviderAsync(imageryProviderPromise),
       terrainProvider: new Cesium.EllipsoidTerrainProvider(),
       baseLayerPicker: false,
       geocoder: false,
@@ -614,11 +655,16 @@ class GameplayScreen extends AbstractScreen {
     this.applyCharacterTheme();
     this.updateScore();
     this.renderProgressTrail();
-    this.flyToLocation(this.currentIndex);
+    this.showLoading();
+    this.whenMapReady(() => {
+      this.hideLoading();
+      this.flyToLocation(this.currentIndex);
+    });
   }
 
   hide() {
     this.screenElement.classList.remove('active');
+    this.hideLoading();
     if (this.viewer) {
       this.viewer.camera.cancelFlight();
       this.isFlying = false;
@@ -658,6 +704,9 @@ class GameplayScreen extends AbstractScreen {
     const accent = this.character.themeColor || "#ffd84d";
     if (this.gameplayUi) {
       this.gameplayUi.style.setProperty("--guide-accent", accent);
+    }
+    if (this.loadingScreen) {
+      this.loadingScreen.style.setProperty("--guide-accent", accent);
     }
     if (this.scoreLabel) {
       this.scoreLabel.textContent = formatCollectibleLabel(this.character.collectibleName);
