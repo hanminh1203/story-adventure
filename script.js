@@ -1311,7 +1311,8 @@ class EmbedFullscreenController {
         }
       }
       this.btn.removeAttribute("title");
-    } catch {
+    } catch (e) {
+      console.error(e);
       this.btn.title = "Full screen was blocked. Try opening this page in a new tab.";
     }
     this.update();
