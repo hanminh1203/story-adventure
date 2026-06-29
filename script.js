@@ -58,25 +58,28 @@ function cloneTemplate(id) {
   return document.getElementById(id).content.cloneNode(true).firstElementChild;
 }
 
-const COLLECTIBLE_LAYOUTS = [
-  [
-    { x: 22, y: 34 },
-    { x: 57, y: 52 },
-    { x: 78, y: 27 }
-  ],
-  [
-    { x: 18, y: 58 },
-    { x: 46, y: 30 },
-    { x: 73, y: 64 }
-  ],
-  [
-    { x: 31, y: 24 },
-    { x: 52, y: 68 },
-    { x: 82, y: 45 }
-  ]
-];
+const COLLECTIBLES_PER_SLIDE = 3;
+const COLLECTIBLE_X_EDGE_PAD = 6;
+const COLLECTIBLE_Y_MIN = 18;
+const COLLECTIBLE_Y_MAX = 78;
 
-const COLLECTIBLES_PER_SLIDE = COLLECTIBLE_LAYOUTS[0].length;
+function randomInRange(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function generateBalancedPositions() {
+  const bandWidth = 100 / COLLECTIBLES_PER_SLIDE;
+  const positions = [];
+  for (let i = 0; i < COLLECTIBLES_PER_SLIDE; i++) {
+    const xMin = i * bandWidth + COLLECTIBLE_X_EDGE_PAD;
+    const xMax = (i + 1) * bandWidth - COLLECTIBLE_X_EDGE_PAD;
+    positions.push({
+      x: randomInRange(xMin, xMax),
+      y: randomInRange(COLLECTIBLE_Y_MIN, COLLECTIBLE_Y_MAX)
+    });
+  }
+  return positions;
+}
 
 function formatCollectGoal(character) {
   const name = getCharacterCollectibleName(character);
@@ -88,7 +91,7 @@ function getCollectMessages(character) {
 }
 
 function getCollectibleCountForSlide(slideIndex) {
-  return COLLECTIBLE_LAYOUTS[slideIndex % COLLECTIBLE_LAYOUTS.length].length;
+  return COLLECTIBLES_PER_SLIDE;
 }
 
 function makeCollectibleId(loc, imageIndex, itemIndex) {
@@ -112,8 +115,7 @@ function countCollectedCollectiblesForLocation(loc, collectedItems) {
   const images = loc.images || [];
   let count = 0;
   for (let imageIndex = 0; imageIndex < images.length; imageIndex++) {
-    const layout = COLLECTIBLE_LAYOUTS[imageIndex % COLLECTIBLE_LAYOUTS.length];
-    for (let itemIndex = 0; itemIndex < layout.length; itemIndex++) {
+    for (let itemIndex = 0; itemIndex < COLLECTIBLES_PER_SLIDE; itemIndex++) {
       if (collectedItems.has(makeCollectibleId(loc, imageIndex, itemIndex))) {
         count++;
       }
@@ -129,9 +131,7 @@ function isLocationFullyCollected(loc, collectedItems) {
 }
 
 function areAllCollectiblesCollectedForSlide(loc, slideIndex, collectedItems) {
-  const layout = COLLECTIBLE_LAYOUTS[slideIndex % COLLECTIBLE_LAYOUTS.length];
-  if (!layout || layout.length === 0) return false;
-  for (let itemIndex = 0; itemIndex < layout.length; itemIndex++) {
+  for (let itemIndex = 0; itemIndex < COLLECTIBLES_PER_SLIDE; itemIndex++) {
     if (!collectedItems.has(makeCollectibleId(loc, slideIndex, itemIndex))) {
       return false;
     }
@@ -446,6 +446,7 @@ class GameplayScreen extends AbstractScreen {
     this.collectedItems = new Set();
     this.clearedLocations = new Set();
     this.visitedLocations = new Set();
+    this.collectiblePositions = new Map();
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
     this.locations = [];
@@ -601,6 +602,7 @@ class GameplayScreen extends AbstractScreen {
     this.collectedItems.clear();
     this.clearedLocations.clear();
     this.visitedLocations.clear();
+    this.collectiblePositions.clear();
     this.hideAchievementToast();
     this.hideExitConfirm();
     this.hideDetailsPopup({ restoreCamera: false });
@@ -927,7 +929,7 @@ class GameplayScreen extends AbstractScreen {
     const buttons = [];
     const imageUrl = getCharacterCollectibleImage(this.character);
     const singular = getCollectibleSingular(getCharacterCollectibleName(this.character));
-    this.getCollectiblesForSlide(this.slideshowIndex).forEach((item, itemIndex) => {
+    this.getCollectiblesForSlide(loc, this.slideshowIndex).forEach((item, itemIndex) => {
       const itemId = this.getCollectibleId(loc, this.slideshowIndex, itemIndex);
       if (this.collectedItems.has(itemId)) return;
 
@@ -945,8 +947,12 @@ class GameplayScreen extends AbstractScreen {
     return buttons;
   }
 
-  getCollectiblesForSlide(index) {
-    return COLLECTIBLE_LAYOUTS[index % COLLECTIBLE_LAYOUTS.length];
+  getCollectiblesForSlide(loc, slideIndex) {
+    const key = `${loc.name}:${slideIndex}`;
+    if (!this.collectiblePositions.has(key)) {
+      this.collectiblePositions.set(key, generateBalancedPositions());
+    }
+    return this.collectiblePositions.get(key);
   }
 
   getCollectibleId(loc, imageIndex, itemIndex) {
