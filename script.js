@@ -17,7 +17,7 @@ const MAX_FLIGHT_HEIGHT_METERS = 3000000;
 const TARGET_SCREEN_POSITION_FROM_BOTTOM = 0.3;
 const DEFAULT_COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got it!"];
 const DEFAULT_COLLECTIBLE_NAME = "treasures";
-const DEFAULT_COLLECTIBLE_IMAGE = "/assets/collectible-lantern.svg";
+const DEFAULT_COLLECTIBLE_IMAGE = "assets/collectible-lantern.svg";
 const DEBUG_COORDS = new URLSearchParams(location.search).has("debug");
 
 function getCharacterCollectibleName(character) {

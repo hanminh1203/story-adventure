@@ -33,10 +33,10 @@ Edit the `CHARACTERS` array in `locations.js`. Each character:
   id: "1",
   name: "Tjingeling",
   title: "The Latern Traveller",
-  avatarUrl: "/assets/avatar-tjingeling.png",
+  avatarUrl: "assets/avatar-tjingeling.png",
   youtubeId: "y_92xI5zY8g",   // YouTube video ID (the part after ?v=)
   themeColor: "#ffd84d",       // accent for borders, buttons, and HUD
-  collectibleImage: "/assets/collectible-lantern.svg",
+  collectibleImage: "assets/collectible-lantern.svg",
   collectibleName: "lanterns", // plural label in score and toasts
   collectMessages: ["Great find!", "Nice one!", "Got a lantern!"],
   selectButtonLabel: "Pick me!",
@@ -67,7 +67,7 @@ Collectible positions are preset per slide in `script.js` (`COLLECTIBLE_LAYOUTS`
 
 ## Running locally
 
-No build step. Serve the folder over HTTP so root-relative asset paths (e.g. `/assets/avatar-tjingeling.png`) resolve correctly:
+No build step. Asset paths are relative (e.g. `assets/avatar-tjingeling.png`), so they resolve whether the page is served over HTTP or opened as a `file://` URL. Serving over HTTP is still recommended:
 
 ```bash
 # Python 3
@@ -77,7 +77,7 @@ python -m http.server 8080
 npx serve .
 ```
 
-Then open `http://localhost:8080` (or the port shown). Opening `index.html` directly as a `file://` URL may break avatar images because they use absolute paths.
+Then open `http://localhost:8080` (or the port shown).
 
 ## Controls
 
