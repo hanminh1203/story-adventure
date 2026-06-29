@@ -1267,7 +1267,72 @@ class GameController {
   }
 }
 
+const EMBED_MIN_WIDTH = 280;
+const EMBED_MIN_HEIGHT = 400;
+
+class EmbedFullscreenController {
+  constructor() {
+    this.btn = document.getElementById("fullscreen-btn");
+
+    this.btn.addEventListener("click", () => this.toggle());
+    document.addEventListener("fullscreenchange", () => this.update());
+    document.addEventListener("webkitfullscreenchange", () => this.update());
+    window.addEventListener("resize", () => this.update());
+
+    this.update();
+  }
+
+  isFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+
+  isViewportTooSmall() {
+    return window.innerWidth < EMBED_MIN_WIDTH || window.innerHeight < EMBED_MIN_HEIGHT;
+  }
+
+  shouldConstrain() {
+    return this.isViewportTooSmall() && !this.isFullscreen();
+  }
+
+  async toggle() {
+    try {
+      if (this.isFullscreen()) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      } else {
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+      }
+      this.btn.removeAttribute("title");
+    } catch {
+      this.btn.title = "Full screen was blocked. Try opening this page in a new tab.";
+    }
+    this.update();
+  }
+
+  update() {
+    const constrained = this.shouldConstrain();
+    document.body.classList.toggle("embed-constrained", constrained);
+
+    const fullscreen = this.isFullscreen();
+    this.btn.setAttribute("aria-pressed", String(fullscreen));
+    this.btn.setAttribute(
+      "aria-label",
+      fullscreen ? "Exit full screen" : "Enter full screen"
+    );
+    this.btn.title = fullscreen ? "Exit full screen" : "Full screen";
+  }
+}
+
 // Initialize the application controller
 document.addEventListener("DOMContentLoaded", () => {
+  new EmbedFullscreenController();
   new GameController();
 });

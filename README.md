@@ -120,6 +120,13 @@ Google Sites cannot run custom scripts on a page directly, so host this project 
 
 The map, character select, slideshows, and scoring all run inside the iframe.
 
+**Full screen button**
+
+- A **Full screen** button is always visible in the lower-right corner on every screen.
+- Click it to enter full screen; click again to exit.
+- If the viewport is smaller than 480 × 560 px (whether inside a small iframe or just a small window), the rest of the UI is hidden and a centered prompt with the Full screen button is shown until the user enters full screen.
+- When embedding, the parent must allow full screen (`allowfullscreen` or `allow="fullscreen"`). Google Sites **Embed by URL** usually includes this; custom HTML embeds may need it added manually.
+
 ## Notes
 
 - CesiumJS: [github.com/CesiumGS/cesium](https://github.com/CesiumGS/cesium) (Apache 2.0)

@@ -179,6 +179,30 @@
     <p class="details-empty">Our photos are still on their way — check back soon!</p>
   </template>
 
+  <div id="embed-prompt" class="embed-prompt">
+    <p class="embed-prompt-text">Oh no, the window is too small for our journey! Tap the button to go full
+      screen and begin the adventure.</p>
+    <button id="fullscreen-btn" class="fullscreen-btn" type="button"
+      aria-label="Enter full screen" aria-pressed="false" title="Full screen">
+      <span class="fullscreen-icon" aria-hidden="true">
+        <svg class="fullscreen-icon-enter" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+          <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+          <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+          <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+        </svg>
+        <svg class="fullscreen-icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+          <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+          <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+          <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+        </svg>
+      </span>
+    </button>
+  </div>
+
   <script src="locations.js"></script>
   <script src="script.js"></script>
 </body>
