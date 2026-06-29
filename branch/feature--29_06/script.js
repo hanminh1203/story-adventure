@@ -1269,10 +1269,24 @@ class GameController {
 
 const EMBED_MIN_WIDTH = 280;
 const EMBED_MIN_HEIGHT = 400;
+const EMBED_PROMPT_FULLSCREEN =
+  "Oh no, the window is too small for our journey! Tap the button to go full screen and begin the adventure.";
+const EMBED_PROMPT_NEWTAB =
+  "Oh no, the window is too small for our journey! Tap the button to open the adventure in a new tab.";
 
 class EmbedFullscreenController {
   constructor() {
     this.btn = document.getElementById("fullscreen-btn");
+    this.promptText = document.querySelector(".embed-prompt-text");
+
+    const inIframe = window.self !== window.top;
+    const fsEnabled =
+      typeof document.fullscreenEnabled === "boolean"
+        ? document.fullscreenEnabled
+        : typeof document.webkitFullscreenEnabled === "boolean"
+          ? document.webkitFullscreenEnabled
+          : true;
+    this.newTabMode = inIframe && !fsEnabled;
 
     this.btn.addEventListener("click", () => this.toggle());
     document.addEventListener("fullscreenchange", () => this.update());
@@ -1294,7 +1308,16 @@ class EmbedFullscreenController {
     return this.isViewportTooSmall() && !this.isFullscreen();
   }
 
-  async toggle() {
+  toggle() {
+    if (this.newTabMode) {
+      window.open(window.location.href, "_blank", "noopener");
+      return;
+    }
+
+    this.toggleFullscreen();
+  }
+
+  async toggleFullscreen() {
     try {
       if (this.isFullscreen()) {
         if (document.exitFullscreen) {
@@ -1322,6 +1345,18 @@ class EmbedFullscreenController {
     const constrained = this.shouldConstrain();
     document.body.classList.toggle("embed-constrained", constrained);
 
+    this.btn.classList.toggle("is-newtab", this.newTabMode);
+
+    if (this.newTabMode) {
+      this.btn.setAttribute("aria-pressed", "false");
+      this.btn.setAttribute("aria-label", "Open in new tab");
+      this.btn.title = "Open in new tab";
+      if (this.promptText) {
+        this.promptText.textContent = EMBED_PROMPT_NEWTAB;
+      }
+      return;
+    }
+
     const fullscreen = this.isFullscreen();
     this.btn.setAttribute("aria-pressed", String(fullscreen));
     this.btn.setAttribute(
@@ -1329,6 +1364,9 @@ class EmbedFullscreenController {
       fullscreen ? "Exit full screen" : "Enter full screen"
     );
     this.btn.title = fullscreen ? "Exit full screen" : "Full screen";
+    if (this.promptText) {
+      this.promptText.textContent = EMBED_PROMPT_FULLSCREEN;
+    }
   }
 }
 
