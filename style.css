@@ -179,8 +179,7 @@ body {
 }
 
 .btn-accent:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 4px;
+  outline: none;
 }
 
 .btn-glass {
@@ -201,8 +200,7 @@ body {
 }
 
 .btn-glass:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .btn-glass:disabled {
@@ -433,8 +431,7 @@ body {
 }
 
 .carousel-arrow:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .carousel-arrow:active {
@@ -717,8 +714,7 @@ body {
 }
 
 .exit-confirm-btn:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 /* exit-confirm-btn-primary: built on .btn-accent (add btn-accent in markup) */
@@ -1055,8 +1051,7 @@ body {
 }
 
 .details-close-btn:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 #details-collect-goal {
@@ -1134,8 +1129,7 @@ body {
 }
 
 .slideshow-btn:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .slideshow-btn-previous {
@@ -1184,8 +1178,7 @@ body {
 }
 
 .slideshow-thumbnails button:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: 2px;
+  outline: none;
 }
 
 .slideshow-thumbnails img {
@@ -1231,8 +1224,7 @@ body {
 }
 
 .collectible-item:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 3px;
+  outline: none;
 }
 
 .collectible-item.collected {
