@@ -38,7 +38,7 @@ jobs:
 
       # 4. Run gh-pages-multibranch to merge this branch into the directory
       - name: Arrange Multi-Branch Layout
-        uses: coderefinery/gh-pages-multibranch@v1
+        uses: coderefinery/gh-pages-multibranch@main
         with:
           # Change 'dist' or 'build' to match your static files folder. 
           # Use '.' if your plain HTML files sit in the root folder.
