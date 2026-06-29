@@ -20,6 +20,15 @@ const DEFAULT_COLLECTIBLE_NAME = "treasures";
 const DEFAULT_COLLECTIBLE_IMAGE = "assets/collectible-lantern.svg";
 const DEBUG_COORDS = new URLSearchParams(location.search).has("debug");
 
+function prefersReducedMotion() {
+  return window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function flightDuration(base) {
+  return prefersReducedMotion() ? 0 : base;
+}
+
 function getCharacterCollectibleName(character) {
   return character?.collectibleName || DEFAULT_COLLECTIBLE_NAME;
 }
@@ -270,6 +279,8 @@ class FinalScreen extends AbstractScreen {
   }
 
   spawnConfetti() {
+    if (prefersReducedMotion()) return;
+
     this.clearConfetti();
     const colors = ["#ffd84d", "#6fa8ff", "#ff9a8b", "#6dd47e", "#ffe679"];
     const pieceCount = 36;
@@ -423,27 +434,7 @@ class GameplayScreen extends AbstractScreen {
     this.onFinalize = onFinalize;
     this.onExit = onExit;
     this.selectedCharacterId = null;
-
-    this.viewer = new Cesium.Viewer("cesiumContainer", {
-      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-        Cesium.ArcGisMapServerImageryProvider.fromUrl(
-          "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
-        )
-      ),
-      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-      baseLayerPicker: false,
-      geocoder: false,
-      homeButton: false,
-      sceneModePicker: false,
-      navigationHelpButton: false,
-      animation: false,
-      timeline: false,
-      fullscreenButton: false,
-      infoBox: false,
-      selectionIndicator: false
-    });
-
-    this.viewer.scene.globe.enableLighting = true;
+    this.viewer = null;
 
     // State variables
     this.currentIndex = 0;
@@ -491,6 +482,36 @@ class GameplayScreen extends AbstractScreen {
     this.initEventListeners();
   }
 
+  ensureViewer() {
+    if (this.viewer) return;
+
+    this.viewer = new Cesium.Viewer("cesiumContainer", {
+      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+        Cesium.ArcGisMapServerImageryProvider.fromUrl(
+          "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
+        )
+      ),
+      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+      baseLayerPicker: false,
+      geocoder: false,
+      homeButton: false,
+      sceneModePicker: false,
+      navigationHelpButton: false,
+      animation: false,
+      timeline: false,
+      fullscreenButton: false,
+      infoBox: false,
+      selectionIndicator: false
+    });
+
+    this.viewer.scene.globe.enableLighting = true;
+    this.viewer.scene.postRender.addEventListener(this.positionPinPanel.bind(this));
+
+    if (DEBUG_COORDS) {
+      this.onCanvasClicked();
+    }
+  }
+
   /**
    * Reserved for DEBUG location when the coordinate is not working (do not remove this function).
    * Enabled only when the URL contains ?debug=coords or ?debug.
@@ -516,11 +537,6 @@ class GameplayScreen extends AbstractScreen {
   }
 
   initEventListeners() {
-    this.viewer.scene.postRender.addEventListener(this.positionPinPanel.bind(this));
-    if (DEBUG_COORDS) {
-      this.onCanvasClicked();
-    }
-
     this.nextBtn.addEventListener("click", () => this.goNext());
     this.prevBtn.addEventListener("click", () => this.goPrev());
     this.detailsCloseBtn.addEventListener("click", () => this.hideDetailsPopup());
@@ -579,6 +595,7 @@ class GameplayScreen extends AbstractScreen {
   start() {
     this.screenElement.classList.add('active');
     this.isActive = true;
+    this.ensureViewer();
     this.currentIndex = 0;
     this.score = 0;
     this.collectedItems.clear();
@@ -600,10 +617,12 @@ class GameplayScreen extends AbstractScreen {
 
   hide() {
     this.screenElement.classList.remove('active');
-    this.viewer.camera.cancelFlight();
-    this.isFlying = false;
+    if (this.viewer) {
+      this.viewer.camera.cancelFlight();
+      this.isFlying = false;
+      this.viewer.camera.flyHome();
+    }
     this.clearOverviewCamera();
-    this.viewer.camera.flyHome();
     this.hideExitConfirm();
     this.hideDetailsPopup({ restoreCamera: false });
     this.hidePinPanel();
@@ -1000,6 +1019,11 @@ class GameplayScreen extends AbstractScreen {
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
 
+    if (!this.viewer) {
+      this.clearOverviewCamera();
+      return;
+    }
+
     this.viewer.camera.cancelFlight();
 
     if (!restoreCamera || !this.overviewCameraState) {
@@ -1021,7 +1045,7 @@ class GameplayScreen extends AbstractScreen {
         pitch: saved.pitch,
         roll: saved.roll
       },
-      duration: DETAIL_FLIGHT_DURATION_SECONDS,
+      duration: flightDuration(DETAIL_FLIGHT_DURATION_SECONDS),
       maximumHeight: overviewHeight,
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
       complete: () => this.finishDetailFlyBack(),
@@ -1077,7 +1101,7 @@ class GameplayScreen extends AbstractScreen {
         pitch: saved.pitch,
         roll: saved.roll
       },
-      duration: DETAIL_FLIGHT_DURATION_SECONDS,
+      duration: flightDuration(DETAIL_FLIGHT_DURATION_SECONDS),
       maximumHeight: camera.positionCartographic.height,
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
       complete: () => {
@@ -1113,7 +1137,7 @@ class GameplayScreen extends AbstractScreen {
     }
 
     this.viewer.camera.flyToBoundingSphere(boundingSphere, {
-      duration,
+      duration: flightDuration(duration),
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
       offset: cameraOffset,
       maximumHeight: MAX_FLIGHT_HEIGHT_METERS,
