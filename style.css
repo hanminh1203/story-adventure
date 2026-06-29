@@ -1594,6 +1594,19 @@ body {
   display: none;
 }
 
+.fullscreen-icon .fullscreen-icon-newtab {
+  display: none;
+}
+
+.fullscreen-btn.is-newtab .fullscreen-icon-enter,
+.fullscreen-btn.is-newtab .fullscreen-icon-exit {
+  display: none;
+}
+
+.fullscreen-btn.is-newtab .fullscreen-icon-newtab {
+  display: block;
+}
+
 .fullscreen-btn[aria-pressed="true"] {
   background: rgba(111, 168, 255, 0.22);
   border-color: var(--color-accent);
