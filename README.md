@@ -1,6 +1,6 @@
 # Magical Story Adventures
 
-An interactive educational game built with CesiumJS. Children pick a storybook guide, fly a 3D globe between real-world landmarks, explore photo slideshows, and collect hidden ducks for points — inspired by Google Earth-style exploration.
+An interactive educational game built with CesiumJS. Children pick a storybook guide, fly a 3D globe between real-world landmarks, explore photo slideshows, and collect hidden treasures for points — inspired by Google Earth-style exploration.
 
 No API key required for the default setup.
 
@@ -9,7 +9,7 @@ No API key required for the default setup.
 1. **Start screen** — intro and **LET'S GO!**
 2. **Character select** — choose one of four guides (each has a YouTube intro video)
 3. **Gameplay** — the camera flies between that character's locations on a 3D globe
-4. **Details & collectibles** — open **Show details** on a location pin to browse images; click hidden ducks for 1 point each
+4. **Details & collectibles** — open **Show details** on a location pin to browse images; click hidden collectibles for 1 point each
 5. **Final screen** — total score, then **RESTART** to play again
 
 Navigation does not wrap: **Previous** is hidden on the first stop, and **Next** becomes **Finalize** on the last.
@@ -22,7 +22,7 @@ Navigation does not wrap: **Previous** is hidden on the first stop, and **Next**
 | `locations.js` | Character guides and their tour stops (`CHARACTERS`) |
 | `script.js` | Game flow, Cesium viewer, camera flights, slideshow, scoring |
 | `style.css` | Screens, HUD, pin panel, details modal, collectibles |
-| `assets/` | Character avatars and background images |
+| `assets/` | Character avatars, collectible icons, and background images |
 
 ## Customizing characters and locations
 
@@ -35,6 +35,11 @@ Edit the `CHARACTERS` array in `locations.js`. Each character:
   title: "The Latern Traveller",
   avatarUrl: "/assets/avatar-tjingeling.png",
   youtubeId: "y_92xI5zY8g",   // YouTube video ID (the part after ?v=)
+  themeColor: "#ffd84d",       // accent for borders, buttons, and HUD
+  collectibleImage: "/assets/collectible-lantern.svg",
+  collectibleName: "lanterns", // plural label in score and toasts
+  collectMessages: ["Great find!", "Nice one!", "Got a lantern!"],
+  selectButtonLabel: "Pick me!",
   locations: [ /* tour stops */ ]
 }
 ```
@@ -58,7 +63,7 @@ Each location:
 
 Order in `locations` is the order **Next** / **Previous** follow. To find coordinates, right-click a place in Google Maps and copy lat/lon.
 
-Collectible duck positions are preset per slide in `script.js` (`COLLECTIBLE_LAYOUTS`); each slide can have up to three ducks. Ducks already collected in a session are tracked and do not respawn until restart.
+Collectible positions are preset per slide in `script.js` (`COLLECTIBLE_LAYOUTS`); each slide can have up to three items. Collectibles already found in a session are tracked and do not respawn until restart.
 
 ## Running locally
 
@@ -119,4 +124,4 @@ The map, character select, slideshows, and scoring all run inside the iframe.
 
 - CesiumJS: [github.com/CesiumGS/cesium](https://github.com/CesiumGS/cesium) (Apache 2.0)
 - Slideshow images are loaded from external URLs configured in `locations.js`; host your own images if you need offline or long-term stability
-- A debug helper in `script.js` (`onCanvasClicked`) logs map click coordinates to the browser console when tuning `lat` / `lon`
+- To tune `lat` / `lon` values, append `?debug` to the URL (e.g. `http://localhost:8080/?debug`). Map clicks then log coordinates to the browser console via `onCanvasClicked` in `script.js`

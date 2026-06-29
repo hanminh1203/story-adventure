@@ -9,10 +9,10 @@
  *   youtubeId          - YouTube video ID (the part after ?v= in a YouTube URL)
  *   themeColor         - accent color for cards, modals, and speech bubbles
  *   collectibleImage   - icon used for hidden collectibles and score HUD
- *   collectibleName      - plural name for UI copy (e.g. "ducks")
+ *   collectibleName      - plural name for UI copy (e.g. "lanterns")
  *   collectMessages    - short messages shown when collecting an item
  *   selectButtonLabel  - CTA on the character select card
- *   locations          - array of tour stops (each may include guideLine)
+ *   locations          - array of tour stops for this character
  */
 const CHARACTERS = [
   {
@@ -29,7 +29,6 @@ const CHARACTERS = [
     locations: [
       {
         name: "Eiffel Tower",
-        guideLine: "My lantern loves this view — look how Paris sparkles!",
         description: "Gustave Eiffel's iconic iron lattice tower in Paris, built in 1889 for the World's Fair.",
         lat: 48.8584,
         lon: 2.2945,
@@ -43,7 +42,6 @@ const CHARACTERS = [
       },
       {
         name: "Big Ben & Houses of Parliament",
-        guideLine: "Hear that chime? London is calling us closer!",
         description: "The iconic clock tower and Gothic Revival Palace of Westminster in London.",
         lat: 51.4975,
         lon: -0.1246,
@@ -56,7 +54,6 @@ const CHARACTERS = [
       },
       {
         name: "Venice Grand Canal",
-        guideLine: "The water glitters like a thousand tiny lanterns!",
         description: "The main watercourse through Venice, Italy, surrounded by magnificent Renaissance and Byzantine buildings.",
         lat: 45.4375,
         lon: 12.3358,
@@ -84,7 +81,6 @@ const CHARACTERS = [
     locations: [
       {
         name: "Black Forest, Germany",
-        guideLine: "The trees whisper fairy tales — stay close on the path!",
         description: "Ancient fairy-tale forests in southwestern Germany, known for dense woodlands and charming villages.",
         lat: 48.2,
         lon: 8.2,
@@ -97,7 +93,6 @@ const CHARACTERS = [
       },
       {
         name: "Swiss Alps",
-        guideLine: "Snowy peaks and cozy chalets — what a grand adventure!",
         description: "Majestic mountain peaks in Switzerland offering stunning alpine scenery and charming chalets.",
         lat: 46.8,
         lon: 8.2,
@@ -111,7 +106,6 @@ const CHARACTERS = [
       },
       {
         name: "Lake Louise, Canada",
-        guideLine: "That turquoise water looks good enough to drink!",
         description: "A glacial lake in Banff National Park, renowned for its turquoise waters and mountain backdrop.",
         lat: 51.426,
         lon: -116.2023,
@@ -138,7 +132,6 @@ const CHARACTERS = [
     locations: [
       {
         name: "Sydney Opera House",
-        guideLine: "Listen — the sails sing with the harbour breeze!",
         description: "Jorn Utzon's sail-shaped performing arts venue on Sydney Harbour, opened in 1973.",
         lat: -33.8568,
         lon: 151.2153,
@@ -151,7 +144,6 @@ const CHARACTERS = [
       },
       {
         name: "Palais Garnier Opera House, Paris",
-        guideLine: "Gold and velvet everywhere — a stage fit for magic!",
         description: "A masterpiece of 19th-century Beaux-Arts architecture, the home of the Opéra Nationale de Paris.",
         lat: 48.872,
         lon: 2.3842,
@@ -165,7 +157,6 @@ const CHARACTERS = [
       },
       {
         name: "Vienna State Opera",
-        guideLine: "Can you hear the orchestra warming up?",
         description: "A Renaissance revival opera house in Vienna, Austria, one of the most prestigious opera venues in the world.",
         lat: 48.2023,
         lon: 16.3698,
@@ -192,7 +183,6 @@ const CHARACTERS = [
     locations: [
       {
         name: "Mount Fuji",
-        guideLine: "A giant sleeping under a fluffy cloud hat — curious!",
         description: "Japan's tallest peak at 3,776 m, an active stratovolcano about 100 km southwest of Tokyo.",
         lat: 35.3606582,
         lon: 138.7296,
@@ -206,7 +196,6 @@ const CHARACTERS = [
       },
       {
         name: "Arashiyama Bamboo Grove",
-        guideLine: "The bamboo sways like it's dancing at a tea party!",
         description: "A magical forest of towering bamboo stalks in Kyoto, Japan, creating an enchanting and dreamlike atmosphere.",
         lat: 35.0137,
         lon: 135.6742,
@@ -219,7 +208,6 @@ const CHARACTERS = [
       },
       {
         name: "Angkor Wat, Cambodia",
-        guideLine: "Ancient stones hiding secrets — shall we peek inside?",
         description: "The largest religious monument in the world, an ancient temple complex surrounded by lush jungle and mystery.",
         lat: 13.3667,
         lon: 103.8667,

@@ -16,6 +16,17 @@ const DETAIL_FLIGHT_DURATION_SECONDS = 1;
 const MAX_FLIGHT_HEIGHT_METERS = 3000000;
 const TARGET_SCREEN_POSITION_FROM_BOTTOM = 0.3;
 const DEFAULT_COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got it!"];
+const DEFAULT_COLLECTIBLE_NAME = "treasures";
+const DEFAULT_COLLECTIBLE_IMAGE = "/assets/collectible-lantern.svg";
+const DEBUG_COORDS = new URLSearchParams(location.search).has("debug");
+
+function getCharacterCollectibleName(character) {
+  return character?.collectibleName || DEFAULT_COLLECTIBLE_NAME;
+}
+
+function getCharacterCollectibleImage(character) {
+  return character?.collectibleImage || DEFAULT_COLLECTIBLE_IMAGE;
+}
 
 function formatCollectibleLabel(collectibleName) {
   if (!collectibleName) return "Treasures found!";
@@ -27,12 +38,6 @@ function getCollectibleSingular(collectibleName) {
   if (collectibleName === "music notes") return "music note";
   if (collectibleName.endsWith("s")) return collectibleName.slice(0, -1);
   return collectibleName;
-}
-
-function formatCollectGoal(character) {
-  const count = getDucksForSlide(0);
-  const name = character?.collectibleName || "ducks";
-  return `Find ${count} hidden ${name} in these pictures!`;
 }
 
 /**
@@ -62,11 +67,18 @@ const COLLECTIBLE_LAYOUTS = [
   ]
 ];
 
+const COLLECTIBLES_PER_SLIDE = COLLECTIBLE_LAYOUTS[0].length;
+
+function formatCollectGoal(character) {
+  const name = getCharacterCollectibleName(character);
+  return `Find ${COLLECTIBLES_PER_SLIDE} hidden ${name} in these pictures!`;
+}
+
 function getCollectMessages(character) {
   return character?.collectMessages || DEFAULT_COLLECT_MESSAGES;
 }
 
-function getDucksForSlide(slideIndex) {
+function getCollectibleCountForSlide(slideIndex) {
   return COLLECTIBLE_LAYOUTS[slideIndex % COLLECTIBLE_LAYOUTS.length].length;
 }
 
@@ -74,25 +86,25 @@ function makeCollectibleId(loc, imageIndex, itemIndex) {
   return `${loc.name}:${imageIndex}:${itemIndex}`;
 }
 
-function countDucksForLocation(loc) {
+function countCollectiblesForLocation(loc) {
   const images = loc.images || [];
   let total = 0;
   for (let i = 0; i < images.length; i++) {
-    total += getDucksForSlide(i);
+    total += getCollectibleCountForSlide(i);
   }
   return total;
 }
 
-function countDucksForTour(locations) {
-  return locations.reduce((sum, loc) => sum + countDucksForLocation(loc), 0);
+function countCollectiblesForTour(locations) {
+  return locations.reduce((sum, loc) => sum + countCollectiblesForLocation(loc), 0);
 }
 
-function countCollectedDucksForLocation(loc, collectedItems) {
+function countCollectedCollectiblesForLocation(loc, collectedItems) {
   const images = loc.images || [];
   let count = 0;
   for (let imageIndex = 0; imageIndex < images.length; imageIndex++) {
-    const ducks = COLLECTIBLE_LAYOUTS[imageIndex % COLLECTIBLE_LAYOUTS.length];
-    for (let itemIndex = 0; itemIndex < ducks.length; itemIndex++) {
+    const layout = COLLECTIBLE_LAYOUTS[imageIndex % COLLECTIBLE_LAYOUTS.length];
+    for (let itemIndex = 0; itemIndex < layout.length; itemIndex++) {
       if (collectedItems.has(makeCollectibleId(loc, imageIndex, itemIndex))) {
         count++;
       }
@@ -102,13 +114,9 @@ function countCollectedDucksForLocation(loc, collectedItems) {
 }
 
 function isLocationFullyCollected(loc, collectedItems) {
-  const total = countDucksForLocation(loc);
+  const total = countCollectiblesForLocation(loc);
   if (total === 0) return false;
-  return countCollectedDucksForLocation(loc, collectedItems) === total;
-}
-
-function countFullyClearedLocations(locations, collectedItems) {
-  return locations.filter((loc) => isLocationFullyCollected(loc, collectedItems)).length;
+  return countCollectedCollectiblesForLocation(loc, collectedItems) === total;
 }
 
 function getStarRating(score, maxScore) {
@@ -188,7 +196,7 @@ class FinalScreen extends AbstractScreen {
     super("final-screen");
     this.finalScore = document.getElementById("final-score");
     this.finalStars = document.getElementById("final-stars");
-    this.finalDucksSummary = document.getElementById("final-ducks-summary");
+    this.finalCollectSummary = document.getElementById("final-collect-summary");
     this.finalCharacterMessage = document.getElementById("final-character-message");
     this.confettiLayer = document.getElementById("confetti-layer");
     this.restartBtn = document.getElementById("restart-btn");
@@ -212,7 +220,7 @@ class FinalScreen extends AbstractScreen {
   show(summary) {
     super.show();
     const { score, maxScore, character, collectibleName } = summary;
-    const itemsName = collectibleName || character?.collectibleName || "ducks";
+    const itemsName = collectibleName || getCharacterCollectibleName(character);
 
     this.renderStars(getStarRating(score, maxScore));
     this.finalScore.textContent = String(score);
@@ -224,7 +232,7 @@ class FinalScreen extends AbstractScreen {
     if (maxScore > 0 && score === maxScore) {
       itemsSummary += " Super Explorer!";
     }
-    this.finalDucksSummary.textContent = itemsSummary;
+    this.finalCollectSummary.textContent = itemsSummary;
 
     const characterName = character ? character.name : "Your guide";
     this.finalCharacterMessage.textContent = `${characterName} is proud of your adventure!`;
@@ -466,7 +474,8 @@ class GameplayScreen extends AbstractScreen {
   }
 
   /**
-   * Resevered for DEBUG location when the coordinate is not working (do not remove this function)
+   * Reserved for DEBUG location when the coordinate is not working (do not remove this function).
+   * Enabled only when the URL contains ?debug=coords or ?debug.
    */
   onCanvasClicked() {
     const handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
@@ -490,7 +499,9 @@ class GameplayScreen extends AbstractScreen {
 
   initEventListeners() {
     this.viewer.scene.postRender.addEventListener(this.positionPinPanel.bind(this));
-    this.onCanvasClicked();
+    if (DEBUG_COORDS) {
+      this.onCanvasClicked();
+    }
 
     this.nextBtn.addEventListener("click", () => this.goNext());
     this.prevBtn.addEventListener("click", () => this.goPrev());
@@ -703,17 +714,16 @@ class GameplayScreen extends AbstractScreen {
     if (this.clearedLocations.has(loc.name)) return;
 
     this.clearedLocations.add(loc.name);
-    const itemsName = this.character?.collectibleName || "ducks";
+    const itemsName = getCharacterCollectibleName(this.character);
     this.showAchievementToast(`All ${itemsName} found at ${loc.name}!`);
   }
 
   buildFinalizeSummary() {
     return {
       score: this.score,
-      maxScore: countDucksForTour(this.locations),
+      maxScore: countCollectiblesForTour(this.locations),
       character: this.character,
-      collectibleName: this.character?.collectibleName || "ducks",
-      locationsCleared: countFullyClearedLocations(this.locations, this.collectedItems)
+      collectibleName: getCharacterCollectibleName(this.character)
     };
   }
 
@@ -796,9 +806,6 @@ class GameplayScreen extends AbstractScreen {
     const images = loc ? loc.images || [] : [];
 
     if (images.length === 0) {
-      if (this.detailsCollectGoal) {
-        this.detailsCollectGoal.hidden = true;
-      }
       this.detailsSlideshow.replaceChildren(cloneTemplate("tpl-slideshow-empty"));
       return;
     }
@@ -836,8 +843,8 @@ class GameplayScreen extends AbstractScreen {
   /** Returns an array of collectible button elements for the current slide. */
   buildCollectibles(loc) {
     const buttons = [];
-    const imageUrl = this.character?.collectibleImage || "/assets/duck.svg";
-    const singular = getCollectibleSingular(this.character?.collectibleName);
+    const imageUrl = getCharacterCollectibleImage(this.character);
+    const singular = getCollectibleSingular(getCharacterCollectibleName(this.character));
     this.getCollectiblesForSlide(this.slideshowIndex).forEach((item, itemIndex) => {
       const itemId = this.getCollectibleId(loc, this.slideshowIndex, itemIndex);
       if (this.collectedItems.has(itemId)) return;
@@ -900,7 +907,7 @@ class GameplayScreen extends AbstractScreen {
     if (this.character) {
       this.avatar.src = this.character.avatarUrl;
       if (this.scoreCollectibleIcon) {
-        this.scoreCollectibleIcon.src = this.character.collectibleImage || "/assets/duck.svg";
+        this.scoreCollectibleIcon.src = getCharacterCollectibleImage(this.character);
       }
     }
   }
@@ -1019,12 +1026,21 @@ class GameplayScreen extends AbstractScreen {
     );
   }
 
-  flyToCameraOffset(loc, { duration = FLIGHT_DURATION_SECONDS, onComplete, onCancel } = {}) {
+  flyToLocationCamera(loc, { duration = FLIGHT_DURATION_SECONDS, instant = false, onComplete, onCancel } = {}) {
     const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
     const boundingSphere = new Cesium.BoundingSphere(target, 1);
     const cameraOffset = this.getCameraOffset(loc);
 
     this.viewer.camera.cancelFlight();
+
+    if (instant) {
+      this.viewer.camera.viewBoundingSphere(boundingSphere, cameraOffset);
+      this.viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+      this.applyTargetVerticalOffset(loc.height);
+      if (onComplete) onComplete();
+      return;
+    }
+
     this.viewer.camera.flyToBoundingSphere(boundingSphere, {
       duration,
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
@@ -1039,6 +1055,12 @@ class GameplayScreen extends AbstractScreen {
         if (onCancel) onCancel();
       }
     });
+  }
+
+  finishLocationArrival(loc, index) {
+    this.currentIndex = index;
+    this.updatePanel(index);
+    this.showPinPanel();
   }
 
   hidePinPanel() {
@@ -1098,23 +1120,18 @@ class GameplayScreen extends AbstractScreen {
 
   flyToLocation(index, { instant = false } = {}) {
     const loc = this.locations[index];
-    const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
-    const boundingSphere = new Cesium.BoundingSphere(target, 1);
-    const cameraOffset = this.getCameraOffset(loc);
 
     if (this.isDetailViewActive || this.detailsModal.classList.contains("visible")) {
       this.hideDetailsPopup({ restoreCamera: false });
     }
     this.clearOverviewCamera();
+    this.setPin(loc, index);
 
     if (instant) {
-      this.viewer.camera.viewBoundingSphere(boundingSphere, cameraOffset);
-      this.viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-      this.applyTargetVerticalOffset(loc.height);
-      this.currentIndex = index;
-      this.updatePanel(index);
-      this.setPin(loc, index);
-      this.showPinPanel();
+      this.flyToLocationCamera(loc, {
+        instant: true,
+        onComplete: () => this.finishLocationArrival(loc, index)
+      });
       return;
     }
 
@@ -1122,27 +1139,17 @@ class GameplayScreen extends AbstractScreen {
     this.setButtonsEnabled(false);
     this.hidePinPanel();
 
-    this.viewer.camera.cancelFlight();
-    this.viewer.camera.flyToBoundingSphere(boundingSphere, {
-      duration: FLIGHT_DURATION_SECONDS,
-      easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
-      offset: cameraOffset,
-      maximumHeight: MAX_FLIGHT_HEIGHT_METERS,
-      pitchAdjustHeight: 10,
-      complete: () => {
-        this.applyTargetVerticalOffset(loc.height);
+    this.flyToLocationCamera(loc, {
+      onComplete: () => {
         this.isFlying = false;
         this.setButtonsEnabled(true);
-        this.currentIndex = index;
-        this.updatePanel(index);
-        this.showPinPanel();
+        this.finishLocationArrival(loc, index);
       },
-      cancel: () => {
+      onCancel: () => {
         this.isFlying = false;
         this.setButtonsEnabled(true);
       }
     });
-    this.setPin(loc, index);
   }
 
   /**
@@ -1171,16 +1178,14 @@ class GameplayScreen extends AbstractScreen {
       return;
     }
 
-    this.currentIndex += 1;
-    this.flyToLocation(this.currentIndex);
+    this.flyToLocation(this.currentIndex + 1);
   }
 
   goPrev() {
     if (!this.isActive || this.isFlying) return;
     if (this.currentIndex === 0) return;
 
-    this.currentIndex -= 1;
-    this.flyToLocation(this.currentIndex);
+    this.flyToLocation(this.currentIndex - 1);
   }
 }
 
