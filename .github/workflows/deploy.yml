@@ -31,10 +31,14 @@ jobs:
       # 3. Insert your Build Steps here if you use a framework (React, Vite, etc.)
       # If you are using plain HTML/CSS, you can skip this step.
       # For example: 
-      # - name: Build Site
-      #   run: |
-      #     npm install
-      #     npm run build
+      - name: Build Site
+        run: |
+          mkdir build
+          cp -r index.html build/
+          cp -r assets build/
+          cp -r locations.js build/
+          cp -r script.js build/
+          cp -r style.css build/
 
       # 4. Run gh-pages-multibranch to merge this branch into the directory
       - name: Arrange Multi-Branch Layout
@@ -42,7 +46,7 @@ jobs:
         with:
           # Change 'dist' or 'build' to match your static files folder. 
           # Use '.' if your plain HTML files sit in the root folder.
-          directory: .
+          directory: build
           default_branch: main
 
       # 5. Push the compiled multi-branch folder back to the gh-pages branch
@@ -50,4 +54,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
+          publish_dir: build
