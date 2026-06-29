@@ -42,7 +42,7 @@ jobs:
         with:
           # Change 'dist' or 'build' to match your static files folder. 
           # Use '.' if your plain HTML files sit in the root folder.
-          directory: . 
+          directory: .
           default_branch: main
 
       # 5. Push the compiled multi-branch folder back to the gh-pages branch
@@ -50,4 +50,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: . # Must match the directory specified above
+          publish_dir: .
