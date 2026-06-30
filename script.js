@@ -15,10 +15,121 @@ const FLIGHT_DURATION_SECONDS = 2;
 const DETAIL_FLIGHT_DURATION_SECONDS = 1;
 const MAX_FLIGHT_HEIGHT_METERS = 3000000;
 const TARGET_SCREEN_POSITION_FROM_BOTTOM = 0.3;
-const DEFAULT_COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got it!"];
+const COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got it!"];
+const SELECT_BUTTON_LABEL = "Pick me!";
 const DEFAULT_COLLECTIBLE_NAME = "treasures";
-const DEFAULT_COLLECTIBLE_IMAGE = "assets/collectible-lantern.svg";
+const DEFAULT_COLLECTIBLE_IMAGE = "assets/collectible-coin.svg";
+const DEFAULT_AVATAR_IMAGE = "assets/avatar-princess.svg";
 const DEBUG_COORDS = new URLSearchParams(location.search).has("debug");
+
+/** Google Apps Script Web App URL — replace after deploying apps-script/Code.gs */
+const CHARACTERS_DATA_URL = "https://script.google.com/macros/s/AKfycby-iKxGO8dQGPMg6rPlSzlc09dflN7uoe_CwPpyRc2j29FT6JtmZkL4D_Q4ub323BUT/exec";
+
+/** Character guides loaded from the Google Sheet at runtime. */
+let CHARACTERS = [];
+
+const CHARACTERS_CACHE_KEY = "charactersCache";
+
+function splitCell(value) {
+  return String(value || "")
+    .split("|")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function isSafeMediaUrl(url) {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith("assets/") || trimmed.startsWith("./assets/")) {
+    return true;
+  }
+  try {
+    const parsed = new URL(trimmed, window.location.href);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeMediaUrl(url) {
+  return isSafeMediaUrl(url) ? url.trim() : "";
+}
+
+/**
+ * Accepts a full YouTube URL (watch, youtu.be, embed, shorts) or a bare video
+ * id and returns just the 11-char video id, or "" if none can be found.
+ */
+function extractYouTubeId(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
+  try {
+    const url = new URL(raw, window.location.href);
+    const host = url.hostname.replace(/^www\./, "");
+    if (host === "youtu.be") {
+      return url.pathname.slice(1, 12);
+    }
+    if (host.endsWith("youtube.com")) {
+      const v = url.searchParams.get("v");
+      if (v) return v;
+      const match = url.pathname.match(/\/(?:embed|shorts|v)\/([A-Za-z0-9_-]{11})/);
+      if (match) return match[1];
+    }
+  } catch {
+    /* not a parseable URL */
+  }
+  const fallback = raw.match(/[A-Za-z0-9_-]{11}/);
+  return fallback ? fallback[0] : "";
+}
+
+function getYouTubeEmbedUrl(character) {
+  const id = extractYouTubeId(character?.youtubeUrl);
+  return id ? `https://www.youtube.com/embed/${id}` : "";
+}
+
+function normalizeCharacters(data) {
+  return (data.characters || []).map((character) => ({
+    ...character,
+    avatarUrl: sanitizeMediaUrl(character.avatarUrl),
+    collectibleImage: sanitizeMediaUrl(character.collectibleImage),
+    locations: (character.locations || []).map((location) => {
+      const images = Array.isArray(location.images)
+        ? location.images
+        : splitCell(location.images);
+      const normalized = {
+        ...location,
+        lat: Number(location.lat),
+        lon: Number(location.lon),
+        height: Number(location.height),
+        images: images.map(sanitizeMediaUrl).filter(Boolean),
+      };
+      if (location.heading === "" || location.heading == null) {
+        delete normalized.heading;
+      } else {
+        normalized.heading = Number(location.heading);
+      }
+      return normalized;
+    }),
+  }));
+}
+
+async function loadCharacters() {
+  const response = await fetch(CHARACTERS_DATA_URL, { redirect: "follow" });
+  if (!response.ok) {
+    throw new Error(`Failed to load characters (${response.status})`);
+  }
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(data.error);
+  }
+  CHARACTERS = normalizeCharacters(data);
+  try {
+    localStorage.setItem(CHARACTERS_CACHE_KEY, JSON.stringify(CHARACTERS));
+  } catch {
+    // localStorage may be unavailable in some embed contexts
+  }
+}
 
 function prefersReducedMotion() {
   return window.matchMedia &&
@@ -35,6 +146,10 @@ function getCharacterCollectibleName(character) {
 
 function getCharacterCollectibleImage(character) {
   return character?.collectibleImage || DEFAULT_COLLECTIBLE_IMAGE;
+}
+
+function getCharacterAvatarImage(character) {
+  return character?.avatarUrl || DEFAULT_AVATAR_IMAGE;
 }
 
 function formatCollectibleLabel(collectibleName) {
@@ -86,8 +201,8 @@ function formatCollectGoal(character) {
   return `Find ${COLLECTIBLES_PER_SLIDE} hidden ${name} in these pictures!`;
 }
 
-function getCollectMessages(character) {
-  return character?.collectMessages || DEFAULT_COLLECT_MESSAGES;
+function getCollectMessages() {
+  return COLLECT_MESSAGES;
 }
 
 function getCollectibleCountForSlide(slideIndex) {
@@ -364,7 +479,7 @@ class CharacterSelectScreen extends AbstractScreen {
       const iframe = document.createElement("iframe");
       iframe.width = "100%";
       iframe.height = "100%";
-      iframe.src = `https://www.youtube.com/embed/${character.youtubeId}`;
+      iframe.src = getYouTubeEmbedUrl(character);
       iframe.title = character.name;
       iframe.frameBorder = "0";
       iframe.allow = "autoplay;";
@@ -389,7 +504,7 @@ class CharacterSelectScreen extends AbstractScreen {
       selectBtn.className = "btn-accent character-select-btn";
       selectBtn.type = "button";
       selectBtn.dataset.character = character.id;
-      selectBtn.textContent = character.selectButtonLabel || "Pick me!";
+      selectBtn.textContent = SELECT_BUTTON_LABEL;
 
       selectBtn.addEventListener("click", (e) => {
         const characterId = e.target.dataset.character;
@@ -1038,7 +1153,7 @@ class GameplayScreen extends AbstractScreen {
 
     const feedback = document.createElement("span");
     feedback.className = "collect-feedback";
-    const messages = getCollectMessages(this.character);
+    const messages = getCollectMessages();
     feedback.textContent = messages[(this.score - 1) % messages.length];
     feedback.setAttribute("aria-hidden", "true");
     feedback.style.left = button.style.left;
@@ -1050,7 +1165,7 @@ class GameplayScreen extends AbstractScreen {
   updateScore() {
     this.scoreValue.textContent = String(this.score);
     if (this.character) {
-      this.avatar.src = this.character.avatarUrl;
+      this.avatar.src = getCharacterAvatarImage(this.character);
       if (this.scoreCollectibleIcon) {
         this.scoreCollectibleIcon.src = getCharacterCollectibleImage(this.character);
       }
@@ -1521,8 +1636,47 @@ class EmbedFullscreenController {
   }
 }
 
+function showStartupLoading() {
+  const loadingScreen = document.getElementById("loading-screen");
+  if (!loadingScreen) return;
+  const loadingText = loadingScreen.querySelector(".loading-text");
+  if (loadingText) loadingText.textContent = "Gathering your guides...";
+  loadingScreen.classList.remove("hidden");
+  loadingScreen.setAttribute("aria-hidden", "false");
+}
+
+function hideStartupLoading() {
+  const loadingScreen = document.getElementById("loading-screen");
+  if (!loadingScreen) return;
+  loadingScreen.classList.add("hidden");
+  loadingScreen.setAttribute("aria-hidden", "true");
+  const loadingText = loadingScreen.querySelector(".loading-text");
+  if (loadingText) loadingText.textContent = "Preparing your adventure...";
+}
+
 // Initialize the application controller
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   new EmbedFullscreenController();
+  showStartupLoading();
+  try {
+    await loadCharacters();
+  } catch (error) {
+    console.error(error);
+    try {
+      const cached = localStorage.getItem(CHARACTERS_CACHE_KEY);
+      if (cached) {
+        CHARACTERS = JSON.parse(cached);
+      }
+    } catch {
+      // ignore cache parse errors
+    }
+  } finally {
+    hideStartupLoading();
+  }
+  if (!CHARACTERS.length) {
+    document.body.innerHTML =
+      "<p style='padding:2rem;font-family:sans-serif'>Could not load adventure data. Please try again later.</p>";
+    return;
+  }
   new GameController();
 });

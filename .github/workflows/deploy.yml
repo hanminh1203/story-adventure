@@ -36,7 +36,6 @@ jobs:
           mkdir build
           cp -r index.html build/
           cp -r assets build/
-          cp -r locations.js build/
           cp -r script.js build/
           cp -r style.css build/
 
