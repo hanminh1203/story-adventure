@@ -104,11 +104,6 @@ function normalizeCharacters(data) {
         height: Number(location.height),
         images: images.map(sanitizeMediaUrl).filter(Boolean),
       };
-      if (location.heading === "" || location.heading == null) {
-        delete normalized.heading;
-      } else {
-        normalized.heading = Number(location.heading);
-      }
       return normalized;
     }),
   }));
@@ -1285,7 +1280,7 @@ class GameplayScreen extends AbstractScreen {
 
   getCameraOffset(loc) {
     return new Cesium.HeadingPitchRange(
-      Cesium.Math.toRadians(loc.heading || 0),
+      0,
       Cesium.Math.toRadians(-50),
       loc.height
     );
