@@ -13,17 +13,14 @@ One row per character guide.
 |--------|-------------|---------|
 | `name` | Display name. **Locations link to a character by this name.** | `Tjingeling` |
 | `title` | Subtitle on character card | `The Latern Traveller` |
-| `avatarCell` | **In-cell image** for the avatar (Insert → Image → Image in cell). If empty, the website shows a default **princess** avatar. | _(image in cell)_ |
+| `avatarCell` | Avatar image, read **straight from the cell**: either an **in-cell image** (Insert → Image → Image in cell) or a pasted URL / `assets/...` path. If empty, the website shows a default **princess** avatar. | _(image in cell)_ or `https://example.com/a.jpg` |
 | `youtubeUrl` | Full YouTube link (watch, youtu.be, embed, or shorts) | `https://www.youtube.com/watch?v=y_92xI5zY8g` |
 | `themeColor` | Hex accent color | `#ffd84d` |
-| `collectibleCell` | **In-cell image** for the collectible icon. If empty, the website shows a default **shining coin**. | _(image in cell)_ |
+| `collectibleCell` | Collectible icon, read **straight from the cell**: either an **in-cell image** or a pasted URL / `assets/...` path. If empty, the website shows a default **shining coin**. | _(image in cell)_ or `https://example.com/c.png` |
 | `collectibleName` | Plural label in score UI | `lanterns` |
-| `avatarUrl` | **Auto-filled URL** mirroring `avatarCell`. The script writes the in-cell image's temporary URL here (on edit, and on first read if empty). Usually leave blank. | _(auto)_ |
-| `collectibleUrl` | **Auto-filled URL** mirroring `collectibleCell`. Same behavior as `avatarUrl`. Usually leave blank. | _(auto)_ |
 
-> Put the two URL columns (`avatarUrl`, `collectibleUrl`) **at the end** of the table. If a
-> URL column already holds a value, it is used as-is; otherwise the script reads the matching
-> in-cell image, caches its temporary URL into the column, and uses that.
+> `avatarCell` and `collectibleCell` are read directly on each request — no
+> separate URL columns are needed, and nothing is written back to the sheet.
 
 > Note: collectible toast messages and the character-card button label are defined in
 > code (`COLLECT_MESSAGES` and `SELECT_BUTTON_LABEL` in `script.js`), not on this sheet.
@@ -65,8 +62,7 @@ appear in the slideshow in **row order**.
 | Column | Description | Example |
 |--------|-------------|---------|
 | `Location` | **Dropdown** of location names (data validation from `Locations!name`). This is the foreign key that links the image to a location. | `Eiffel Tower` |
-| `imageCell` | **In-cell image** (Insert → Image → Image in cell). When added/changed, the script writes its temporary URL into `imageUrl`. | _(image in cell)_ |
-| `imageUrl` | **URL column** mirroring `imageCell` (lives at the end of the table). If it already has a value (a reference URL, `assets/...` path, or a cached in-cell URL) it is used as-is; otherwise the script fills it from `imageCell`. | `https://example.com/a.jpg` |
+| `image` | One column for the photo, read **straight from the cell**: either an **in-cell image** (Insert → Image → Image in cell) or a plain URL / `assets/...` path. The script resolves whichever the cell holds. | _(image in cell)_ or `https://example.com/a.jpg` |
 
 The manager picks a `Location` from the dropdown. The script attaches the image to the
 location whose `name` matches that dropdown value — no id/formula column is needed.
@@ -77,53 +73,51 @@ location whose `name` matches that dropdown value — no id/formula column is ne
 2. **Data → Data validation → Add rule**.
 3. Criteria: **Dropdown (from a range)** → `Locations!B2:B` (the `name` column).
 
-## In-cell images
+## Images: in-cell image or URL
 
-You can add pictures directly in the sheet instead of pasting URLs:
+Each image column (`avatarCell`, `collectibleCell`, `image`) accepts **either** an in-cell
+image **or** a plain URL — the script reads whichever the cell holds, on each request.
 
-1. Click the target cell in an image column (`avatarCell`, `collectibleCell`, or `imageCell`).
+To add a picture directly in the sheet:
+
+1. Click the target image cell.
 2. **Insert → Image → Image in cell** (or the 📷 *Insert image* menu → *Insert image in cell*).
 3. Upload a file or pick from Drive/by URL.
 
+Or just paste a full URL / `assets/...` path into the same cell instead.
+
 How it is used:
 
-- The Apps Script reads the in-cell image and returns a **temporary Google-hosted URL**
-  (`CellImage.getContentUrl()`) that the website loads as the photo.
-- Every image column has a matching **URL column at the end of its table**
-  (`avatarCell`→`avatarUrl`, `collectibleCell`→`collectibleUrl`, `imageCell`→`imageUrl`):
-  - On **edit**, when you add/change an in-cell image, the on-edit trigger writes its
-    temporary URL into the matching URL column. Removing the image clears it.
-  - On **read** (Web App fetch), if the URL column already has a value it is used as-is;
-    otherwise the script reads the in-cell image, caches its URL into the column, and uses it.
-- For `Characters`, if both the image cell and URL column are empty, the website shows a
-  built-in default (princess avatar / shining coin).
-- Temporary in-cell URLs can expire; re-adding the image (or clearing the URL column so it is
-  re-resolved) refreshes them.
-- The Sheet must remain accessible to the Web App owner (it runs as **Me**), since the
-  content URL is tied to that account.
+- For an **in-cell image**, the Apps Script returns a **temporary Google-hosted URL**
+  (`CellImage.getContentUrl()`) that the website loads as the photo. For a **text value**, the
+  cell's URL / path is used as-is.
+- Images are resolved **straight from the cell on every Web App fetch** — there are no separate
+  URL columns and the script never writes image URLs back to the sheet.
+- For `Characters`, if the image cell is empty, the website shows a built-in default
+  (princess avatar / shining coin).
+- The Sheet must remain accessible to the Web App owner (it runs as **Me**), since an in-cell
+  image's content URL is tied to that account.
 
-> **Setup:** the on-edit behavior (image-URL caching and location geocoding) runs from an
-> **installable trigger**. In the Apps Script editor, run **`setupTriggers`** once and approve
-> the permissions. A plain `onEdit` simple trigger cannot use Maps geocoding or write cells.
-> Running `setupTriggers` also installs a **nightly** trigger (`runFullSync`, ~midnight in the
-> script's timezone) that re-runs the same automation across every row.
+> **Setup:** the location geocoding runs from an **installable trigger**. In the Apps Script
+> editor, run **`setupTriggers`** once and approve the permissions. A plain `onEdit` simple
+> trigger cannot use Maps geocoding or write cells. Running `setupTriggers` also installs a
+> **nightly** trigger (`runFullSync`, ~midnight in the script's timezone) that re-geocodes every
+> location.
 
 ### Running the automation nightly and on demand
 
-The same automation runs in three ways:
+The location geocoding runs in three ways:
 
-- **On edit** — when you change a single cell (handled by `handleEdit`).
-- **Nightly** — `runFullSync` runs automatically around midnight. This refreshes expiring
-  in-cell image URLs and re-geocodes every location. It is installed automatically when you run
-  **`setupTriggers`** (no extra setup needed).
+- **On edit** — when you change a Locations `name` cell (handled by `handleEdit`).
+- **Nightly** — `runFullSync` runs automatically around midnight and re-geocodes every location.
+  It is installed automatically when you run **`setupTriggers`** (no extra setup needed).
 - **Manually from the Sheet** — open the Sheet and use the menu
   **Story Adventures → Refresh all data now** (added by `onOpen`). The first time you click it
   Google asks you to authorize the script.
 
 > The full sync **re-geocodes every location and overwrites** its `latitude`/`longitude`/`height`
 > (so any manual coordinate tweaks are replaced by the fresh geocoded values — locations whose
-> name can't be geocoded are left untouched). For image columns it only overwrites a URL cell when
-> that cell holds an in-cell image, so manually pasted URLs / `assets/...` paths are preserved.
+> name can't be geocoded are left untouched). Image cells are never modified.
 
 > If the **Story Adventures** menu does not appear, reload the Sheet (the `onOpen` trigger runs on
 > open). If the nightly run isn't firing, re-run **`setupTriggers`** in the Apps Script editor.
@@ -137,7 +131,7 @@ collectible toast messages live in code, not on the sheet.
 
 - Just type the place into the Locations `name` column — `latitude`/`longitude` fill in automatically (override them manually if the geocoded spot is slightly off).
 - Give each location a unique `name` on the `Locations` tab; the `Images` tab matches on it.
-- Add a photo: go to the `Images` tab, pick the `Location` from the dropdown, then add an in-cell image (or paste a URL in `imageUrl`).
+- Add a photo: go to the `Images` tab, pick the `Location` from the dropdown, then add an in-cell image (or paste a URL) in the `image` column.
 - Reorder photos by moving rows up/down within the `Images` tab.
 - Changes appear on the live site after visitors **refresh** the page (no redeploy).
 - Share the sheet with **Editor** access only for people who should change content.

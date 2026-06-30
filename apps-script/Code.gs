@@ -7,14 +7,19 @@
  * IMPORTANT — one-time setup for the edit automation:
  *   Run setupTriggers() once from the Apps Script editor and grant the
  *   permissions it asks for. This installs:
- *     - an on-edit trigger (handleEdit) that reacts to individual cell edits, and
- *     - a nightly time-based trigger (runFullSync) that re-runs the same
- *       automation across every row (handy for refreshing expiring in-cell
- *       image URLs and filling in any missing coordinates).
- *   Both run with full authorization, which the geocoding (Maps) and in-cell
- *   image reading require — a plain simple onEdit trigger is not allowed to use
- *   them. The same full sync can also be triggered manually from the Sheet via
- *   the "Story Adventures → Refresh all data now" menu (added by onOpen).
+ *     - an on-edit trigger (handleEdit) that geocodes the Locations "name"
+ *       column into latitude/longitude, and
+ *     - a nightly time-based trigger (runFullSync) that re-geocodes every
+ *       Locations row (handy for filling in any missing coordinates).
+ *   Both run with full authorization, which the geocoding (Maps) requires — a
+ *   plain simple onEdit trigger is not allowed to use it. The same full sync can
+ *   also be triggered manually from the Sheet via the
+ *   "Story Adventures → Refresh all data now" menu (added by onOpen).
+ *
+ *   Image columns are read straight from the cell on each Web App request
+ *   (doGet): a cell may hold an in-cell image (Insert → Image → Image in cell)
+ *   or a plain URL / assets path, and the script resolves whichever is present.
+ *   No URL caching columns or image triggers are needed.
  *
  * Sheet tabs required:
  *   - Characters
@@ -33,17 +38,6 @@ var CHARACTERS_SHEET = 'Characters';
 var LOCATIONS_SHEET = 'Locations';
 var IMAGES_SHEET = 'Images';
 
-/**
- * Maps each in-cell image column to the plain-text URL column that mirrors it.
- * The URL column lives at the end of the same table and caches the temporary
- * Google-hosted URL of the in-cell image.
- */
-var IMAGE_URL_COLUMNS = {
-  avatarCell: 'avatarUrl',
-  collectibleCell: 'collectibleUrl',
-  imageCell: 'imageUrl'
-};
-
 // Hour of day (0–23, script timezone) for the nightly runFullSync trigger.
 // The trigger fires within the hour starting here, i.e. between 00:00–01:00.
 var NIGHTLY_TRIGGER_HOUR = 0;
@@ -51,6 +45,7 @@ var NIGHTLY_TRIGGER_HOUR = 0;
 // Custom Sheet menu (added by onOpen) for running the full sync on demand.
 var MENU_TITLE = 'Story Adventures';
 var MENU_REFRESH_ITEM = 'Refresh all data now';
+var MENU_VALIDATE_ITEM = 'Validate sheet data';
 
 // Multiplier applied to a geocoding result's viewport diagonal to derive the
 // camera height, so the whole place comfortably fits in frame (>1 adds margin).
@@ -88,12 +83,11 @@ function readCharacters() {
     return {
       name: String(row.name || '').trim(),
       title: String(row.title || '').trim(),
-      // Use the cached URL column if present; otherwise resolve the in-cell
-      // image, write the temporary URL back into the URL column, and use it.
-      avatarUrl: resolveImageUrl(table, record, 'avatarCell'),
+      // Read straight from the cell: an in-cell image or a pasted URL.
+      avatarUrl: cellToImageUrl(row.avatarCell),
       youtubeUrl: String(row.youtubeUrl || '').trim(),
       themeColor: String(row.themeColor || '').trim(),
-      collectibleImage: resolveImageUrl(table, record, 'collectibleCell'),
+      collectibleImage: cellToImageUrl(row.collectibleCell),
       collectibleName: String(row.collectibleName || '').trim()
     };
   }).filter(function (c) { return c.name; }).map(function (character, index) {
@@ -143,9 +137,8 @@ function readImages() {
   var byName = {};
   table.rows.forEach(function (record) {
     var row = record.data;
-    // Use the cached imageUrl column if present; otherwise resolve the in-cell
-    // image, write the temporary URL back into imageUrl, and use it.
-    var url = resolveImageUrl(table, record, 'imageCell');
+    // Single "image" column holds either an in-cell image or a plain URL.
+    var url = cellToImageUrl(row.image);
     if (!url) return;
     // Foreign key: Images."Location" matches Locations."name".
     var locationName = String(row.Location || row.location || '').trim();
@@ -196,49 +189,21 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu(MENU_TITLE)
     .addItem(MENU_REFRESH_ITEM, 'runFullSync')
+    .addItem(MENU_VALIDATE_ITEM, 'validateSheets')
     .addToUi();
 }
 
 /**
- * Runs the on-edit automation across every row of every sheet. Used by the
- * nightly trigger and the "Refresh all data now" menu item.
+ * Runs the location automation across every row. Used by the nightly trigger
+ * and the "Refresh all data now" menu item.
  *
- * Mirrors handleEdit, but applied to the whole table instead of a single cell:
- *   - Refreshes the cached image URL for every in-cell image (avatarCell /
- *     collectibleCell / imageCell) so expiring temporary URLs are renewed.
- *     Manually entered URLs (reference links, assets/ paths) are preserved:
- *     a URL column is only overwritten when its cell actually holds an in-cell
- *     image.
- *   - Re-geocodes every Locations row and overwrites its latitude/longitude
- *     (and height), even when those cells were already filled. Rows whose name
- *     can't be geocoded are left as-is.
+ * Re-geocodes every Locations row and overwrites its latitude/longitude (and
+ * height), even when those cells were already filled. Rows whose name can't be
+ * geocoded are left as-is. Image columns need no sync — they are read straight
+ * from the cell on each request.
  */
 function runFullSync() {
-  refreshImageUrls(CHARACTERS_SHEET, ['avatarCell', 'collectibleCell']);
-  refreshImageUrls(IMAGES_SHEET, ['imageCell']);
   refreshLocationCoords();
-}
-
-/**
- * Re-reads every in-cell image in the given columns and writes its current
- * temporary URL into the matching URL column. Skips rows where the image cell
- * has no in-cell image, so any manually entered URL is left as-is.
- */
-function refreshImageUrls(sheetName, cellHeaders) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  if (!ss.getSheetByName(sheetName)) return;
-  var table = readSheet(sheetName);
-  table.rows.forEach(function (record) {
-    cellHeaders.forEach(function (cellHeader) {
-      var cellCol = table.headerMap[cellHeader];
-      var urlCol = table.headerMap[IMAGE_URL_COLUMNS[cellHeader]];
-      if (!cellCol || !urlCol) return;
-      var url = getCellImageUrl(record.data[cellHeader]);
-      if (url) {
-        table.sheet.getRange(record.rowIndex, urlCol).setValue(url);
-      }
-    });
-  });
 }
 
 /**
@@ -251,11 +216,19 @@ function refreshLocationCoords() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss.getSheetByName(LOCATIONS_SHEET)) return;
   var table = readSheet(LOCATIONS_SHEET);
+  if (!table.rows.length) return;
   var nameCol = table.headerMap.name;
   var latCol = table.headerMap.latitude;
   var lonCol = table.headerMap.longitude;
   var heightCol = table.headerMap.height;
   if (!nameCol || (!latCol && !lonCol && !heightCol)) return;
+
+  // Read each target column once, update in memory, write each back once.
+  var span = getDataRowSpan(table);
+  var latValues = latCol ? table.sheet.getRange(span.firstRow, latCol, span.numRows, 1).getValues() : null;
+  var lonValues = lonCol ? table.sheet.getRange(span.firstRow, lonCol, span.numRows, 1).getValues() : null;
+  var heightValues = heightCol ? table.sheet.getRange(span.firstRow, heightCol, span.numRows, 1).getValues() : null;
+  var changed = false;
 
   table.rows.forEach(function (record) {
     var query = String(record.data.name || '').trim();
@@ -263,20 +236,24 @@ function refreshLocationCoords() {
 
     var coords = geocodeLocation(query);
     if (!coords) return;
-    if (latCol) table.sheet.getRange(record.rowIndex, latCol).setValue(coords.lat);
-    if (lonCol) table.sheet.getRange(record.rowIndex, lonCol).setValue(coords.lng);
-    if (heightCol && coords.height != null) {
-      table.sheet.getRange(record.rowIndex, heightCol).setValue(coords.height);
-    }
+    var i = record.rowIndex - span.firstRow;
+    if (latValues) latValues[i][0] = coords.lat;
+    if (lonValues) lonValues[i][0] = coords.lng;
+    if (heightValues && coords.height != null) heightValues[i][0] = coords.height;
+    changed = true;
   });
+
+  if (!changed) return;
+  if (latValues) table.sheet.getRange(span.firstRow, latCol, span.numRows, 1).setValues(latValues);
+  if (lonValues) table.sheet.getRange(span.firstRow, lonCol, span.numRows, 1).setValues(lonValues);
+  if (heightValues) table.sheet.getRange(span.firstRow, heightCol, span.numRows, 1).setValues(heightValues);
 }
 
 /**
- * On-edit handler (installable trigger). Reacts to two kinds of edits:
- *   1. An in-cell image added/changed in avatarCell / collectibleCell / imageCell
- *      → writes the temporary URL into the matching URL column.
- *   2. A location entered in Locations."name" → geocodes it and fills
- *      latitude/longitude (clearing them when empty or not found).
+ * On-edit handler (installable trigger). Reacts to a location entered in
+ * Locations."name" → geocodes it and fills latitude/longitude (clearing them
+ * when empty or not found). Image columns are read straight from the cell on
+ * each request, so they need no on-edit handling.
  */
 function handleEdit(e) {
   if (!e || !e.range) return;
@@ -286,31 +263,9 @@ function handleEdit(e) {
   var col = e.range.getColumn();
   if (row < 2) return; // header row
 
-  var headerMap = getHeaderMap(sheet);
-
-  if (sheetName === CHARACTERS_SHEET) {
-    syncImageUrlOnEdit(sheet, headerMap, row, col, ['avatarCell', 'collectibleCell']);
-  } else if (sheetName === IMAGES_SHEET) {
-    syncImageUrlOnEdit(sheet, headerMap, row, col, ['imageCell']);
-  } else if (sheetName === LOCATIONS_SHEET) {
+  if (sheetName === LOCATIONS_SHEET) {
+    var headerMap = getHeaderMap(sheet);
     syncLocationCoordsOnEdit(sheet, headerMap, row, col);
-  }
-}
-
-/**
- * When an in-cell image column is edited, cache its temporary URL in the
- * matching URL column. Clears the URL column when the image is removed.
- */
-function syncImageUrlOnEdit(sheet, headerMap, row, editedCol, cellHeaders) {
-  for (var i = 0; i < cellHeaders.length; i++) {
-    var cellHeader = cellHeaders[i];
-    var cellCol = headerMap[cellHeader];
-    if (!cellCol || cellCol !== editedCol) continue;
-    var urlCol = headerMap[IMAGE_URL_COLUMNS[cellHeader]];
-    if (!urlCol) continue;
-    var cellValue = sheet.getRange(row, cellCol).getValue();
-    var url = getCellImageUrl(cellValue);
-    sheet.getRange(row, urlCol).setValue(url || '');
   }
 }
 
@@ -432,28 +387,30 @@ function getHeaderMap(sheet) {
 }
 
 /**
- * Resolves the usable URL for an in-cell image column:
- *   - If the matching URL column already holds a value, use it.
- *   - Otherwise read the in-cell image, write its temporary URL back into the
- *     URL column (so it is cached for next time), and use it.
+ * Resolves a cell value to a usable image URL, whatever it holds:
+ *   - an in-cell image (Insert → Image → Image in cell) → its temporary URL, or
+ *   - a plain text value (full URL or assets/ path) → the trimmed text.
+ * Returns '' when the cell is empty or unusable.
  */
-function resolveImageUrl(table, record, cellHeader) {
-  var urlHeader = IMAGE_URL_COLUMNS[cellHeader];
-  var existing = String((record.data[urlHeader] != null ? record.data[urlHeader] : '')).trim();
-  if (existing) return existing;
-
-  var url = getCellImageUrl(record.data[cellHeader]);
-  if (url) {
-    var urlCol = table.headerMap[urlHeader];
-    if (urlCol) {
-      try {
-        table.sheet.getRange(record.rowIndex, urlCol).setValue(url);
-      } catch (err) {
-        // Read-only contexts (rare) just skip the cache write.
-      }
-    }
+function cellToImageUrl(value) {
+  var inCellUrl = getCellImageUrl(value);
+  if (inCellUrl) return inCellUrl;
+  if (value != null && typeof value !== 'object') {
+    return String(value).trim();
   }
-  return url;
+  return '';
+}
+
+/**
+ * Returns the contiguous span of populated data rows for a table read by
+ * readSheet(): { firstRow, numRows }. Used to read/write whole columns at once.
+ * Note: readSheet skips fully-empty rows, so this span can include them; batch
+ * callers read existing values first and only overwrite the rows they touch.
+ */
+function getDataRowSpan(table) {
+  var firstRow = table.rows[0].rowIndex;
+  var lastRow = table.rows[table.rows.length - 1].rowIndex;
+  return { firstRow: firstRow, numRows: lastRow - firstRow + 1 };
 }
 
 /**
