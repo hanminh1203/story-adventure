@@ -40,8 +40,7 @@ function getValidationSchema() {
       { name: 'description', required: false },
       { name: 'latitude', required: false, check: checkLatitude },
       { name: 'longitude', required: false, check: checkLongitude },
-      { name: 'height', required: false, check: checkNonNegativeNumber },
-      { name: 'heading', required: false, check: checkHeading }
+      { name: 'height', required: false, check: checkNonNegativeNumber }
     ],
     Images: [
       { name: 'Location', required: true, foreignKey: { sheet: 'Locations', column: 'name' } },
@@ -197,13 +196,6 @@ function checkNonNegativeNumber(value) {
   var n = Number(value);
   if (isNaN(n)) return '"' + truncateValue(String(value)) + '" is not a number.';
   if (n < 0) return 'Value ' + n + ' must be zero or positive.';
-  return null;
-}
-
-function checkHeading(value) {
-  var n = Number(value);
-  if (isNaN(n)) return 'Heading "' + truncateValue(String(value)) + '" is not a number.';
-  if (n < 0 || n > 360) return 'Heading ' + n + ' is out of range (0 to 360).';
   return null;
 }
 

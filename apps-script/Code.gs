@@ -6,13 +6,10 @@
  *
  * IMPORTANT — one-time setup for the edit automation:
  *   Run setupTriggers() once from the Apps Script editor and grant the
- *   permissions it asks for. This installs:
- *     - an on-edit trigger (handleEdit) that geocodes the Locations "name"
- *       column into latitude/longitude, and
- *     - a nightly time-based trigger (runFullSync) that re-geocodes every
- *       Locations row (handy for filling in any missing coordinates).
- *   Both run with full authorization, which the geocoding (Maps) requires — a
- *   plain simple onEdit trigger is not allowed to use it. The same full sync can
+ *   permissions it asks for. This installs an on-edit trigger (handleEdit) that
+ *   geocodes the Locations "name" column into latitude/longitude. It runs with
+ *   full authorization, which the geocoding (Maps) requires — a plain simple
+ *   onEdit trigger is not allowed to use it. A full re-geocode of every row can
  *   also be triggered manually from the Sheet via the
  *   "Story Adventures → Refresh all data now" menu (added by onOpen).
  *
@@ -37,10 +34,6 @@
 var CHARACTERS_SHEET = 'Characters';
 var LOCATIONS_SHEET = 'Locations';
 var IMAGES_SHEET = 'Images';
-
-// Hour of day (0–23, script timezone) for the nightly runFullSync trigger.
-// The trigger fires within the hour starting here, i.e. between 00:00–01:00.
-var NIGHTLY_TRIGGER_HOUR = 0;
 
 // Custom Sheet menu (added by onOpen) for running the full sync on demand.
 var MENU_TITLE = 'Story Adventures';
@@ -109,7 +102,6 @@ function readLocationsByCharacter(imagesByLocation) {
     if (!characterName) return;
     if (!grouped[characterName]) grouped[characterName] = [];
     var name = String(row.name || '').trim();
-    var heading = row.heading;
     // Images live in the Images sheet, matched by Location name.
     var locationImages = imagesByLocation[name] || [];
     var location = {
@@ -121,9 +113,6 @@ function readLocationsByCharacter(imagesByLocation) {
       height: toNumber(row.height),
       images: locationImages
     };
-    if (heading !== '' && heading != null) {
-      location.heading = toNumber(heading);
-    }
     grouped[characterName].push(location);
   });
   return grouped;
@@ -154,11 +143,10 @@ function readImages() {
  * ------------------------------------------------------------------------ */
 
 /**
- * Installs the automation triggers. Run this once from the Apps Script editor.
- * Safe to re-run: it removes any existing handleEdit / runFullSync triggers
- * first. Installs:
+ * Installs the automation trigger. Run this once from the Apps Script editor.
+ * Safe to re-run: it removes any existing handleEdit trigger (and any leftover
+ * runFullSync time-based trigger from older versions) first. Installs:
  *   - handleEdit  : on-edit trigger (reacts to individual cell edits)
- *   - runFullSync : nightly time-based trigger (~midnight, script timezone)
  */
 function setupTriggers() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -171,12 +159,6 @@ function setupTriggers() {
   ScriptApp.newTrigger('handleEdit')
     .forSpreadsheet(ss)
     .onEdit()
-    .create();
-  // Nightly full refresh in the script's timezone (see NIGHTLY_TRIGGER_HOUR).
-  ScriptApp.newTrigger('runFullSync')
-    .timeBased()
-    .atHour(NIGHTLY_TRIGGER_HOUR)
-    .everyDays(1)
     .create();
 }
 
@@ -194,8 +176,8 @@ function onOpen() {
 }
 
 /**
- * Runs the location automation across every row. Used by the nightly trigger
- * and the "Refresh all data now" menu item.
+ * Runs the location automation across every row. Used by the
+ * "Refresh all data now" menu item.
  *
  * Re-geocodes every Locations row and overwrites its latitude/longitude (and
  * height), even when those cells were already filled. Rows whose name can't be

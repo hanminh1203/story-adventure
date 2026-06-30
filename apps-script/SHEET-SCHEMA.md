@@ -37,7 +37,6 @@ One row per tour stop. Row order within the same character is the **Next / Previ
 | `latitude` | **Auto-filled** from `name` on edit. Geocoded latitude. | `48.8584` |
 | `longitude` | **Auto-filled** from `name` on edit. Geocoded longitude. | `2.2945` |
 | `height` | Camera distance in meters (lower = closer) | `1500` |
-| `heading` | Optional compass degrees | leave blank or `0` |
 
 The manager picks a `Character` from the dropdown. The script groups locations under the
 character whose `name` matches that dropdown value — no id/formula column is needed.
@@ -100,17 +99,13 @@ How it is used:
 
 > **Setup:** the location geocoding runs from an **installable trigger**. In the Apps Script
 > editor, run **`setupTriggers`** once and approve the permissions. A plain `onEdit` simple
-> trigger cannot use Maps geocoding or write cells. Running `setupTriggers` also installs a
-> **nightly** trigger (`runFullSync`, ~midnight in the script's timezone) that re-geocodes every
-> location.
+> trigger cannot use Maps geocoding or write cells.
 
-### Running the automation nightly and on demand
+### Running the automation on demand
 
-The location geocoding runs in three ways:
+The location geocoding runs in two ways:
 
 - **On edit** — when you change a Locations `name` cell (handled by `handleEdit`).
-- **Nightly** — `runFullSync` runs automatically around midnight and re-geocodes every location.
-  It is installed automatically when you run **`setupTriggers`** (no extra setup needed).
 - **Manually from the Sheet** — open the Sheet and use the menu
   **Story Adventures → Refresh all data now** (added by `onOpen`). The first time you click it
   Google asks you to authorize the script.
@@ -120,7 +115,7 @@ The location geocoding runs in three ways:
 > name can't be geocoded are left untouched). Image cells are never modified.
 
 > If the **Story Adventures** menu does not appear, reload the Sheet (the `onOpen` trigger runs on
-> open). If the nightly run isn't firing, re-run **`setupTriggers`** in the Apps Script editor.
+> open).
 
 ## Delimiter rule
 

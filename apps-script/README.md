@@ -6,10 +6,9 @@
 4. Replace the default `Code.gs` with the contents of [Code.gs](Code.gs) in this folder.
 5. In the Apps Script editor, select the **`setupTriggers`** function and **Run** it once, then
    approve the permissions. This installs the on-edit trigger that geocodes the Locations `name`
-   column into `latitude`/`longitude`, plus a **nightly** `runFullSync` trigger (~midnight) that
-   re-geocodes every location. You can also run it on demand from the Sheet via
-   **Story Adventures → Refresh all data now**. (Image columns need no trigger — they are read
-   straight from the cell on each request.)
+   column into `latitude`/`longitude`. You can also re-geocode every location on demand from the
+   Sheet via **Story Adventures → Refresh all data now**. (Image columns need no trigger — they are
+   read straight from the cell on each request.)
 6. **Deploy → New deployment → Web app**
    - Execute as: **Me**
    - Who has access: **Anyone**
