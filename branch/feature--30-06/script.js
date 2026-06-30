@@ -22,8 +22,16 @@ const DEFAULT_COLLECTIBLE_IMAGE = "assets/collectible-coin.svg";
 const DEFAULT_AVATAR_IMAGE = "assets/avatar-princess.svg";
 const DEBUG_COORDS = new URLSearchParams(location.search).has("debug");
 
-/** Google Apps Script Web App URL — replace after deploying apps-script/Code.gs */
-const CHARACTERS_DATA_URL = "https://script.google.com/macros/s/AKfycby-iKxGO8dQGPMg6rPlSzlc09dflN7uoe_CwPpyRc2j29FT6JtmZkL4D_Q4ub323BUT/exec";
+/**
+ * Google Apps Script Web App URL — replace after deploying apps-script/Code.gs.
+ * Resolved from the CHARACTERS_DATA_URL environment variable when available
+ * (e.g. injected at build time via window.ENV or process.env); otherwise the
+ * hardcoded value below is used as a fallback.
+ */
+const CHARACTERS_DATA_URL =
+  (typeof process !== "undefined" && process.env && process.env.CHARACTERS_DATA_URL) ||
+  (typeof window !== "undefined" && window.ENV && window.ENV.CHARACTERS_DATA_URL) ||
+  "https://script.google.com/macros/s/AKfycby-iKxGO8dQGPMg6rPlSzlc09dflN7uoe_CwPpyRc2j29FT6JtmZkL4D_Q4ub323BUT/exec";
 
 /** Character guides loaded from the Google Sheet at runtime. */
 let CHARACTERS = [];
