@@ -16,6 +16,26 @@ const DETAIL_FLIGHT_DURATION_SECONDS = 1;
 const MAX_FLIGHT_HEIGHT_METERS = 3000000;
 const TARGET_SCREEN_POSITION_FROM_BOTTOM = 0.3;
 const DEFAULT_COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got it!"];
+const DEFAULT_COLLECTIBLE_NAME = "treasures";
+const DEFAULT_COLLECTIBLE_IMAGE = "assets/collectible-lantern.svg";
+const DEBUG_COORDS = new URLSearchParams(location.search).has("debug");
+
+function prefersReducedMotion() {
+  return window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function flightDuration(base) {
+  return prefersReducedMotion() ? 0 : base;
+}
+
+function getCharacterCollectibleName(character) {
+  return character?.collectibleName || DEFAULT_COLLECTIBLE_NAME;
+}
+
+function getCharacterCollectibleImage(character) {
+  return character?.collectibleImage || DEFAULT_COLLECTIBLE_IMAGE;
+}
 
 function formatCollectibleLabel(collectibleName) {
   if (!collectibleName) return "Treasures found!";
@@ -29,12 +49,6 @@ function getCollectibleSingular(collectibleName) {
   return collectibleName;
 }
 
-function formatCollectGoal(character) {
-  const count = getDucksForSlide(0);
-  const name = character?.collectibleName || "ducks";
-  return `Find ${count} hidden ${name} in these pictures!`;
-}
-
 /**
  * Clones a <template> by id and returns its single root element.
  * @param {string} id - The id of the <template> element.
@@ -44,55 +58,64 @@ function cloneTemplate(id) {
   return document.getElementById(id).content.cloneNode(true).firstElementChild;
 }
 
-const COLLECTIBLE_LAYOUTS = [
-  [
-    { x: 22, y: 34 },
-    { x: 57, y: 52 },
-    { x: 78, y: 27 }
-  ],
-  [
-    { x: 18, y: 58 },
-    { x: 46, y: 30 },
-    { x: 73, y: 64 }
-  ],
-  [
-    { x: 31, y: 24 },
-    { x: 52, y: 68 },
-    { x: 82, y: 45 }
-  ]
-];
+const COLLECTIBLES_PER_SLIDE = 3;
+const COLLECTIBLE_X_EDGE_PAD = 6;
+const COLLECTIBLE_Y_MIN = 18;
+const COLLECTIBLE_Y_MAX = 78;
+
+function randomInRange(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function generateBalancedPositions() {
+  const bandWidth = 100 / COLLECTIBLES_PER_SLIDE;
+  const positions = [];
+  for (let i = 0; i < COLLECTIBLES_PER_SLIDE; i++) {
+    const xMin = i * bandWidth + COLLECTIBLE_X_EDGE_PAD;
+    const xMax = (i + 1) * bandWidth - COLLECTIBLE_X_EDGE_PAD;
+    positions.push({
+      x: randomInRange(xMin, xMax),
+      y: randomInRange(COLLECTIBLE_Y_MIN, COLLECTIBLE_Y_MAX)
+    });
+  }
+  return positions;
+}
+
+function formatCollectGoal(character) {
+  const name = getCharacterCollectibleName(character);
+  return `Find ${COLLECTIBLES_PER_SLIDE} hidden ${name} in these pictures!`;
+}
 
 function getCollectMessages(character) {
   return character?.collectMessages || DEFAULT_COLLECT_MESSAGES;
 }
 
-function getDucksForSlide(slideIndex) {
-  return COLLECTIBLE_LAYOUTS[slideIndex % COLLECTIBLE_LAYOUTS.length].length;
+function getCollectibleCountForSlide(slideIndex) {
+  return COLLECTIBLES_PER_SLIDE;
 }
 
 function makeCollectibleId(loc, imageIndex, itemIndex) {
   return `${loc.name}:${imageIndex}:${itemIndex}`;
 }
 
-function countDucksForLocation(loc) {
+function countCollectiblesForLocation(loc) {
   const images = loc.images || [];
   let total = 0;
   for (let i = 0; i < images.length; i++) {
-    total += getDucksForSlide(i);
+    total += getCollectibleCountForSlide(i);
   }
   return total;
 }
 
-function countDucksForTour(locations) {
-  return locations.reduce((sum, loc) => sum + countDucksForLocation(loc), 0);
+function countCollectiblesForTour(locations) {
+  return locations.reduce((sum, loc) => sum + countCollectiblesForLocation(loc), 0);
 }
 
-function countCollectedDucksForLocation(loc, collectedItems) {
+function countCollectedCollectiblesForLocation(loc, collectedItems) {
   const images = loc.images || [];
   let count = 0;
   for (let imageIndex = 0; imageIndex < images.length; imageIndex++) {
-    const ducks = COLLECTIBLE_LAYOUTS[imageIndex % COLLECTIBLE_LAYOUTS.length];
-    for (let itemIndex = 0; itemIndex < ducks.length; itemIndex++) {
+    for (let itemIndex = 0; itemIndex < COLLECTIBLES_PER_SLIDE; itemIndex++) {
       if (collectedItems.has(makeCollectibleId(loc, imageIndex, itemIndex))) {
         count++;
       }
@@ -102,13 +125,18 @@ function countCollectedDucksForLocation(loc, collectedItems) {
 }
 
 function isLocationFullyCollected(loc, collectedItems) {
-  const total = countDucksForLocation(loc);
+  const total = countCollectiblesForLocation(loc);
   if (total === 0) return false;
-  return countCollectedDucksForLocation(loc, collectedItems) === total;
+  return countCollectedCollectiblesForLocation(loc, collectedItems) === total;
 }
 
-function countFullyClearedLocations(locations, collectedItems) {
-  return locations.filter((loc) => isLocationFullyCollected(loc, collectedItems)).length;
+function areAllCollectiblesCollectedForSlide(loc, slideIndex, collectedItems) {
+  for (let itemIndex = 0; itemIndex < COLLECTIBLES_PER_SLIDE; itemIndex++) {
+    if (!collectedItems.has(makeCollectibleId(loc, slideIndex, itemIndex))) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function getStarRating(score, maxScore) {
@@ -188,7 +216,7 @@ class FinalScreen extends AbstractScreen {
     super("final-screen");
     this.finalScore = document.getElementById("final-score");
     this.finalStars = document.getElementById("final-stars");
-    this.finalDucksSummary = document.getElementById("final-ducks-summary");
+    this.finalCollectSummary = document.getElementById("final-collect-summary");
     this.finalCharacterMessage = document.getElementById("final-character-message");
     this.confettiLayer = document.getElementById("confetti-layer");
     this.restartBtn = document.getElementById("restart-btn");
@@ -212,7 +240,13 @@ class FinalScreen extends AbstractScreen {
   show(summary) {
     super.show();
     const { score, maxScore, character, collectibleName } = summary;
-    const itemsName = collectibleName || character?.collectibleName || "ducks";
+    const itemsName = collectibleName || getCharacterCollectibleName(character);
+
+    if (character && character.themeColor) {
+      this.screenElement.style.setProperty("--guide-accent", character.themeColor);
+    } else {
+      this.screenElement.style.removeProperty("--guide-accent");
+    }
 
     this.renderStars(getStarRating(score, maxScore));
     this.finalScore.textContent = String(score);
@@ -224,7 +258,7 @@ class FinalScreen extends AbstractScreen {
     if (maxScore > 0 && score === maxScore) {
       itemsSummary += " Super Explorer!";
     }
-    this.finalDucksSummary.textContent = itemsSummary;
+    this.finalCollectSummary.textContent = itemsSummary;
 
     const characterName = character ? character.name : "Your guide";
     this.finalCharacterMessage.textContent = `${characterName} is proud of your adventure!`;
@@ -245,6 +279,8 @@ class FinalScreen extends AbstractScreen {
   }
 
   spawnConfetti() {
+    if (prefersReducedMotion()) return;
+
     this.clearConfetti();
     const colors = ["#ffd84d", "#6fa8ff", "#ff9a8b", "#6dd47e", "#ffe679"];
     const pieceCount = 36;
@@ -350,7 +386,7 @@ class CharacterSelectScreen extends AbstractScreen {
       characterInfoDiv.appendChild(titleDiv);
 
       const selectBtn = document.createElement("button");
-      selectBtn.className = "character-select-btn";
+      selectBtn.className = "btn-accent character-select-btn";
       selectBtn.type = "button";
       selectBtn.dataset.character = character.id;
       selectBtn.textContent = character.selectButtonLabel || "Pick me!";
@@ -398,27 +434,7 @@ class GameplayScreen extends AbstractScreen {
     this.onFinalize = onFinalize;
     this.onExit = onExit;
     this.selectedCharacterId = null;
-
-    this.viewer = new Cesium.Viewer("cesiumContainer", {
-      baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-        Cesium.ArcGisMapServerImageryProvider.fromUrl(
-          "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
-        )
-      ),
-      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-      baseLayerPicker: false,
-      geocoder: false,
-      homeButton: false,
-      sceneModePicker: false,
-      navigationHelpButton: false,
-      animation: false,
-      timeline: false,
-      fullscreenButton: false,
-      infoBox: false,
-      selectionIndicator: false
-    });
-
-    this.viewer.scene.globe.enableLighting = true;
+    this.viewer = null;
 
     // State variables
     this.currentIndex = 0;
@@ -429,6 +445,8 @@ class GameplayScreen extends AbstractScreen {
     this.isActive = false;
     this.collectedItems = new Set();
     this.clearedLocations = new Set();
+    this.visitedLocations = new Set();
+    this.collectiblePositions = new Map();
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
     this.locations = [];
@@ -461,12 +479,84 @@ class GameplayScreen extends AbstractScreen {
     this.exitConfirmModal = document.getElementById("exit-confirm-modal");
     this.exitConfirmBtn = document.getElementById("exit-confirm-btn");
     this.exitCancelBtn = document.getElementById("exit-cancel-btn");
+    this.loadingScreen = document.getElementById("loading-screen");
 
     this.initEventListeners();
   }
 
+  showLoading() {
+    if (!this.loadingScreen) return;
+    this.loadingScreen.classList.remove("hidden");
+    this.loadingScreen.setAttribute("aria-hidden", "false");
+  }
+
+  hideLoading() {
+    if (!this.loadingScreen) return;
+    this.loadingScreen.classList.add("hidden");
+    this.loadingScreen.setAttribute("aria-hidden", "true");
+  }
+
+  whenMapReady(onReady) {
+    const globe = this.viewer.scene.globe;
+    let done = false;
+    let removeListener = null;
+
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (removeListener) removeListener();
+      window.clearTimeout(timer);
+      onReady();
+    };
+
+    const timer = window.setTimeout(finish, 15000);
+
+    Promise.resolve(this.imageryProviderPromise).catch(() => {}).then(() => {
+      if (done) return;
+      if (globe.tilesLoaded) {
+        finish();
+        return;
+      }
+      removeListener = globe.tileLoadProgressEvent.addEventListener((queued) => {
+        if (queued === 0 && globe.tilesLoaded) finish();
+      });
+    });
+  }
+
+  ensureViewer() {
+    if (this.viewer) return;
+
+    const imageryProviderPromise = Cesium.ArcGisMapServerImageryProvider.fromUrl(
+      "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
+    );
+    this.imageryProviderPromise = imageryProviderPromise;
+
+    this.viewer = new Cesium.Viewer("cesiumContainer", {
+      baseLayer: Cesium.ImageryLayer.fromProviderAsync(imageryProviderPromise),
+      terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+      baseLayerPicker: false,
+      geocoder: false,
+      homeButton: false,
+      sceneModePicker: false,
+      navigationHelpButton: false,
+      animation: false,
+      timeline: false,
+      fullscreenButton: false,
+      infoBox: false,
+      selectionIndicator: false
+    });
+
+    this.viewer.scene.globe.enableLighting = true;
+    this.viewer.scene.postRender.addEventListener(this.positionPinPanel.bind(this));
+
+    if (DEBUG_COORDS) {
+      this.onCanvasClicked();
+    }
+  }
+
   /**
-   * Resevered for DEBUG location when the coordinate is not working (do not remove this function)
+   * Reserved for DEBUG location when the coordinate is not working (do not remove this function).
+   * Enabled only when the URL contains ?debug=coords or ?debug.
    */
   onCanvasClicked() {
     const handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
@@ -489,9 +579,6 @@ class GameplayScreen extends AbstractScreen {
   }
 
   initEventListeners() {
-    this.viewer.scene.postRender.addEventListener(this.positionPinPanel.bind(this));
-    this.onCanvasClicked();
-
     this.nextBtn.addEventListener("click", () => this.goNext());
     this.prevBtn.addEventListener("click", () => this.goPrev());
     this.detailsCloseBtn.addEventListener("click", () => this.hideDetailsPopup());
@@ -550,10 +637,13 @@ class GameplayScreen extends AbstractScreen {
   start() {
     this.screenElement.classList.add('active');
     this.isActive = true;
+    this.ensureViewer();
     this.currentIndex = 0;
     this.score = 0;
     this.collectedItems.clear();
     this.clearedLocations.clear();
+    this.visitedLocations.clear();
+    this.collectiblePositions.clear();
     this.hideAchievementToast();
     this.hideExitConfirm();
     this.hideDetailsPopup({ restoreCamera: false });
@@ -565,15 +655,22 @@ class GameplayScreen extends AbstractScreen {
     this.applyCharacterTheme();
     this.updateScore();
     this.renderProgressTrail();
-    this.flyToLocation(this.currentIndex);
+    this.showLoading();
+    this.whenMapReady(() => {
+      this.hideLoading();
+      this.flyToLocation(this.currentIndex);
+    });
   }
 
   hide() {
     this.screenElement.classList.remove('active');
-    this.viewer.camera.cancelFlight();
-    this.isFlying = false;
+    this.hideLoading();
+    if (this.viewer) {
+      this.viewer.camera.cancelFlight();
+      this.isFlying = false;
+      this.viewer.camera.flyHome();
+    }
     this.clearOverviewCamera();
-    this.viewer.camera.flyHome();
     this.hideExitConfirm();
     this.hideDetailsPopup({ restoreCamera: false });
     this.hidePinPanel();
@@ -607,6 +704,9 @@ class GameplayScreen extends AbstractScreen {
     const accent = this.character.themeColor || "#ffd84d";
     if (this.gameplayUi) {
       this.gameplayUi.style.setProperty("--guide-accent", accent);
+    }
+    if (this.loadingScreen) {
+      this.loadingScreen.style.setProperty("--guide-accent", accent);
     }
     if (this.scoreLabel) {
       this.scoreLabel.textContent = formatCollectibleLabel(this.character.collectibleName);
@@ -654,6 +754,15 @@ class GameplayScreen extends AbstractScreen {
         dot.classList.add("current");
       } else {
         dot.classList.add("upcoming");
+      }
+      if (isLocationFullyCollected(loc, this.collectedItems)) {
+        dot.classList.add("collected-all");
+      } else if (countCollectedCollectiblesForLocation(loc, this.collectedItems) > 0) {
+        dot.classList.add("collected-some");
+      } else if (index === this.currentIndex) {
+        dot.classList.add("visiting-empty");
+      } else if (this.visitedLocations.has(loc.name)) {
+        dot.classList.add("visited-empty");
       }
       dot.setAttribute("aria-label", loc.name);
       this.progressTrailDots.appendChild(dot);
@@ -703,17 +812,16 @@ class GameplayScreen extends AbstractScreen {
     if (this.clearedLocations.has(loc.name)) return;
 
     this.clearedLocations.add(loc.name);
-    const itemsName = this.character?.collectibleName || "ducks";
+    const itemsName = getCharacterCollectibleName(this.character);
     this.showAchievementToast(`All ${itemsName} found at ${loc.name}!`);
   }
 
   buildFinalizeSummary() {
     return {
       score: this.score,
-      maxScore: countDucksForTour(this.locations),
+      maxScore: countCollectiblesForTour(this.locations),
       character: this.character,
-      collectibleName: this.character?.collectibleName || "ducks",
-      locationsCleared: countFullyClearedLocations(this.locations, this.collectedItems)
+      collectibleName: getCharacterCollectibleName(this.character)
     };
   }
 
@@ -796,9 +904,6 @@ class GameplayScreen extends AbstractScreen {
     const images = loc ? loc.images || [] : [];
 
     if (images.length === 0) {
-      if (this.detailsCollectGoal) {
-        this.detailsCollectGoal.hidden = true;
-      }
       this.detailsSlideshow.replaceChildren(cloneTemplate("tpl-slideshow-empty"));
       return;
     }
@@ -831,14 +936,49 @@ class GameplayScreen extends AbstractScreen {
     });
 
     this.detailsSlideshow.replaceChildren(frame, meta, thumbnails);
+    this.renderSlideComplete(frame);
+  }
+
+  renderSlideComplete(frame) {
+    if (!frame) {
+      frame = this.detailsSlideshow.querySelector(".slideshow-frame");
+    }
+    if (!frame) return;
+
+    const existing = frame.querySelector(".slide-complete");
+    if (existing) existing.remove();
+
+    const loc = this.slideshowLocation;
+    const images = loc ? loc.images || [] : [];
+    if (images.length === 0) return;
+    if (!areAllCollectiblesCollectedForSlide(loc, this.slideshowIndex, this.collectedItems)) {
+      return;
+    }
+
+    const overlay = cloneTemplate("tpl-slide-complete");
+    const btn = overlay.querySelector(".slide-complete-btn");
+    const isLastImage = this.slideshowIndex === images.length - 1;
+
+    if (isLastImage) {
+      btn.textContent = "On to the next stop!";
+      btn.addEventListener("click", () => {
+        this.hideDetailsPopup({ restoreCamera: false });
+        this.goNext();
+      });
+    } else {
+      btn.textContent = "See the next picture!";
+      btn.addEventListener("click", () => this.changeSlide(1));
+    }
+
+    frame.appendChild(overlay);
   }
 
   /** Returns an array of collectible button elements for the current slide. */
   buildCollectibles(loc) {
     const buttons = [];
-    const imageUrl = this.character?.collectibleImage || "/assets/duck.svg";
-    const singular = getCollectibleSingular(this.character?.collectibleName);
-    this.getCollectiblesForSlide(this.slideshowIndex).forEach((item, itemIndex) => {
+    const imageUrl = getCharacterCollectibleImage(this.character);
+    const singular = getCollectibleSingular(getCharacterCollectibleName(this.character));
+    this.getCollectiblesForSlide(loc, this.slideshowIndex).forEach((item, itemIndex) => {
       const itemId = this.getCollectibleId(loc, this.slideshowIndex, itemIndex);
       if (this.collectedItems.has(itemId)) return;
 
@@ -856,8 +996,12 @@ class GameplayScreen extends AbstractScreen {
     return buttons;
   }
 
-  getCollectiblesForSlide(index) {
-    return COLLECTIBLE_LAYOUTS[index % COLLECTIBLE_LAYOUTS.length];
+  getCollectiblesForSlide(loc, slideIndex) {
+    const key = `${loc.name}:${slideIndex}`;
+    if (!this.collectiblePositions.has(key)) {
+      this.collectiblePositions.set(key, generateBalancedPositions());
+    }
+    return this.collectiblePositions.get(key);
   }
 
   getCollectibleId(loc, imageIndex, itemIndex) {
@@ -877,6 +1021,14 @@ class GameplayScreen extends AbstractScreen {
 
     if (this.slideshowLocation) {
       this.checkLocationCompletion(this.slideshowLocation);
+      this.renderProgressTrail();
+      if (areAllCollectiblesCollectedForSlide(
+        this.slideshowLocation,
+        this.slideshowIndex,
+        this.collectedItems
+      )) {
+        this.renderSlideComplete();
+      }
     }
   }
 
@@ -900,7 +1052,7 @@ class GameplayScreen extends AbstractScreen {
     if (this.character) {
       this.avatar.src = this.character.avatarUrl;
       if (this.scoreCollectibleIcon) {
-        this.scoreCollectibleIcon.src = this.character.collectibleImage || "/assets/duck.svg";
+        this.scoreCollectibleIcon.src = getCharacterCollectibleImage(this.character);
       }
     }
   }
@@ -921,6 +1073,11 @@ class GameplayScreen extends AbstractScreen {
     }
     this.slideshowLocation = null;
     this.slideshowIndex = 0;
+
+    if (!this.viewer) {
+      this.clearOverviewCamera();
+      return;
+    }
 
     this.viewer.camera.cancelFlight();
 
@@ -943,7 +1100,7 @@ class GameplayScreen extends AbstractScreen {
         pitch: saved.pitch,
         roll: saved.roll
       },
-      duration: DETAIL_FLIGHT_DURATION_SECONDS,
+      duration: flightDuration(DETAIL_FLIGHT_DURATION_SECONDS),
       maximumHeight: overviewHeight,
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
       complete: () => this.finishDetailFlyBack(),
@@ -999,7 +1156,7 @@ class GameplayScreen extends AbstractScreen {
         pitch: saved.pitch,
         roll: saved.roll
       },
-      duration: DETAIL_FLIGHT_DURATION_SECONDS,
+      duration: flightDuration(DETAIL_FLIGHT_DURATION_SECONDS),
       maximumHeight: camera.positionCartographic.height,
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
       complete: () => {
@@ -1019,14 +1176,23 @@ class GameplayScreen extends AbstractScreen {
     );
   }
 
-  flyToCameraOffset(loc, { duration = FLIGHT_DURATION_SECONDS, onComplete, onCancel } = {}) {
+  flyToLocationCamera(loc, { duration = FLIGHT_DURATION_SECONDS, instant = false, onComplete, onCancel } = {}) {
     const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
     const boundingSphere = new Cesium.BoundingSphere(target, 1);
     const cameraOffset = this.getCameraOffset(loc);
 
     this.viewer.camera.cancelFlight();
+
+    if (instant) {
+      this.viewer.camera.viewBoundingSphere(boundingSphere, cameraOffset);
+      this.viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+      this.applyTargetVerticalOffset(loc.height);
+      if (onComplete) onComplete();
+      return;
+    }
+
     this.viewer.camera.flyToBoundingSphere(boundingSphere, {
-      duration,
+      duration: flightDuration(duration),
       easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
       offset: cameraOffset,
       maximumHeight: MAX_FLIGHT_HEIGHT_METERS,
@@ -1039,6 +1205,13 @@ class GameplayScreen extends AbstractScreen {
         if (onCancel) onCancel();
       }
     });
+  }
+
+  finishLocationArrival(loc, index) {
+    this.currentIndex = index;
+    if (loc) this.visitedLocations.add(loc.name);
+    this.updatePanel(index);
+    this.showPinPanel();
   }
 
   hidePinPanel() {
@@ -1098,23 +1271,18 @@ class GameplayScreen extends AbstractScreen {
 
   flyToLocation(index, { instant = false } = {}) {
     const loc = this.locations[index];
-    const target = Cesium.Cartesian3.fromDegrees(loc.lon, loc.lat, 0);
-    const boundingSphere = new Cesium.BoundingSphere(target, 1);
-    const cameraOffset = this.getCameraOffset(loc);
 
     if (this.isDetailViewActive || this.detailsModal.classList.contains("visible")) {
       this.hideDetailsPopup({ restoreCamera: false });
     }
     this.clearOverviewCamera();
+    this.setPin(loc, index);
 
     if (instant) {
-      this.viewer.camera.viewBoundingSphere(boundingSphere, cameraOffset);
-      this.viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
-      this.applyTargetVerticalOffset(loc.height);
-      this.currentIndex = index;
-      this.updatePanel(index);
-      this.setPin(loc, index);
-      this.showPinPanel();
+      this.flyToLocationCamera(loc, {
+        instant: true,
+        onComplete: () => this.finishLocationArrival(loc, index)
+      });
       return;
     }
 
@@ -1122,27 +1290,17 @@ class GameplayScreen extends AbstractScreen {
     this.setButtonsEnabled(false);
     this.hidePinPanel();
 
-    this.viewer.camera.cancelFlight();
-    this.viewer.camera.flyToBoundingSphere(boundingSphere, {
-      duration: FLIGHT_DURATION_SECONDS,
-      easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT,
-      offset: cameraOffset,
-      maximumHeight: MAX_FLIGHT_HEIGHT_METERS,
-      pitchAdjustHeight: 10,
-      complete: () => {
-        this.applyTargetVerticalOffset(loc.height);
+    this.flyToLocationCamera(loc, {
+      onComplete: () => {
         this.isFlying = false;
         this.setButtonsEnabled(true);
-        this.currentIndex = index;
-        this.updatePanel(index);
-        this.showPinPanel();
+        this.finishLocationArrival(loc, index);
       },
-      cancel: () => {
+      onCancel: () => {
         this.isFlying = false;
         this.setButtonsEnabled(true);
       }
     });
-    this.setPin(loc, index);
   }
 
   /**
@@ -1171,16 +1329,14 @@ class GameplayScreen extends AbstractScreen {
       return;
     }
 
-    this.currentIndex += 1;
-    this.flyToLocation(this.currentIndex);
+    this.flyToLocation(this.currentIndex + 1);
   }
 
   goPrev() {
     if (!this.isActive || this.isFlying) return;
     if (this.currentIndex === 0) return;
 
-    this.currentIndex -= 1;
-    this.flyToLocation(this.currentIndex);
+    this.flyToLocation(this.currentIndex - 1);
   }
 }
 
@@ -1262,7 +1418,111 @@ class GameController {
   }
 }
 
+const EMBED_MIN_WIDTH = 280;
+const EMBED_MIN_HEIGHT = 400;
+const EMBED_PROMPT_FULLSCREEN =
+  "Oh no, the window is too small for our journey! Tap the button to go full screen and begin the adventure.";
+const EMBED_PROMPT_NEWTAB =
+  "Oh no, the window is too small for our journey! Tap the button to open the adventure in a new tab.";
+
+class EmbedFullscreenController {
+  constructor() {
+    this.btn = document.getElementById("fullscreen-btn");
+    this.promptText = document.querySelector(".embed-prompt-text");
+
+    const inIframe = window.self !== window.top;
+    const fsEnabled =
+      typeof document.fullscreenEnabled === "boolean"
+        ? document.fullscreenEnabled
+        : typeof document.webkitFullscreenEnabled === "boolean"
+          ? document.webkitFullscreenEnabled
+          : true;
+    this.newTabMode = inIframe && !fsEnabled;
+
+    this.btn.addEventListener("click", () => this.toggle());
+    document.addEventListener("fullscreenchange", () => this.update());
+    document.addEventListener("webkitfullscreenchange", () => this.update());
+    window.addEventListener("resize", () => this.update());
+
+    this.update();
+  }
+
+  isFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+
+  isViewportTooSmall() {
+    return window.innerWidth < EMBED_MIN_WIDTH || window.innerHeight < EMBED_MIN_HEIGHT;
+  }
+
+  shouldConstrain() {
+    return this.isViewportTooSmall() && !this.isFullscreen();
+  }
+
+  toggle() {
+    if (this.newTabMode) {
+      window.open(window.location.href, "_blank", "noopener");
+      return;
+    }
+
+    this.toggleFullscreen();
+  }
+
+  async toggleFullscreen() {
+    try {
+      if (this.isFullscreen()) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      } else {
+        const el = document.documentElement;
+        if (el.requestFullscreen) {
+          await el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+          el.webkitRequestFullscreen();
+        }
+      }
+      this.btn.removeAttribute("title");
+    } catch (e) {
+      console.error(e);
+      this.btn.title = "Full screen was blocked. Try opening this page in a new tab.";
+    }
+    this.update();
+  }
+
+  update() {
+    const constrained = this.shouldConstrain();
+    document.body.classList.toggle("embed-constrained", constrained);
+
+    this.btn.classList.toggle("is-newtab", this.newTabMode);
+
+    if (this.newTabMode) {
+      this.btn.setAttribute("aria-pressed", "false");
+      this.btn.setAttribute("aria-label", "Open in new tab");
+      this.btn.title = "Open in new tab";
+      if (this.promptText) {
+        this.promptText.textContent = EMBED_PROMPT_NEWTAB;
+      }
+      return;
+    }
+
+    const fullscreen = this.isFullscreen();
+    this.btn.setAttribute("aria-pressed", String(fullscreen));
+    this.btn.setAttribute(
+      "aria-label",
+      fullscreen ? "Exit full screen" : "Enter full screen"
+    );
+    this.btn.title = fullscreen ? "Exit full screen" : "Full screen";
+    if (this.promptText) {
+      this.promptText.textContent = EMBED_PROMPT_FULLSCREEN;
+    }
+  }
+}
+
 // Initialize the application controller
 document.addEventListener("DOMContentLoaded", () => {
+  new EmbedFullscreenController();
   new GameController();
 });

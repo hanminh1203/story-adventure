@@ -1,0 +1,57 @@
+name: Deploy Multi-Branch Pages
+
+on:
+  push:
+    # Trigger on any branch you want previews for
+    branches:
+      - main
+      - dev
+      - 'feature/*' 
+
+# Prevent concurrent deployments from corrupting the gh-pages branch
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Fetch your codebase
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Fetch the existing gh-pages history so we don't overwrite other branches
+      - name: Checkout gh-pages Branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: old-gh-pages
+
+      # 3. Insert your Build Steps here if you use a framework (React, Vite, etc.)
+      # If you are using plain HTML/CSS, you can skip this step.
+      # For example: 
+      - name: Build Site
+        run: |
+          mkdir build
+          cp -r index.html build/
+          cp -r assets build/
+          cp -r locations.js build/
+          cp -r script.js build/
+          cp -r style.css build/
+
+      # 4. Run gh-pages-multibranch to merge this branch into the directory
+      - name: Arrange Multi-Branch Layout
+        uses: coderefinery/gh-pages-multibranch@main
+        with:
+          # Change 'dist' or 'build' to match your static files folder. 
+          # Use '.' if your plain HTML files sit in the root folder.
+          directory: build
+          default_branch: main
+
+      # 5. Push the compiled multi-branch folder back to the gh-pages branch
+      - name: Deploy to GitHub Pages Branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build

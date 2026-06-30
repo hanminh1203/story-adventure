@@ -8,10 +8,8 @@
 
   <!-- CesiumJS - free, open-source (Apache 2.0), no API key required for this setup -->
   <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.142/Build/Cesium/Widgets/widgets.css" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.142/Build/Cesium/Cesium.js"></script>
@@ -23,14 +21,14 @@
     <div id="cesiumContainer"></div>
 
     <div class="ui">
-      <div id="score-panel" class="d-flex gap-3 align-items-center justify-content-between">
+      <div id="score-panel" class="score-panel-layout">
         <div>
           <img id="avatar" src="" alt="Character avatar" class="avatar">
         </div>
         <div>
-          <div id="score-label" class="panel-label">Ducks found!</div>
+          <div id="score-label" class="panel-label">Treasures found!</div>
           <div class="score-row">
-            <img id="score-collectible-icon" class="score-collectible-icon" src="assets/duck.svg" alt="" aria-hidden="true">
+            <img id="score-collectible-icon" class="score-collectible-icon" src="assets/collectible-lantern.svg" alt="" aria-hidden="true">
             <div id="score-value">0</div>
           </div>
         </div>
@@ -43,14 +41,14 @@
 
       <div id="achievement-toast" class="achievement-toast" aria-live="polite" hidden></div>
 
-      <button id="exit-btn" class="exit-btn" type="button" aria-label="Exit game">Exit</button>
+      <button id="exit-btn" class="btn-glass exit-btn" type="button" aria-label="Exit game">Exit</button>
 
       <div id="location-ui" class="location-ui">
-        <button id="prev-btn" class="nav-button" aria-label="Previous location" title="Previous (left arrow)">&#8592;</button>
+        <button id="prev-btn" class="btn-glass nav-button" aria-label="Previous location" title="Previous (left arrow)">&#8592;</button>
         <div id="pin-panel" class="pin-panel">
           <div id="pin-panel-body" class="pin-panel-body"></div>
         </div>
-        <button id="next-btn" class="nav-button" aria-label="Next location" title="Next (right arrow)">&#8594;</button>
+        <button id="next-btn" class="btn-glass nav-button" aria-label="Next location" title="Next (right arrow)">&#8594;</button>
       </div>
 
       <div id="details-modal" class="details-modal" aria-hidden="true">
@@ -70,7 +68,7 @@
           <p>Your progress will be lost. Are you sure you want to exit?</p>
           <div class="exit-confirm-actions">
             <button id="exit-cancel-btn" type="button" class="exit-confirm-btn">Keep playing</button>
-            <button id="exit-confirm-btn" type="button" class="exit-confirm-btn exit-confirm-btn-primary">Exit</button>
+            <button id="exit-confirm-btn" type="button" class="btn-accent exit-confirm-btn-primary">Exit</button>
           </div>
         </div>
       </div>
@@ -90,15 +88,15 @@
       </div>
       <h1>Magical Story Adventures</h1>
       <p>Step into a world where children can explore countries, cultures, landmarks, stories, and magical adventures through an interactive online journey inspired by Google Earth.</p>
-      <button id="start-btn" class="game-screen-btn" type="button">LET'S GO!</button>
+      <button id="start-btn" class="btn-accent game-screen-btn" type="button">LET'S GO!</button>
     </div>
   </div>
 
   <div id="character-select-screen" class="game-screen hidden static-background" aria-hidden="true">
     <div class="game-screen-overlay"></div>
-    <div class="game-screen-ui position-absolute w-100 h-100">
-      <button id="character-select-go-back-btn" class="game-screen-btn go-back-btn">
-        &#8592; <span class="d-sm-inline-block d-none">Go back</span>
+    <div class="game-screen-ui character-screen-ui">
+      <button id="character-select-go-back-btn" class="btn-glass go-back-btn">
+        &#8592; <span class="go-back-label">Go back</span>
       </button>
     </div>
     <div class="container game-screen-content character-select-content">
@@ -125,10 +123,10 @@
       <div class="game-kicker">Final Score</div>
       <div id="final-stars" class="final-stars" aria-label="Star rating"></div>
       <h1 id="final-score">0</h1>
-      <p id="final-ducks-summary">ducks found</p>
+      <p id="final-collect-summary">Treasures found</p>
       <p id="final-character-message"></p>
       <div id="confetti-layer" class="confetti-layer" aria-hidden="true"></div>
-      <button id="restart-btn" class="game-screen-btn" type="button">RESTART</button>
+      <button id="restart-btn" class="btn-accent game-screen-btn" type="button">RESTART</button>
     </div>
   </div>
 
@@ -140,7 +138,7 @@
       <div class="panel-label"></div>
       <h2 class="panel-title"></h2>
       <p class="panel-description"></p>
-      <button type="button" class="pin-details-btn">Show details</button>
+      <button type="button" class="btn-accent pin-details-btn">Show details</button>
     </div>
   </template>
 
@@ -169,17 +167,63 @@
     <button type="button"><img alt="" loading="lazy"></button>
   </template>
 
-  <!-- Single collectible duck button (cloned once per duck) -->
+  <!-- Single collectible item button (cloned once per collectible) -->
   <template id="tpl-collectible">
-    <button type="button" class="collectible-item" aria-label="Collect duck for 1 point">
+    <button type="button" class="collectible-item" aria-label="Collect item for 1 point">
       <img alt="">
     </button>
+  </template>
+
+  <!-- Shown when all collectibles on the current slide are collected -->
+  <template id="tpl-slide-complete">
+    <div class="slide-complete">
+      <p class="slide-complete-label">Hooray! You found them all here!</p>
+      <button type="button" class="btn-accent slide-complete-btn"></button>
+    </div>
   </template>
 
   <!-- Empty-state message shown when a location has no images -->
   <template id="tpl-slideshow-empty">
     <p class="details-empty">Our photos are still on their way — check back soon!</p>
   </template>
+
+  <div id="embed-prompt" class="embed-prompt">
+    <p class="embed-prompt-text">Oh no, the window is too small for our journey! Tap the button to go full
+      screen and begin the adventure.</p>
+    <button id="fullscreen-btn" class="btn-glass fullscreen-btn" type="button"
+      aria-label="Enter full screen" aria-pressed="false" title="Full screen">
+      <span class="fullscreen-icon" aria-hidden="true">
+        <svg class="fullscreen-icon-enter" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+          <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+          <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+          <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+        </svg>
+        <svg class="fullscreen-icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+          <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+          <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+          <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+        </svg>
+        <svg class="fullscreen-icon-newtab" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h6v6" />
+          <path d="M10 14 21 3" />
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
+        </svg>
+      </span>
+    </button>
+  </div>
+
+  <div id="loading-screen" class="loading-screen hidden" aria-hidden="true" role="status">
+    <div class="game-screen-overlay"></div>
+    <div class="loading-content">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <p class="loading-text">Preparing your adventure...</p>
+    </div>
+  </div>
 
   <script src="locations.js"></script>
   <script src="script.js"></script>

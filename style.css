@@ -46,6 +46,39 @@ body {
 }
 
 
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1140px;
+  padding-left: 12px;
+  padding-right: 12px;
+  width: 100%;
+}
+
+.character-screen-ui {
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.score-panel-layout {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.go-back-label {
+  display: none;
+}
+
+@media (min-width: 576px) {
+  .go-back-label {
+    display: inline;
+  }
+}
+
 /* ==========================================================================
    2. GAME SCREENS OVERLAY (COMMON FOR START & FINAL SCREENS)
    ========================================================================== */
@@ -112,37 +145,77 @@ body {
   max-width: 640px;
 }
 
-.game-screen-btn {
-  background: var(--color-sunshine);
+/* ==========================================================================
+   SHARED BUTTON BASES
+   - .btn-accent : solid pill filled with the active guide accent color
+   - .btn-glass  : translucent, blurred "glass" panel button
+   Both derive their color from --guide-accent (falling back to defaults),
+   so they automatically match the selected character's theme.
+   ========================================================================== */
+
+.btn-accent {
+  --btn-accent: var(--guide-accent, var(--color-sunshine));
+  background: var(--btn-accent);
   border: 0;
-  border-bottom: 4px solid var(--color-sunshine-dark);
+  border-bottom: 4px solid color-mix(in srgb, var(--btn-accent) 72%, black);
   border-radius: var(--radius-btn);
-  box-shadow: var(--shadow-sticker), 0 12px 32px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--btn-accent) 72%, black);
   color: var(--color-text-dark);
   cursor: pointer;
   font-family: var(--font-body);
-  font-size: 16px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  padding: 15px 34px;
-  text-transform: uppercase;
-  transition: transform 0.18s ease, background 0.18s ease;
+  transition: transform 0.18s ease, filter 0.18s ease;
 }
 
-.game-screen-btn:hover {
-  background: #ffe679;
+.btn-accent:hover {
+  filter: brightness(1.08);
   transform: translateY(-2px);
 }
 
-.game-screen-btn:active {
+.btn-accent:active {
   animation: btnBounce 0.35s ease;
   border-bottom-width: 2px;
   transform: translateY(2px);
 }
 
-.game-screen-btn:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 4px;
+.btn-accent:focus-visible {
+  outline: none;
+}
+
+.btn-glass {
+  background: var(--color-panel-bg);
+  border: 3px solid var(--guide-accent, var(--color-panel-border));
+  border-radius: var(--radius-btn);
+  color: var(--color-text);
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-panel);
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-glass:hover {
+  background: rgba(35, 45, 65, 0.85);
+  transform: translateY(-2px);
+}
+
+.btn-glass:focus-visible {
+  outline: none;
+}
+
+.btn-glass:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
+
+/* game-screen-btn: large CTA built on .btn-accent (add btn-accent in markup) */
+.game-screen-btn {
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--btn-accent) 72%, black), 0 12px 32px rgba(0, 0, 0, 0.32);
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  padding: 15px 34px;
+  text-transform: uppercase;
 }
 
 @keyframes screenRise {
@@ -290,12 +363,14 @@ body {
   width: 6px;
 }
 
+/* go-back-btn: built on .btn-glass (add btn-glass in markup) */
 .go-back-btn {
   position: absolute;
   top: 16px;
   left: 16px;
   padding: 10px 18px;
   font-size: 14px;
+  font-weight: 700;
   z-index: 2;
 }
 
@@ -356,8 +431,7 @@ body {
 }
 
 .carousel-arrow:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .carousel-arrow:active {
@@ -370,8 +444,6 @@ body {
   min-width: 0;
   margin: 0 auto;
   --guide-accent: var(--color-sunshine);
-  --guide-accent-deep: color-mix(in srgb, var(--guide-accent) 72%, black);
-  --guide-accent-shadow: 0 4px 0 var(--guide-accent-deep);
   background: rgba(15, 20, 30, 0.72);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -412,38 +484,14 @@ body {
   box-shadow: 0 16px 40px color-mix(in srgb, var(--guide-accent) 35%, transparent);
 }
 
+/* character-select-btn: built on .btn-accent (add btn-accent in markup) */
 .character-select-btn {
   margin: 0 12px 12px;
   padding: 12px 20px;
-  background: var(--guide-accent);
-  border: 0;
-  border-bottom: 4px solid var(--guide-accent-deep);
   border-radius: 14px;
-  color: var(--color-text-dark);
-  font-family: var(--font-body);
   font-size: 14px;
-  font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: var(--guide-accent-shadow);
-  transition: transform 0.18s ease, filter 0.18s ease;
-}
-
-.character-select-btn:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-}
-
-.character-select-btn:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 4px;
-}
-
-.character-select-btn:active {
-  animation: btnBounce 0.35s ease;
-  border-bottom-width: 2px;
-  transform: translateY(2px);
 }
 
 .character-video {
@@ -544,8 +592,6 @@ body {
   z-index: 10;
   pointer-events: none;
   --guide-accent: var(--color-panel-border);
-  --guide-accent-deep: color-mix(in srgb, var(--guide-accent) 72%, black);
-  --guide-accent-shadow: 0 4px 0 var(--guide-accent-deep);
 }
 
 #gameplay-screen .ui > * {
@@ -581,43 +627,24 @@ body {
   gap: 8px;
 }
 
-.score-collectible-icon,
-.score-duck-icon {
+.score-collectible-icon {
   display: block;
   flex: 0 0 auto;
   height: 28px;
   width: 28px;
 }
 
+/* exit-btn: built on .btn-glass (add btn-glass in markup) */
 .exit-btn {
   position: absolute;
   top: 16px;
   right: 16px;
   z-index: 10;
   padding: 10px 18px;
-  border: 3px solid var(--guide-accent, var(--color-panel-border));
-  border-radius: var(--radius-btn);
-  background: var(--color-panel-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: var(--color-text);
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  cursor: pointer;
-  box-shadow: var(--shadow-panel);
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.exit-btn:hover {
-  background: rgba(35, 45, 65, 0.85);
-  transform: translateY(-2px);
-}
-
-.exit-btn:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
 }
 
 .exit-confirm-modal {
@@ -666,6 +693,7 @@ body {
   justify-content: center;
 }
 
+/* exit-confirm-btn: secondary "ghost" button (Keep playing) */
 .exit-confirm-btn {
   border: 3px solid var(--color-panel-border-light);
   border-radius: var(--radius-btn);
@@ -686,21 +714,15 @@ body {
 }
 
 .exit-confirm-btn:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
+/* exit-confirm-btn-primary: built on .btn-accent (add btn-accent in markup) */
 .exit-confirm-btn-primary {
-  background: var(--guide-accent);
-  border: 0;
-  border-bottom: 4px solid var(--guide-accent-deep);
-  box-shadow: var(--guide-accent-shadow);
-  color: var(--color-text-dark);
-}
-
-.exit-confirm-btn-primary:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 12px 22px;
 }
 
 #score-panel {
@@ -796,6 +818,30 @@ body {
   border: 2px solid rgba(159, 179, 217, 0.5);
 }
 
+.progress-dot.collected-all {
+  background: #4caf50;
+  border: none;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+}
+
+.progress-dot.collected-some {
+  background: #ffc107;
+  border: none;
+  box-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+}
+
+.progress-dot.visited-empty {
+  background: #e8534e;
+  border: none;
+  box-shadow: 0 0 8px rgba(232, 83, 78, 0.55);
+}
+
+.progress-dot.visiting-empty {
+  background: rgba(255, 255, 255, 0.85);
+  border: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+
 @keyframes dotPulse {
   0%,
   100% {
@@ -869,21 +915,14 @@ body {
   z-index: 10;
 }
 
+/* nav-button: round map nav arrow built on .btn-glass (add btn-glass in markup) */
 .nav-button {
   flex: 0 0 auto;
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 3px solid var(--guide-accent, var(--color-panel-border));
-  background: var(--color-panel-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: var(--color-text);
   font-size: 18px;
   line-height: 1;
-  cursor: pointer;
-  box-shadow: var(--shadow-panel);
-  transition: transform 0.15s ease, background 0.15s ease;
 }
 
 .nav-button.hidden {
@@ -901,24 +940,8 @@ body {
   width: auto;
 }
 
-.nav-button:hover {
-  background: rgba(35, 45, 65, 0.85);
-  transform: translateY(-2px);
-}
-
 .nav-button:active {
   animation: btnBounce 0.35s ease;
-}
-
-.nav-button:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-.nav-button:disabled {
-  opacity: 0.35;
-  cursor: default;
-  transform: none;
 }
 
 
@@ -947,38 +970,15 @@ body {
   min-width: 0;
 }
 
+/* pin-details-btn: built on .btn-accent (add btn-accent in markup) */
 .pin-details-btn {
   display: block;
   width: 100%;
   margin-top: 12px;
-  border: 0;
-  border-bottom: 4px solid var(--guide-accent-deep);
   border-radius: 14px;
-  background: var(--guide-accent);
-  color: var(--color-text-dark);
-  cursor: pointer;
-  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 700;
   padding: 10px 12px;
-  box-shadow: var(--guide-accent-shadow);
-  transition: transform 0.18s ease, filter 0.18s ease;
-}
-
-.pin-details-btn:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-}
-
-.pin-details-btn:active {
-  animation: btnBounce 0.35s ease;
-  border-bottom-width: 2px;
-  transform: translateY(2px);
-}
-
-.pin-details-btn:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 4px;
 }
 
 .pin-panel::after {
@@ -1051,8 +1051,7 @@ body {
 }
 
 .details-close-btn:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 #details-collect-goal {
@@ -1130,8 +1129,7 @@ body {
 }
 
 .slideshow-btn:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
 }
 
 .slideshow-btn-previous {
@@ -1180,8 +1178,7 @@ body {
 }
 
 .slideshow-thumbnails button:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: 2px;
+  outline: none;
 }
 
 .slideshow-thumbnails img {
@@ -1227,8 +1224,7 @@ body {
 }
 
 .collectible-item:focus-visible {
-  outline: 3px solid var(--color-accent);
-  outline-offset: 3px;
+  outline: none;
 }
 
 .collectible-item.collected {
@@ -1243,9 +1239,42 @@ body {
   width: 100%;
 }
 
+.slide-complete {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  inset: 0;
+  justify-content: center;
+  pointer-events: none;
+  position: absolute;
+  z-index: 4;
+}
+
+.slide-complete-label {
+  background: rgba(7, 17, 31, 0.82);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  padding: 12px 20px;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* slide-complete-btn: built on .btn-accent (add btn-accent in markup) */
+.slide-complete-btn {
+  font-size: 16px;
+  padding: 12px 24px;
+  pointer-events: auto;
+}
+
 .collect-feedback {
   position: absolute;
-  color: var(--color-sunshine);
+  color: var(--guide-accent, var(--color-sunshine));
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 800;
@@ -1326,7 +1355,7 @@ body {
   text-shadow: 0 0 12px rgba(255, 216, 77, 0.6);
 }
 
-#final-ducks-summary {
+#final-collect-summary {
   color: var(--color-text-muted);
   font-size: 18px;
   margin: 12px auto 8px;
@@ -1385,10 +1414,8 @@ body {
     animation: none;
   }
 
-  .game-screen-btn:active,
-  .character-select-btn:active,
+  .btn-accent:active,
   .nav-button:active,
-  .pin-details-btn:active,
   .carousel-arrow:active {
     animation: none;
   }
@@ -1417,6 +1444,10 @@ body {
 
   .achievement-toast {
     transition: none;
+  }
+
+  .loading-spinner {
+    animation: none;
   }
 }
 
@@ -1459,8 +1490,7 @@ body {
     padding: 12px 14px;
   }
 
-  .score-collectible-icon,
-  .score-duck-icon {
+  .score-collectible-icon {
     height: 24px;
     width: 24px;
   }
@@ -1491,5 +1521,183 @@ body {
     max-width: calc(100% - 32px);
     top: 12px;
     right: 12px;
+  }
+}
+
+/* ==========================================================================
+   10. MAP LOADING SCREEN
+   ========================================================================== */
+
+.loading-screen {
+  align-items: center;
+  background: url('assets/background.png') no-repeat center center;
+  background-size: cover;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 40;
+}
+
+.loading-screen.hidden {
+  display: none;
+}
+
+.loading-content {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  border-top-color: var(--guide-accent, var(--color-sunshine));
+  height: 56px;
+  width: 56px;
+  animation: spin 0.9s linear infinite;
+}
+
+.loading-text {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: clamp(18px, 5vw, 24px);
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   11. FULLSCREEN BUTTON & EMBED CONSTRAINED MODE
+   ========================================================================== */
+
+.embed-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 28px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.embed-prompt-text {
+  display: none;
+  max-width: min(420px, calc(100vw - 48px));
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: clamp(18px, 6vw, 24px);
+  font-weight: 600;
+  line-height: 1.35;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+/* fullscreen-btn: built on .btn-glass (add btn-glass in markup) */
+.fullscreen-btn {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  pointer-events: auto;
+}
+
+.fullscreen-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.fullscreen-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fullscreen-icon .fullscreen-icon-exit {
+  display: none;
+}
+
+.fullscreen-icon .fullscreen-icon-newtab {
+  display: none;
+}
+
+.fullscreen-btn.is-newtab .fullscreen-icon-enter,
+.fullscreen-btn.is-newtab .fullscreen-icon-exit {
+  display: none;
+}
+
+.fullscreen-btn.is-newtab .fullscreen-icon-newtab {
+  display: block;
+}
+
+.fullscreen-btn[aria-pressed="true"] {
+  background: rgba(111, 168, 255, 0.22);
+  border-color: var(--color-accent);
+}
+
+.fullscreen-btn[aria-pressed="true"] .fullscreen-icon-enter {
+  display: none;
+}
+
+.fullscreen-btn[aria-pressed="true"] .fullscreen-icon-exit {
+  display: block;
+}
+
+.fullscreen-btn[aria-pressed="true"]:hover {
+  background: rgba(111, 168, 255, 0.32);
+}
+
+body.embed-constrained {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(111, 168, 255, 0.28), transparent 30%),
+    radial-gradient(circle at 70% 70%, rgba(255, 216, 77, 0.22), transparent 28%),
+    rgba(4, 8, 14, 0.82);
+}
+
+body.embed-constrained #start-screen,
+body.embed-constrained #character-select-screen,
+body.embed-constrained #final-screen,
+body.embed-constrained #gameplay-screen {
+  display: none !important;
+}
+
+body.embed-constrained .embed-prompt {
+  pointer-events: auto;
+}
+
+body.embed-constrained .embed-prompt-text {
+  display: block;
+}
+
+body.embed-constrained .fullscreen-btn {
+  position: static;
+  bottom: auto;
+  right: auto;
+}
+
+/* When there is only room for the button itself, hide the prompt text. */
+@media (max-width: 300px), (max-height: 360px) {
+  body.embed-constrained .embed-prompt-text {
+    display: none;
   }
 }
