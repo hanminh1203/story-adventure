@@ -6,7 +6,9 @@
 4. Replace the default `Code.gs` with the contents of [Code.gs](Code.gs) in this folder.
 5. In the Apps Script editor, select the **`setupTriggers`** function and **Run** it once, then
    approve the permissions. This installs the on-edit trigger that caches in-cell image URLs and
-   geocodes the Locations `name` column into `latitude`/`longitude`.
+   geocodes the Locations `name` column into `latitude`/`longitude`, plus a **nightly**
+   `runFullSync` trigger (~midnight) that re-runs the same automation across every row. You can
+   also run it on demand from the Sheet via **Story Adventures → Refresh all data now**.
 6. **Deploy → New deployment → Web app**
    - Execute as: **Me**
    - Who has access: **Anyone**

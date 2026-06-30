@@ -6,9 +6,15 @@
  *
  * IMPORTANT — one-time setup for the edit automation:
  *   Run setupTriggers() once from the Apps Script editor and grant the
- *   permissions it asks for. This installs an on-edit trigger (handleEdit) that
- *   runs with full authorization, which the geocoding (Maps) and in-cell image
- *   reading require — a plain simple onEdit trigger is not allowed to use them.
+ *   permissions it asks for. This installs:
+ *     - an on-edit trigger (handleEdit) that reacts to individual cell edits, and
+ *     - a nightly time-based trigger (runFullSync) that re-runs the same
+ *       automation across every row (handy for refreshing expiring in-cell
+ *       image URLs and filling in any missing coordinates).
+ *   Both run with full authorization, which the geocoding (Maps) and in-cell
+ *   image reading require — a plain simple onEdit trigger is not allowed to use
+ *   them. The same full sync can also be triggered manually from the Sheet via
+ *   the "Story Adventures → Refresh all data now" menu (added by onOpen).
  *
  * Sheet tabs required:
  *   - Characters
@@ -18,6 +24,11 @@
  * See apps-script/SHEET-SCHEMA.md for column definitions.
  */
 
+/* --------------------------------------------------------------------------
+ * Configuration constants.
+ * ------------------------------------------------------------------------ */
+
+// Names of the three required sheet tabs (must match the tab names exactly).
 var CHARACTERS_SHEET = 'Characters';
 var LOCATIONS_SHEET = 'Locations';
 var IMAGES_SHEET = 'Images';
@@ -32,6 +43,21 @@ var IMAGE_URL_COLUMNS = {
   collectibleCell: 'collectibleUrl',
   imageCell: 'imageUrl'
 };
+
+// Hour of day (0–23, script timezone) for the nightly runFullSync trigger.
+// The trigger fires within the hour starting here, i.e. between 00:00–01:00.
+var NIGHTLY_TRIGGER_HOUR = 0;
+
+// Custom Sheet menu (added by onOpen) for running the full sync on demand.
+var MENU_TITLE = 'Story Adventures';
+var MENU_REFRESH_ITEM = 'Refresh all data now';
+
+// Multiplier applied to a geocoding result's viewport diagonal to derive the
+// camera height, so the whole place comfortably fits in frame (>1 adds margin).
+var VIEWPORT_PADDING_FACTOR = 2;
+
+// Earth's mean radius in meters, used by the Haversine distance calculation.
+var EARTH_RADIUS_METERS = 6371000;
 
 function doGet() {
   try {
@@ -135,13 +161,17 @@ function readImages() {
  * ------------------------------------------------------------------------ */
 
 /**
- * Installs the on-edit trigger. Run this once from the Apps Script editor.
- * Safe to re-run: it removes any existing handleEdit trigger first.
+ * Installs the automation triggers. Run this once from the Apps Script editor.
+ * Safe to re-run: it removes any existing handleEdit / runFullSync triggers
+ * first. Installs:
+ *   - handleEdit  : on-edit trigger (reacts to individual cell edits)
+ *   - runFullSync : nightly time-based trigger (~midnight, script timezone)
  */
 function setupTriggers() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   ScriptApp.getProjectTriggers().forEach(function (trigger) {
-    if (trigger.getHandlerFunction() === 'handleEdit') {
+    var handler = trigger.getHandlerFunction();
+    if (handler === 'handleEdit' || handler === 'runFullSync') {
       ScriptApp.deleteTrigger(trigger);
     }
   });
@@ -149,6 +179,96 @@ function setupTriggers() {
     .forSpreadsheet(ss)
     .onEdit()
     .create();
+  // Nightly full refresh in the script's timezone (see NIGHTLY_TRIGGER_HOUR).
+  ScriptApp.newTrigger('runFullSync')
+    .timeBased()
+    .atHour(NIGHTLY_TRIGGER_HOUR)
+    .everyDays(1)
+    .create();
+}
+
+/**
+ * Simple trigger that adds a custom menu so the manager can run the full sync
+ * on demand straight from the Sheet (Story Adventures → Refresh all data now).
+ * Runs automatically whenever the spreadsheet is opened.
+ */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu(MENU_TITLE)
+    .addItem(MENU_REFRESH_ITEM, 'runFullSync')
+    .addToUi();
+}
+
+/**
+ * Runs the on-edit automation across every row of every sheet. Used by the
+ * nightly trigger and the "Refresh all data now" menu item.
+ *
+ * Mirrors handleEdit, but applied to the whole table instead of a single cell:
+ *   - Refreshes the cached image URL for every in-cell image (avatarCell /
+ *     collectibleCell / imageCell) so expiring temporary URLs are renewed.
+ *     Manually entered URLs (reference links, assets/ paths) are preserved:
+ *     a URL column is only overwritten when its cell actually holds an in-cell
+ *     image.
+ *   - Re-geocodes every Locations row and overwrites its latitude/longitude
+ *     (and height), even when those cells were already filled. Rows whose name
+ *     can't be geocoded are left as-is.
+ */
+function runFullSync() {
+  refreshImageUrls(CHARACTERS_SHEET, ['avatarCell', 'collectibleCell']);
+  refreshImageUrls(IMAGES_SHEET, ['imageCell']);
+  refreshLocationCoords();
+}
+
+/**
+ * Re-reads every in-cell image in the given columns and writes its current
+ * temporary URL into the matching URL column. Skips rows where the image cell
+ * has no in-cell image, so any manually entered URL is left as-is.
+ */
+function refreshImageUrls(sheetName, cellHeaders) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss.getSheetByName(sheetName)) return;
+  var table = readSheet(sheetName);
+  table.rows.forEach(function (record) {
+    cellHeaders.forEach(function (cellHeader) {
+      var cellCol = table.headerMap[cellHeader];
+      var urlCol = table.headerMap[IMAGE_URL_COLUMNS[cellHeader]];
+      if (!cellCol || !urlCol) return;
+      var url = getCellImageUrl(record.data[cellHeader]);
+      if (url) {
+        table.sheet.getRange(record.rowIndex, urlCol).setValue(url);
+      }
+    });
+  });
+}
+
+/**
+ * Re-geocodes every Locations row that has a name and overwrites its
+ * latitude/longitude (and height when available) with the fresh result, even
+ * if those cells were already filled. Rows whose name can't be geocoded (or is
+ * empty) are left as-is, so a transient Maps failure won't wipe existing data.
+ */
+function refreshLocationCoords() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss.getSheetByName(LOCATIONS_SHEET)) return;
+  var table = readSheet(LOCATIONS_SHEET);
+  var nameCol = table.headerMap.name;
+  var latCol = table.headerMap.latitude;
+  var lonCol = table.headerMap.longitude;
+  var heightCol = table.headerMap.height;
+  if (!nameCol || (!latCol && !lonCol && !heightCol)) return;
+
+  table.rows.forEach(function (record) {
+    var query = String(record.data.name || '').trim();
+    if (!query) return;
+
+    var coords = geocodeLocation(query);
+    if (!coords) return;
+    if (latCol) table.sheet.getRange(record.rowIndex, latCol).setValue(coords.lat);
+    if (lonCol) table.sheet.getRange(record.rowIndex, lonCol).setValue(coords.lng);
+    if (heightCol && coords.height != null) {
+      table.sheet.getRange(record.rowIndex, heightCol).setValue(coords.height);
+    }
+  });
 }
 
 /**
@@ -196,38 +316,71 @@ function syncImageUrlOnEdit(sheet, headerMap, row, editedCol, cellHeaders) {
 
 /**
  * When Locations."name" is edited, geocode the entered place and fill the
- * longitude/latitude columns. Clears both when the cell is empty or the place
- * can't be found.
+ * longitude/latitude/height columns. Clears them when the cell is empty or the
+ * place can't be found.
  */
 function syncLocationCoordsOnEdit(sheet, headerMap, row, editedCol) {
   var nameCol = headerMap.name;
   if (!nameCol || editedCol !== nameCol) return;
   var latCol = headerMap.latitude;
   var lonCol = headerMap.longitude;
-  if (!latCol && !lonCol) return;
+  var heightCol = headerMap.height;
+  if (!latCol && !lonCol && !heightCol) return;
 
   var query = String(sheet.getRange(row, nameCol).getDisplayValue() || '').trim();
   var coords = query ? geocodeLocation(query) : null;
 
   if (latCol) sheet.getRange(row, latCol).setValue(coords ? coords.lat : '');
   if (lonCol) sheet.getRange(row, lonCol).setValue(coords ? coords.lng : '');
+  if (heightCol) {
+    sheet.getRange(row, heightCol).setValue(coords && coords.height != null ? coords.height : '');
+  }
 }
 
 /**
- * Geocodes a place name/address to { lat, lng }, or null if not found.
- * Requires authorization (installed trigger / Web App), not a simple trigger.
+ * Geocodes a place name/address to { lat, lng, height }, or null if not found.
+ * Height is a camera-altitude heuristic derived from the result's viewport: the
+ * diagonal distance (in meters) across the viewport bounds, so larger places get
+ * a higher camera. Requires authorization (installed trigger / Web App), not a
+ * simple trigger.
  */
 function geocodeLocation(query) {
   try {
     var response = Maps.newGeocoder().geocode(query);
     if (response && response.status === 'OK' && response.results && response.results.length) {
-      var location = response.results[0].geometry.location;
-      return { lat: location.lat, lng: location.lng };
+      var geometry = response.results[0].geometry;
+      var location = geometry.location;
+      var result = { lat: location.lat, lng: location.lng };
+      var viewport = geometry.viewport;
+      if (viewport && viewport.northeast && viewport.southwest) {
+        var ne = viewport.northeast;
+        var sw = viewport.southwest;
+        result.height = Math.round(haversineDistance(sw.lat, sw.lng, ne.lat, ne.lng) * VIEWPORT_PADDING_FACTOR);
+      }
+      return result;
     }
   } catch (err) {
     // Maps quota/permission errors fall through to "not found".
   }
   return null;
+}
+
+/**
+ * Great-circle distance in meters between two lat/lng points (Haversine).
+ */
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  var R = EARTH_RADIUS_METERS;
+  var toRad = function (deg) { return deg * Math.PI / 180; };
+
+  var dLat = toRad(lat2 - lat1);
+  var dLon = toRad(lon2 - lon1);
+
+  var a = Math.pow(Math.sin(dLat / 2), 2) +
+          Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+          Math.pow(Math.sin(dLon / 2), 2);
+
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 /* --------------------------------------------------------------------------

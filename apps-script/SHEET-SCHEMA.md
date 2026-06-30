@@ -105,6 +105,28 @@ How it is used:
 > **Setup:** the on-edit behavior (image-URL caching and location geocoding) runs from an
 > **installable trigger**. In the Apps Script editor, run **`setupTriggers`** once and approve
 > the permissions. A plain `onEdit` simple trigger cannot use Maps geocoding or write cells.
+> Running `setupTriggers` also installs a **nightly** trigger (`runFullSync`, ~midnight in the
+> script's timezone) that re-runs the same automation across every row.
+
+### Running the automation nightly and on demand
+
+The same automation runs in three ways:
+
+- **On edit** — when you change a single cell (handled by `handleEdit`).
+- **Nightly** — `runFullSync` runs automatically around midnight. This refreshes expiring
+  in-cell image URLs and re-geocodes every location. It is installed automatically when you run
+  **`setupTriggers`** (no extra setup needed).
+- **Manually from the Sheet** — open the Sheet and use the menu
+  **Story Adventures → Refresh all data now** (added by `onOpen`). The first time you click it
+  Google asks you to authorize the script.
+
+> The full sync **re-geocodes every location and overwrites** its `latitude`/`longitude`/`height`
+> (so any manual coordinate tweaks are replaced by the fresh geocoded values — locations whose
+> name can't be geocoded are left untouched). For image columns it only overwrites a URL cell when
+> that cell holds an in-cell image, so manually pasted URLs / `assets/...` paths are preserved.
+
+> If the **Story Adventures** menu does not appear, reload the Sheet (the `onOpen` trigger runs on
+> open). If the nightly run isn't firing, re-run **`setupTriggers`** in the Apps Script editor.
 
 ## Delimiter rule
 
