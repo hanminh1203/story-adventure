@@ -19,51 +19,75 @@ Navigation does not wrap: **Previous** is hidden on the first stop, and **Next**
 | Path | Purpose |
 |------|---------|
 | `index.html` | Page layout, screen markup, HTML `<template>` elements |
-| `locations.js` | Character guides and their tour stops (`CHARACTERS`) |
 | `script.js` | Game flow, Cesium viewer, camera flights, slideshow, scoring |
 | `style.css` | Screens, HUD, pin panel, details modal, collectibles |
 | `assets/` | Character avatars, collectible icons, and background images |
+| `apps-script/` | Google Apps Script source + sheet column reference |
 
-## Customizing characters and locations
+## Editing content (manager guide)
 
-Edit the `CHARACTERS` array in `locations.js`. Each character:
+Character and location data lives in a **Google Sheet**. No code or git is required to update the game.
 
-```js
+1. Open the shared Google Sheet (your team lead will send the link).
+2. Edit the **Characters** tab for guides (names, colors, YouTube ids, etc.).
+3. Edit the **Locations** tab for tour stops — pick the **Character** from the dropdown (this links the stop to that character), give the stop a unique `name`, then set description, coordinates, etc.
+4. Edit the **Images** tab to manage slideshow photos — pick the **Location** from the dropdown (this links the photo to that location by name) and add the photo (see below).
+5. Save — changes appear when players **refresh** the game page (no redeploy).
+
+**Adding photos** — you can either:
+
+- **Insert image in cell** (recommended): click the `imageCell` (or `avatarCell` / `collectibleCell`) cell, then **Insert → Image → Image in cell** and upload. The app shows the inserted picture automatically.
+- **Paste a URL**: put an `https://` link in the reference column (`imageUrl` / `avatarUrl` / `collectibleImage`). Used only when the matching in-cell image is empty.
+
+**Tips**
+
+- On **Locations**, choose the **Character** from the dropdown — its `name` links the stop to a character. Give each stop a unique `name`.
+- Location **row order** within the same character is the order **Next** / **Previous** follows.
+- On **Images**, choose the **Location** from the dropdown — its `name` links the photo to a location. Each photo is its own row; **row order** sets the slideshow order.
+- In-cell images are served via temporary Google URLs refreshed on each load; the reference URL columns are kept as a fallback.
+- **Camera height** is in meters — lower values zoom closer.
+- For coordinates, right-click a place in Google Maps and copy lat/lon.
+
+Full column reference: [apps-script/SHEET-SCHEMA.md](apps-script/SHEET-SCHEMA.md)
+
+### First-time setup (developers)
+
+1. Create the Sheet with `Characters`, `Locations`, and `Images` tabs per [apps-script/SHEET-SCHEMA.md](apps-script/SHEET-SCHEMA.md) (including the `Character` / `Location` dropdowns).
+2. Paste [apps-script/Code.gs](apps-script/Code.gs) into the Sheet's Apps Script editor.
+3. Deploy as a Web App (Execute as **Me**, access **Anyone**) — see [apps-script/README.md](apps-script/README.md).
+4. Set `CHARACTERS_DATA_URL` in `script.js` to the deployed `/exec` URL.
+5. Share the Sheet with **Editor** access for managers who should edit content.
+
+## Data format reference
+
+The Apps Script Web App returns nested JSON consumed by the game:
+
+```json
 {
-  id: "1",
-  name: "Tjingeling",
-  title: "The Latern Traveller",
-  avatarUrl: "assets/avatar-tjingeling.png",
-  youtubeId: "y_92xI5zY8g",   // YouTube video ID (the part after ?v=)
-  themeColor: "#ffd84d",       // accent for borders, buttons, and HUD
-  collectibleImage: "assets/collectible-lantern.svg",
-  collectibleName: "lanterns", // plural label in score and toasts
-  collectMessages: ["Great find!", "Nice one!", "Got a lantern!"],
-  selectButtonLabel: "Pick me!",
-  locations: [ /* tour stops */ ]
-}
-```
-
-Each location:
-
-```js
-{
-  name: "Eiffel Tower",
-  description: "Short text shown in the pin panel and details modal.",
-  lat: 48.8584,
-  lon: 2.2945,
-  height: 1500,    // camera distance in meters — lower = closer
-  heading: 0,      // optional compass direction in degrees (default 0)
-  images: [        // slideshow URLs (3–4 recommended)
-    "https://example.com/photo1.jpg",
-    "https://example.com/photo2.jpg"
+  "characters": [
+    {
+      "id": "1",
+      "name": "Tjingeling",
+      "title": "The Latern Traveller",
+      "avatarUrl": "assets/avatar-tjingeling.png",
+      "youtubeUrl": "https://www.youtube.com/watch?v=y_92xI5zY8g",
+      "themeColor": "#ffd84d",
+      "collectibleImage": "assets/collectible-lantern.svg",
+      "collectibleName": "lanterns",
+      "locations": [
+        {
+          "name": "Eiffel Tower",
+          "description": "Short text shown in the pin panel and details modal.",
+          "lat": 48.8584,
+          "lon": 2.2945,
+          "height": 1500,
+          "images": ["https://example.com/photo1.jpg"]
+        }
+      ]
+    }
   ]
 }
 ```
-
-Order in `locations` is the order **Next** / **Previous** follow. To find coordinates, right-click a place in Google Maps and copy lat/lon.
-
-Collectible positions are preset per slide in `script.js` (`COLLECTIBLE_LAYOUTS`); each slide can have up to three items. Collectibles already found in a session are tracked and do not respawn until restart.
 
 ## Running locally
 
@@ -130,5 +154,6 @@ The map, character select, slideshows, and scoring all run inside the iframe.
 ## Notes
 
 - CesiumJS: [github.com/CesiumGS/cesium](https://github.com/CesiumGS/cesium) (Apache 2.0)
-- Slideshow images are loaded from external URLs configured in `locations.js`; host your own images if you need offline or long-term stability
+- Slideshow images come from the Google Sheet's **Images** tab (one photo per row, linked to a location by the `Location` name); add them as in-cell images (`imageCell`) or as `https://` URLs (`imageUrl`)
+- If the Sheet is temporarily unreachable, the app may use the last successful load cached in the browser
 - To tune `lat` / `lon` values, append `?debug` to the URL (e.g. `http://localhost:8080/?debug`). Map clicks then log coordinates to the browser console via `onCanvasClicked` in `script.js`

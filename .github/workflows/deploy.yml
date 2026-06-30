@@ -32,13 +32,22 @@ jobs:
       # If you are using plain HTML/CSS, you can skip this step.
       # For example: 
       - name: Build Site
+        env:
+          CHARACTERS_DATA_URL: ${{ secrets.CHARACTERS_DATA_URL }}
         run: |
           mkdir build
           cp -r index.html build/
           cp -r assets build/
-          cp -r locations.js build/
           cp -r script.js build/
           cp -r style.css build/
+          # Inject the data URL from the environment into a runtime config file.
+          # If the secret is unset, write an empty config so script.js falls back
+          # to its hardcoded default.
+          if [ -n "$CHARACTERS_DATA_URL" ]; then
+            printf 'window.ENV = { CHARACTERS_DATA_URL: "%s" };\n' "$CHARACTERS_DATA_URL" > build/env.js
+          else
+            printf 'window.ENV = {};\n' > build/env.js
+          fi
 
       # 4. Run gh-pages-multibranch to merge this branch into the directory
       - name: Arrange Multi-Branch Layout
