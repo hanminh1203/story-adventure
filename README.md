@@ -1,169 +1,172 @@
 # Magical Story Adventures
 
-An interactive educational game built with CesiumJS. Children pick a storybook guide, fly a 3D globe between real-world landmarks, explore photo slideshows, and collect hidden treasures for points — inspired by Google Earth-style exploration.
+Interactive educational flythrough game built with React, Vite, and CesiumJS. Players pick a guide character, fly between real-world landmarks on a 3D globe, open each location slideshow, and collect hidden items to build a final score.
 
-No API key required for the default setup.
+The app is content-driven: non-developers can update characters, locations, and photos in Google Sheets, while the frontend reads a Google Apps Script Web App JSON feed.
 
-## How it works
+## What This Project Is
 
-1. **Start screen** — intro and **LET'S GO!**
-2. **Character select** — choose one of four guides (each has a YouTube intro video)
-3. **Gameplay** — the camera flies between that character's locations on a 3D globe
-4. **Details & collectibles** — open **Show details** on a location pin to browse images; click hidden collectibles for 1 point each
-5. **Final screen** — total score, then **RESTART** to play again
+`Magical Story Adventures` is a browser game for guided exploration and storytelling.
 
-Navigation does not wrap: **Previous** is hidden on the first stop, and **Next** becomes **Finalize** on the last.
+- Child-friendly character-driven travel experience
+- Real-world places shown on a 3D Cesium globe
+- Per-location image slideshow with collectible mini-game
+- Scoring and end-of-journey summary
+- Content managed externally via Google Sheet + Apps Script
 
-## Project structure
+## Architecture At A Glance
 
-| Path | Purpose |
-|------|---------|
-| `index.html` | Vite entry HTML (Cesium CDN, root mount) |
-| `src/` | React app — screens, gameplay UI, Cesium hook, utilities |
-| `src/style.css` | Screens, HUD, pin panel, details modal, collectibles |
-| `public/assets/` | Character avatars, collectible icons, and background images |
-| `apps-script/` | Google Apps Script source + sheet column reference |
+### Frontend app
 
-## Editing content (manager guide)
+- **Framework:** React 19
+- **Build tool:** Vite 6
+- **3D renderer:** CesiumJS
+- **Main game state hook:** `src/hooks/useGameplay.js`
+- **Data loading/normalization:** `src/lib/characterData.js`
 
-Character and location data lives in a **Google Sheet**. No code or git is required to update the game.
+### Runtime flow
 
-1. Open the shared Google Sheet (your team lead will send the link).
-2. Edit the **Characters** tab for guides (names, colors, YouTube ids, etc.).
-3. Edit the **Locations** tab for tour stops — pick the **Character** from the dropdown (this links the stop to that character), give the stop a unique `name`, then set description, coordinates, etc.
-4. Edit the **Images** tab to manage slideshow photos — pick the **Location** from the dropdown (this links the photo to that location by name) and add the photo (see below).
-5. Save — changes appear when players **refresh** the game page (no redeploy).
+1. `src/main.jsx` mounts the app.
+2. `src/App.jsx` loads character payload from `VITE_CHARACTERS_DATA_URL`.
+3. `src/lib/characterData.js` normalizes data and stores cache in `localStorage`.
+4. UI moves through stages: `start` -> `characterSelect` -> `gameplay` -> `final`.
+5. `useGameplay` orchestrates Cesium viewer, camera movement, slideshow progression, collectibles, tutorial, and scoring.
 
-**Adding photos** — you can either:
+### Data architecture
 
-- **Insert image in cell** (recommended): click the `imageCell` (or `avatarCell` / `collectibleCell`) cell, then **Insert → Image → Image in cell** and upload. The app shows the inserted picture automatically.
-- **Paste a URL**: put an `https://` link in the reference column (`imageUrl` / `avatarUrl` / `collectibleImage`). Used only when the matching in-cell image is empty.
+- **Google Sheet** (tabs: `Characters`, `Locations`, `Images`) is the source of truth.
+- **Apps Script Web App** transforms rows into nested JSON.
+- **Frontend** consumes the JSON feed every load.
 
-**Tips**
+See:
+- `apps-script/README.md`
+- `apps-script/SHEET-SCHEMA.md`
 
-- On **Locations**, choose the **Character** from the dropdown — its `name` links the stop to a character. Give each stop a unique `name`.
-- Location **row order** within the same character is the order **Next** / **Previous** follows.
-- On **Images**, choose the **Location** from the dropdown — its `name` links the photo to a location. Each photo is its own row; **row order** sets the slideshow order.
-- In-cell images are served via temporary Google URLs refreshed on each load; the reference URL columns are kept as a fallback.
-- **Camera height** is in meters — lower values zoom closer.
-- For coordinates, right-click a place in Google Maps and copy lat/lon.
+## How To Play
 
-Full column reference: [apps-script/SHEET-SCHEMA.md](apps-script/SHEET-SCHEMA.md)
+1. Launch the game and click **LET'S GO!**
+2. Select a guide character.
+3. Travel through each destination on the globe.
+4. Click **Look closer!** to open the location slideshow.
+5. Find and click hidden collectibles in each image.
+6. Continue until the final stop.
+7. Click **Finalize** to view total score.
+8. Click **RESTART** to play again.
 
-### First-time setup (developers)
+### Keyboard controls
 
-1. Create the Sheet with `Characters`, `Locations`, and `Images` tabs per [apps-script/SHEET-SCHEMA.md](apps-script/SHEET-SCHEMA.md) (including the `Character` / `Location` dropdowns).
-2. Paste [apps-script/Code.gs](apps-script/Code.gs) into the Sheet's Apps Script editor.
-3. Deploy as a Web App (Execute as **Me**, access **Anyone**) — see [apps-script/README.md](apps-script/README.md).
-4. Set `VITE_CHARACTERS_DATA_URL` in `.env` (or the GitHub Actions secret `CHARACTERS_DATA_URL` for deploys) to the deployed `/exec` URL.
-5. Share the Sheet with **Editor** access for managers who should edit content.
+- `ArrowRight`: next location or next slideshow image
+- `ArrowLeft`: previous location or previous slideshow image
+- `Escape`: close modal / exit confirmation
+- `Enter`: activate focused button on menu screens
 
-## Data format reference
+## How To Setup For Local Development
 
-The Apps Script Web App returns nested JSON consumed by the game:
+### Prerequisites
 
-```json
-{
-  "characters": [
-    {
-      "id": "1",
-      "name": "Tjingeling",
-      "title": "The Latern Traveller",
-      "avatarUrl": "assets/avatar-tjingeling.png",
-      "youtubeUrl": "https://www.youtube.com/watch?v=y_92xI5zY8g",
-      "themeColor": "#ffd84d",
-      "collectibleImage": "assets/collectible-lantern.svg",
-      "collectibleName": "lanterns",
-      "locations": [
-        {
-          "name": "Eiffel Tower",
-          "description": "Short text shown in the pin panel and details modal.",
-          "lat": 48.8584,
-          "lon": 2.2945,
-          "height": 1500,
-          "images": ["https://example.com/photo1.jpg"]
-        }
-      ]
-    }
-  ]
-}
-```
+- Node.js 20+
+- npm
+- A deployed Apps Script Web App URL (`.../exec`)
 
-## Running locally
-
-Install dependencies and start the Vite dev server:
+### 1) Install dependencies
 
 ```bash
 npm install
+```
+
+### 2) Configure environment
+
+Create `.env` in repo root:
+
+```bash
+VITE_CHARACTERS_DATA_URL=https://script.google.com/macros/s/your-deployment-id/exec
+```
+
+Or copy from `.env.example` and replace the placeholder URL.
+
+### 3) Start local dev server
+
+```bash
 npm run dev
 ```
 
-Open the URL shown (typically `http://localhost:5173`).
+Default Vite URL is typically `http://localhost:5173`.
 
-Create a `.env` file to set `VITE_CHARACTERS_DATA_URL`:
+## Deployment (Local And On GitHub Pages)
 
-```bash
-VITE_CHARACTERS_DATA_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
-```
+### Local production build validation
 
-Production build:
+Use this before pushing:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Controls
+- Build output is generated in `dist/`.
+- `preview` serves production output locally for smoke testing.
 
-| Input | Action |
-|-------|--------|
-| **← / →** | Previous / next location (gameplay) |
-| **← / →** | Previous / next slideshow image (details open); **→** on the last image closes details and advances |
-| **Space** | Open details for the current location |
-| **Escape** | Close details modal |
-| **Enter** | Activate focused button on start, character select, or final screen |
+### GitHub Pages deployment
 
-Buttons disable during camera flights so animations cannot overlap.
+Deployment is automated by `.github/workflows/deploy.yml`.
 
-## Map and imagery
+- Trigger branches: `main`, `dev`, and `feature/*`
+- Build env in Actions uses secret `CHARACTERS_DATA_URL` as `VITE_CHARACTERS_DATA_URL`
+- Publish target is `gh-pages` branch
+- Multi-branch page layout is handled by `coderefinery/gh-pages-multibranch`
 
-- **Globe:** CesiumJS 1.142 (Apache 2.0)
-- **Imagery:** Esri World Imagery (free public service, no token)
-- **Terrain:** smooth ellipsoid (no Cesium ion account needed)
+Required GitHub settings/secrets:
 
-### Real 3D terrain (optional)
+1. Repository secret: `CHARACTERS_DATA_URL` (Apps Script `/exec` endpoint)
+2. Pages should serve from `gh-pages` branch
 
-For elevation (mountains, valleys):
+## Data Configuration
 
-1. Sign up at [cesium.com/ion](https://cesium.com/ion) and create an access token
-2. In `src/hooks/useGameplay.js`, set `Cesium.Ion.defaultAccessToken = "<your token>";`
-3. Replace `terrainProvider: new Cesium.EllipsoidTerrainProvider()` with `await Cesium.createWorldTerrainAsync()` (wrap viewer setup in an `async` function)
+### Source of truth
 
-The free ion tier has a monthly usage cap but is enough for personal or portfolio use.
+Game content is managed in Google Sheets with exact tab names:
 
-## Embedding in Google Sites
+- `Characters`
+- `Locations`
+- `Images`
 
-Google Sites cannot run custom scripts on a page directly, so host this project first and embed it in an iframe.
+Header names must match schema exactly (see `apps-script/SHEET-SCHEMA.md`).
 
-**GitHub Pages**
+### Apps Script setup
 
-1. Push the repo to GitHub
-2. **Settings → Pages** — deploy from the `main` branch, root folder
-3. Use the URL GitHub provides (e.g. `https://yourname.github.io/flythrough-map/`)
-4. In Google Sites: **Insert → Embed → By URL** — paste that URL
+In the sheet:
 
-The map, character select, slideshows, and scoring all run inside the iframe.
+1. Open **Extensions -> Apps Script**
+2. Paste `apps-script/Code.gs`
+3. Run `setupTriggers` once and approve permissions
+4. Deploy as Web App:
+   - Execute as: **Me**
+   - Access: **Anyone**
+5. Use deployed `/exec` URL in env/secrets
 
-**Full screen button**
+### Important data behavior
 
-- A **Full screen** button is always visible in the lower-right corner on every screen.
-- Click it to enter full screen; click again to exit.
-- If the viewport is smaller than 480 × 560 px (whether inside a small iframe or just a small window), the rest of the UI is hidden and a centered prompt with the Full screen button is shown until the user enters full screen.
-- When embedding, the parent must allow full screen (`allowfullscreen` or `allow="fullscreen"`). Google Sites **Embed by URL** usually includes this; custom HTML embeds may need it added manually.
+- `Locations.name` is geocoded to `latitude` / `longitude` by installable trigger
+- `Images.Location` links by exact location `name`
+- Row order defines play/slideshow order
+- Image cells can be in-cell images or plain URLs
+- Empty character avatar/collectible image falls back to default app assets
 
-## Notes
+## Technical Note
 
-- CesiumJS: [github.com/CesiumGS/cesium](https://github.com/CesiumGS/cesium) (Apache 2.0)
-- Slideshow images come from the Google Sheet's **Images** tab (one photo per row, linked to a location by the `Location` name); add them as in-cell images (`imageCell`) or as `https://` URLs (`imageUrl`)
-- If the Sheet is temporarily unreachable, the app may use the last successful load cached in the browser
-- To tune `lat` / `lon` values, append `?debug` to the URL (e.g. `http://localhost:5173/?debug`). Map clicks then log coordinates to the browser console via the debug handler in `src/hooks/useGameplay.js`
+- App fetches from `VITE_CHARACTERS_DATA_URL` at runtime.
+- If fetch fails, previous successful payload can still be recovered from `localStorage` cache (`charactersCache`) for resilience.
+- `vite.config.js` uses `base: "./"` to keep relative asset paths compatible with GitHub Pages branch paths.
+- Production/CI uses Node 20 in GitHub Actions.
+- Media URL sanitization and shape normalization happen in `src/lib/characterData.js`.
+
+## Critical Handover Items
+
+- Keep Apps Script deployment URL current in both:
+  - local `.env` (`VITE_CHARACTERS_DATA_URL`)
+  - GitHub secret `CHARACTERS_DATA_URL`
+- Re-run `setupTriggers` if trigger permissions are removed or copied to a new sheet.
+- Do not rename sheet tabs or headers unless you also update Apps Script parser logic.
+- Keep `Locations.name` unique; image/location relationships depend on exact text match.
+- Validate data integrity periodically with `validateSheets` in Apps Script.
+- Before release: run `npm run build` and `npm run preview`.
