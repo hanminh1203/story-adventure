@@ -265,6 +265,24 @@ function getStarRating(score, maxScore) {
   return 1;
 }
 
+function getTutorialSteps(character) {
+  const name = character?.name || "Your guide";
+  const treasures = getCharacterCollectibleName(character);
+  return [
+    {
+      message: `Hi! I'm ${name}. Watch us fly to our first magical stop!`,
+    },
+    {
+      message: "Tap Look closer! to see photos of this place.",
+      target: ".pin-details-btn",
+    },
+    {
+      message: `Can you find the hidden ${treasures}? Tap them for treasure!`,
+      target: ".collectible-item",
+    },
+  ];
+}
+
 /**
  * AbstractScreen - Base class for all screens
  */
@@ -433,6 +451,8 @@ class FinalScreen extends AbstractScreen {
 }
 
 class CharacterSelectScreen extends AbstractScreen {
+  static CAROUSEL_MEDIA_QUERY = "(max-width: 899px)";
+
   constructor(characters, onCharacterSelected, onGoBack) {
     super("character-select-screen");
     this.characterGrid = document.getElementById("character-grid");
@@ -440,6 +460,8 @@ class CharacterSelectScreen extends AbstractScreen {
     this.onCharacterSelected = onCharacterSelected;
     this.selectedCharacter = null;
     this.selectButtons = [];
+    this.isCarouselJumping = false;
+    this.carouselScrollEndTimer = null;
     this.goBackButton = document.getElementById('character-select-go-back-btn');
     this.goBackButton.addEventListener('click', (event) => {
       onGoBack();
@@ -447,81 +469,195 @@ class CharacterSelectScreen extends AbstractScreen {
 
     // Carousel arrows: only visible/needed below the row-of-4 breakpoint
     // (see .carousel-arrow / max-width: 899px in style.css), but wiring the
-    // listeners unconditionally is harmless since scrollBy is a no-op when
-    // the grid has no horizontal overflow (row-of-4 mode).
+    // listeners unconditionally is harmless when the grid has no overflow.
     this.prevButton = document.getElementById('character-prev-btn');
     this.nextButton = document.getElementById('character-next-btn');
     this.prevButton.addEventListener('click', () => this.scrollCharacters(-1));
     this.nextButton.addEventListener('click', () => this.scrollCharacters(1));
 
+    this.carouselMediaQuery = window.matchMedia(CharacterSelectScreen.CAROUSEL_MEDIA_QUERY);
+    this.carouselMediaQuery.addEventListener("change", () => this.resetCarouselPosition());
+    this.characterGrid.addEventListener("scroll", () => this.handleCarouselScroll(), { passive: true });
+
     this.renderCharacters();
   }
 
-  scrollCharacters(direction) {
-    this.characterGrid.scrollBy({
-      left: direction * this.characterGrid.clientWidth,
-      behavior: 'smooth',
+  isCarouselActive() {
+    return this.carouselMediaQuery.matches && this.characters.length > 0;
+  }
+
+  getCarouselCards() {
+    return [...this.characterGrid.querySelectorAll(".character-card")];
+  }
+
+  getCenteredCarouselCardIndex() {
+    const cards = this.getCarouselCards();
+    if (cards.length === 0) return 0;
+
+    const grid = this.characterGrid;
+    const center = grid.scrollLeft + grid.clientWidth / 2;
+    let bestIndex = 0;
+    let bestDistance = Infinity;
+
+    cards.forEach((card, index) => {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+      const distance = Math.abs(center - cardCenter);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    });
+
+    return bestIndex;
+  }
+
+  scrollToCarouselCard(cardIndex, behavior = "smooth") {
+    const cards = this.getCarouselCards();
+    const card = cards[cardIndex];
+    if (!card) return;
+
+    const resolvedBehavior = behavior === "instant" || prefersReducedMotion() ? "auto" : "smooth";
+    card.scrollIntoView({
+      behavior: resolvedBehavior,
+      inline: "center",
+      block: "nearest",
     });
   }
 
-  renderCharacters() {
-    // Clear any existing content
-    this.characterGrid.innerHTML = "";
+  handleCarouselScroll() {
+    if (!this.isCarouselActive() || this.isCarouselJumping) return;
 
-    // Create a card for each character
-    this.characters.forEach((character) => {
-      const card = document.createElement("div");
-      card.className = "character-card";
-      if (character.themeColor) {
-        card.style.setProperty("--guide-accent", character.themeColor);
-      }
+    if (this.carouselScrollEndTimer) {
+      window.clearTimeout(this.carouselScrollEndTimer);
+    }
 
-      const videoContainer = document.createElement("div");
-      videoContainer.className = "character-video";
+    this.carouselScrollEndTimer = window.setTimeout(() => {
+      this.carouselScrollEndTimer = null;
+      this.normalizeCarouselPosition();
+    }, 120);
+  }
 
-      const iframe = document.createElement("iframe");
-      iframe.width = "100%";
-      iframe.height = "100%";
-      iframe.src = getYouTubeEmbedUrl(character);
-      iframe.title = character.name;
-      iframe.frameBorder = "0";
-      iframe.allow = "autoplay;";
-      iframe.allowFullscreen = true;
+  normalizeCarouselPosition() {
+    if (!this.isCarouselActive() || this.isCarouselJumping) return;
 
-      videoContainer.appendChild(iframe);
+    const cards = this.getCarouselCards();
+    const realCount = this.characters.length;
+    if (cards.length < realCount + 2) return;
 
-      const characterInfoDiv = document.createElement("div");
-      characterInfoDiv.className = "character-info";
+    const centeredIndex = this.getCenteredCarouselCardIndex();
+    if (centeredIndex === 0) {
+      this.isCarouselJumping = true;
+      this.scrollToCarouselCard(realCount, "instant");
+      this.isCarouselJumping = false;
+      return;
+    }
 
-      const nameDiv = document.createElement("div");
-      nameDiv.className = "character-name";
-      nameDiv.textContent = character.name;
-      characterInfoDiv.appendChild(nameDiv);
+    if (centeredIndex === realCount + 1) {
+      this.isCarouselJumping = true;
+      this.scrollToCarouselCard(1, "instant");
+      this.isCarouselJumping = false;
+    }
+  }
 
-      const titleDiv = document.createElement("div");
-      titleDiv.className = "character-title";
-      titleDiv.textContent = character.title;
-      characterInfoDiv.appendChild(titleDiv);
+  resetCarouselPosition() {
+    if (!this.isCarouselActive()) return;
 
-      const selectBtn = document.createElement("button");
-      selectBtn.className = "btn-accent character-select-btn";
-      selectBtn.type = "button";
-      selectBtn.dataset.character = character.id;
-      selectBtn.textContent = SELECT_BUTTON_LABEL;
+    this.isCarouselJumping = true;
+    this.scrollToCarouselCard(1, "instant");
+    this.isCarouselJumping = false;
+  }
 
+  scrollCharacters(direction) {
+    if (!this.isCarouselActive()) return;
+
+    const cards = this.getCarouselCards();
+    const centeredIndex = this.getCenteredCarouselCardIndex();
+    const targetIndex = centeredIndex + direction;
+    if (targetIndex < 0 || targetIndex >= cards.length) return;
+
+    this.scrollToCarouselCard(targetIndex);
+  }
+
+  createCharacterCard(character, { isClone = false } = {}) {
+    const card = document.createElement("div");
+    card.className = isClone ? "character-card character-card-clone" : "character-card";
+    if (isClone) {
+      card.setAttribute("aria-hidden", "true");
+    }
+    if (character.themeColor) {
+      card.style.setProperty("--guide-accent", character.themeColor);
+    }
+
+    const videoContainer = document.createElement("div");
+    videoContainer.className = "character-video";
+
+    const iframe = document.createElement("iframe");
+    iframe.width = "100%";
+    iframe.height = "100%";
+    iframe.src = getYouTubeEmbedUrl(character);
+    iframe.title = character.name;
+    iframe.frameBorder = "0";
+    iframe.allow = "autoplay;";
+    iframe.allowFullscreen = true;
+    iframe.tabIndex = isClone ? -1 : 0;
+
+    videoContainer.appendChild(iframe);
+
+    const characterInfoDiv = document.createElement("div");
+    characterInfoDiv.className = "character-info";
+
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "character-name";
+    nameDiv.textContent = character.name;
+    characterInfoDiv.appendChild(nameDiv);
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "character-title";
+    titleDiv.textContent = character.title;
+    characterInfoDiv.appendChild(titleDiv);
+
+    const selectBtn = document.createElement("button");
+    selectBtn.className = "btn-accent character-select-btn";
+    selectBtn.type = "button";
+    selectBtn.dataset.character = character.id;
+    selectBtn.textContent = SELECT_BUTTON_LABEL;
+
+    if (!isClone) {
       selectBtn.addEventListener("click", (e) => {
         const characterId = e.target.dataset.character;
         this.selectCharacter(characterId);
       });
-
       this.selectButtons.push(selectBtn);
+    } else {
+      selectBtn.tabIndex = -1;
+      selectBtn.setAttribute("aria-hidden", "true");
+    }
 
-      card.appendChild(videoContainer);
-      card.appendChild(characterInfoDiv);
-      card.appendChild(selectBtn);
+    card.appendChild(videoContainer);
+    card.appendChild(characterInfoDiv);
+    card.appendChild(selectBtn);
 
-      this.characterGrid.appendChild(card);
+    return card;
+  }
+
+  renderCharacters() {
+    this.characterGrid.innerHTML = "";
+    this.selectButtons = [];
+
+    if (this.characters.length === 0) return;
+
+    const firstCharacter = this.characters[0];
+    const lastCharacter = this.characters[this.characters.length - 1];
+
+    this.characterGrid.appendChild(this.createCharacterCard(lastCharacter, { isClone: true }));
+
+    this.characters.forEach((character) => {
+      this.characterGrid.appendChild(this.createCharacterCard(character));
     });
+
+    this.characterGrid.appendChild(this.createCharacterCard(firstCharacter, { isClone: true }));
+
+    requestAnimationFrame(() => this.resetCarouselPosition());
   }
 
   selectCharacter(characterId) {
@@ -532,6 +668,7 @@ class CharacterSelectScreen extends AbstractScreen {
 
   show() {
     super.show();
+    requestAnimationFrame(() => this.resetCarouselPosition());
     // Focus first button
     if (this.selectButtons.length > 0) {
       this.selectButtons[0].focus();
@@ -571,6 +708,9 @@ class GameplayScreen extends AbstractScreen {
     this.pinPanelOpen = false;
     this.overviewCameraState = null;
     this.isDetailViewActive = false;
+    this.tutorialStep = 0;
+    this.tutorialActive = false;
+    this.tutorialSteps = [];
 
     // DOM Elements
     this.scoreValue = document.getElementById("score-value");
@@ -582,6 +722,11 @@ class GameplayScreen extends AbstractScreen {
     this.progressTrailLabel = document.getElementById("progress-trail-label");
     this.progressTrailDots = document.getElementById("progress-trail-dots");
     this.achievementToast = document.getElementById("achievement-toast");
+    this.tutorialCard = document.getElementById("tutorial-card");
+    this.tutorialAvatar = document.getElementById("tutorial-avatar");
+    this.tutorialSpeaker = document.getElementById("tutorial-speaker");
+    this.tutorialMessage = document.getElementById("tutorial-message");
+    this.tutorialSkipBtn = document.getElementById("tutorial-skip-btn");
     this.prevBtn = document.getElementById("prev-btn");
     this.nextBtn = document.getElementById("next-btn");
     this.pinPanel = document.getElementById("pin-panel");
@@ -703,6 +848,7 @@ class GameplayScreen extends AbstractScreen {
     this.exitBtn.addEventListener("click", () => this.showExitConfirm());
     this.exitConfirmBtn.addEventListener("click", () => this.confirmExit());
     this.exitCancelBtn.addEventListener("click", () => this.hideExitConfirm());
+    this.tutorialSkipBtn.addEventListener("click", () => this.skipTutorial());
 
     this.detailsModal.addEventListener("click", (event) => {
       if (event.target === this.detailsModal) {
@@ -767,12 +913,14 @@ class GameplayScreen extends AbstractScreen {
     this.hideDetailsPopup({ restoreCamera: false });
     this.clearOverviewCamera();
     this.hidePinPanel();
+    this.endTutorial();
     // Get locations from the selected character
     this.character = CHARACTERS.find(c => c.id === this.selectedCharacterId);
     this.locations = this.character ? this.character.locations : [];
     this.applyCharacterTheme();
     this.updateScore();
     this.renderProgressTrail();
+    this.startTutorial();
     this.showLoading();
     this.whenMapReady(() => {
       this.hideLoading();
@@ -793,6 +941,7 @@ class GameplayScreen extends AbstractScreen {
     this.hideDetailsPopup({ restoreCamera: false });
     this.hidePinPanel();
     this.hideAchievementToast();
+    this.endTutorial();
     super.hide();
   }
 
@@ -829,6 +978,74 @@ class GameplayScreen extends AbstractScreen {
     if (this.scoreLabel) {
       this.scoreLabel.textContent = formatCollectibleLabel(this.character.collectibleName);
     }
+  }
+
+  startTutorial() {
+    this.tutorialSteps = getTutorialSteps(this.character);
+    this.tutorialActive = true;
+    this.tutorialStep = 1;
+    if (this.character) {
+      this.tutorialAvatar.src = getCharacterAvatarImage(this.character);
+      this.tutorialAvatar.alt = this.character.name;
+      this.tutorialSpeaker.textContent = `${this.character.name} says:`;
+    } else {
+      this.tutorialSpeaker.textContent = "Your guide says:";
+    }
+    this.showTutorialStep(1);
+  }
+
+  clearTutorialSpotlight() {
+    document.querySelectorAll(".tutorial-spotlight").forEach((el) => {
+      el.classList.remove("tutorial-spotlight");
+    });
+  }
+
+  showTutorialStep(step) {
+    if (!this.tutorialActive) return;
+
+    const config = this.tutorialSteps[step - 1];
+    if (!config) {
+      this.endTutorial();
+      return;
+    }
+
+    this.tutorialStep = step;
+    this.tutorialMessage.textContent = config.message;
+
+    this.clearTutorialSpotlight();
+
+    if (config.target) {
+      const root = step === 2 ? this.pinPanelBody : this.detailsSlideshow;
+      const target = root ? root.querySelector(config.target) : null;
+      if (target) {
+        target.classList.add("tutorial-spotlight");
+      }
+    }
+
+    this.tutorialCard.classList.remove("hidden");
+    this.tutorialCard.setAttribute("aria-hidden", "false");
+  }
+
+  advanceTutorial() {
+    if (!this.tutorialActive) return;
+    if (this.tutorialStep >= this.tutorialSteps.length) {
+      this.endTutorial();
+      return;
+    }
+    this.showTutorialStep(this.tutorialStep + 1);
+  }
+
+  skipTutorial() {
+    this.endTutorial();
+  }
+
+  endTutorial() {
+    this.tutorialActive = false;
+    this.tutorialStep = 0;
+    this.tutorialSteps = [];
+    this.clearTutorialSpotlight();
+    this.tutorialCard.classList.add("hidden");
+    this.tutorialCard.setAttribute("aria-hidden", "true");
   }
 
   createPinPanelContent(index) {
@@ -970,6 +1187,10 @@ class GameplayScreen extends AbstractScreen {
       return;
     }
 
+    if (this.tutorialActive && this.tutorialStep === 2) {
+      this.tutorialStep = 3;
+    }
+
     this.saveOverviewCamera();
     this.hidePinPanel();
     this.isFlying = true;
@@ -1023,6 +1244,9 @@ class GameplayScreen extends AbstractScreen {
 
     if (images.length === 0) {
       this.detailsSlideshow.replaceChildren(cloneTemplate("tpl-slideshow-empty"));
+      if (this.tutorialActive && this.tutorialStep === 3) {
+        this.endTutorial();
+      }
       return;
     }
 
@@ -1055,6 +1279,15 @@ class GameplayScreen extends AbstractScreen {
 
     this.detailsSlideshow.replaceChildren(frame, meta, thumbnails);
     this.renderSlideComplete(frame);
+
+    if (this.tutorialActive && this.tutorialStep === 3) {
+      const collectible = frame.querySelector(".collectible-item");
+      if (collectible) {
+        this.showTutorialStep(3);
+      } else {
+        this.endTutorial();
+      }
+    }
   }
 
   renderSlideComplete(frame) {
@@ -1147,6 +1380,10 @@ class GameplayScreen extends AbstractScreen {
       )) {
         this.renderSlideComplete();
       }
+    }
+
+    if (this.tutorialActive && this.tutorialStep === 3) {
+      this.endTutorial();
     }
   }
 
@@ -1330,6 +1567,9 @@ class GameplayScreen extends AbstractScreen {
     if (loc) this.visitedLocations.add(loc.name);
     this.updatePanel(index);
     this.showPinPanel();
+    if (this.tutorialActive && this.tutorialStep === 1 && index === 0) {
+      this.advanceTutorial();
+    }
   }
 
   hidePinPanel() {
@@ -1349,6 +1589,9 @@ class GameplayScreen extends AbstractScreen {
     this.locationUi.style.visibility = "visible";
     requestAnimationFrame(() => {
       if (this.pinPanelOpen) this.positionPinPanel();
+      if (this.tutorialActive && this.tutorialStep === 2) {
+        this.showTutorialStep(2);
+      }
     });
   }
 
@@ -1445,6 +1688,10 @@ class GameplayScreen extends AbstractScreen {
     if (this.currentIndex === this.locations.length - 1) {
       this.onFinalize(this.buildFinalizeSummary());
       return;
+    }
+
+    if (this.currentIndex === 0 && this.tutorialActive) {
+      this.endTutorial();
     }
 
     this.flyToLocation(this.currentIndex + 1);
