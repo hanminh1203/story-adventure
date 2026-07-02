@@ -496,7 +496,8 @@ body {
 
 .character-video {
   width: 100%;
-  aspect-ratio: 9 / 12;
+  height: calc(100vh - 390px);
+  max-height: 380px;
   background: #000;
   overflow: hidden;
 }
