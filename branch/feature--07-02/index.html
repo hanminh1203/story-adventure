@@ -41,6 +41,17 @@
 
       <div id="achievement-toast" class="achievement-toast" aria-live="polite" hidden></div>
 
+      <div id="tutorial-card" class="tutorial-card hidden" aria-hidden="true" role="dialog" aria-labelledby="tutorial-message">
+        <img id="tutorial-avatar" class="tutorial-avatar" src="" alt="" referrerpolicy="no-referrer">
+        <div class="tutorial-speech">
+          <p id="tutorial-speaker" class="tutorial-speaker"></p>
+          <p id="tutorial-message"></p>
+          <div class="tutorial-actions">
+            <button id="tutorial-skip-btn" type="button" class="tutorial-skip-btn">Skip tutorial</button>
+          </div>
+        </div>
+      </div>
+
       <button id="exit-btn" class="btn-glass exit-btn" type="button" aria-label="Exit game">Exit</button>
 
       <div id="location-ui" class="location-ui">
@@ -101,6 +112,7 @@
     </div>
     <div class="container game-screen-content character-select-content">
       <h1>Meet your guides</h1>
+      <p class="character-select-instruction">Watch their stories, choose your favourite guide, then tap <strong>Pick me!</strong> to begin your adventure!</p>
       <div class="character-carousel" id="character-carousel">
         <button type="button" class="carousel-arrow carousel-arrow-prev" id="character-prev-btn" aria-label="Previous character">&#8249;</button>
         <div class="character-grid" id="character-grid"></div>
@@ -132,13 +144,13 @@
 
   <!-- ── Reusable HTML templates (never rendered directly) ──────────────── -->
 
-  <!-- Pin panel: location label + title + description + "Show details" CTA -->
+  <!-- Pin panel: location label + title + description + "Look closer!" CTA -->
   <template id="tpl-pin-panel">
     <div>
       <div class="panel-label"></div>
       <h2 class="panel-title"></h2>
       <p class="panel-description"></p>
-      <button type="button" class="btn-accent pin-details-btn">Show details</button>
+      <button type="button" class="btn-accent pin-details-btn">Look closer!</button>
     </div>
   </template>
 
