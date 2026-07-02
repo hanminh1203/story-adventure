@@ -15,12 +15,16 @@ const FLIGHT_DURATION_SECONDS = 2;
 const DETAIL_FLIGHT_DURATION_SECONDS = 1;
 const MAX_FLIGHT_HEIGHT_METERS = 3000000;
 const TARGET_SCREEN_POSITION_FROM_BOTTOM = 0.3;
-const COLLECT_MESSAGES = ["Great find!", "Nice one!", "Got it!"];
-const SELECT_BUTTON_LABEL = "Pick me!";
-const DEFAULT_COLLECTIBLE_NAME = "treasures";
 const DEFAULT_COLLECTIBLE_IMAGE = "assets/collectible-coin.svg";
 const DEFAULT_AVATAR_IMAGE = "assets/avatar-princess.svg";
 const DEBUG_COORDS = new URLSearchParams(location.search).has("debug");
+
+function formatTemplate(template, params) {
+  return String(template).replace(/\{(\w+)\}/g, (match, key) => {
+    if (Object.prototype.hasOwnProperty.call(params, key)) return params[key];
+    return match;
+  });
+}
 
 /**
  * Google Apps Script Web App URL — replace after deploying apps-script/Code.gs.
@@ -144,7 +148,7 @@ function flightDuration(base) {
 }
 
 function getCharacterCollectibleName(character) {
-  return character?.collectibleName || DEFAULT_COLLECTIBLE_NAME;
+  return character?.collectibleName || UI_TEXT.DEFAULT_COLLECTIBLE_NAME;
 }
 
 function getCharacterCollectibleImage(character) {
@@ -156,13 +160,16 @@ function getCharacterAvatarImage(character) {
 }
 
 function formatCollectibleLabel(collectibleName) {
-  if (!collectibleName) return "Treasures found!";
-  return `${collectibleName.charAt(0).toUpperCase()}${collectibleName.slice(1)} found!`;
+  if (!collectibleName) return UI_TEXT.SCORE_LABEL_FALLBACK;
+  const capitalized = `${collectibleName.charAt(0).toUpperCase()}${collectibleName.slice(1)}`;
+  return formatTemplate(UI_TEXT.COLLECTIBLE_FOUND_LABEL_TEMPLATE, {
+    collectibleName: capitalized,
+  });
 }
 
 function getCollectibleSingular(collectibleName) {
-  if (!collectibleName) return "treasure";
-  if (collectibleName === "music notes") return "music note";
+  if (!collectibleName) return UI_TEXT.COLLECTIBLE_SINGULAR_FALLBACK;
+  if (collectibleName === "music notes") return UI_TEXT.COLLECTIBLE_SINGULAR_MUSIC_NOTES;
   if (collectibleName.endsWith("s")) return collectibleName.slice(0, -1);
   return collectibleName;
 }
@@ -201,11 +208,14 @@ function generateBalancedPositions() {
 
 function formatCollectGoal(character) {
   const name = getCharacterCollectibleName(character);
-  return `Find ${COLLECTIBLES_PER_SLIDE} hidden ${name} in these pictures!`;
+  return formatTemplate(UI_TEXT.COLLECT_GOAL_TEMPLATE, {
+    count: COLLECTIBLES_PER_SLIDE,
+    name,
+  });
 }
 
 function getCollectMessages() {
-  return COLLECT_MESSAGES;
+  return UI_TEXT.COLLECT_MESSAGES;
 }
 
 function getCollectibleCountForSlide(slideIndex) {
@@ -266,18 +276,18 @@ function getStarRating(score, maxScore) {
 }
 
 function getTutorialSteps(character) {
-  const name = character?.name || "Your guide";
+  const name = character?.name || UI_TEXT.FINAL_CHARACTER_FALLBACK_NAME;
   const treasures = getCharacterCollectibleName(character);
   return [
     {
-      message: `Hi! I'm ${name}. Watch us fly to our first magical stop!`,
+      message: formatTemplate(UI_TEXT.TUTORIAL_STEP_1, { name }),
     },
     {
-      message: "Tap Look closer! to see photos of this place.",
+      message: UI_TEXT.TUTORIAL_STEP_2,
       target: ".pin-details-btn",
     },
     {
-      message: `Can you find the hidden ${treasures}? Tap them for treasure!`,
+      message: formatTemplate(UI_TEXT.TUTORIAL_STEP_3, { treasures }),
       target: ".collectible-item",
     },
   ];
@@ -390,14 +400,21 @@ class FinalScreen extends AbstractScreen {
     void this.finalScore.offsetWidth;
     this.finalScore.classList.add("final-score-pop");
 
-    let itemsSummary = `You found ${score} of ${maxScore} ${itemsName}!`;
+    let itemsSummary = formatTemplate(UI_TEXT.FINAL_ITEMS_SUMMARY_TEMPLATE, {
+      score,
+      maxScore,
+      itemsName,
+    });
     if (maxScore > 0 && score === maxScore) {
-      itemsSummary += " Super Explorer!";
+      itemsSummary += UI_TEXT.FINAL_ITEMS_SUMMARY_SUFFIX_SUPER_EXPLORER;
     }
     this.finalCollectSummary.textContent = itemsSummary;
 
-    const characterName = character ? character.name : "Your guide";
-    this.finalCharacterMessage.textContent = `${characterName} is proud of your adventure!`;
+    const characterName = character ? character.name : UI_TEXT.FINAL_CHARACTER_FALLBACK_NAME;
+    this.finalCharacterMessage.textContent = formatTemplate(
+      UI_TEXT.FINAL_CHARACTER_PROUD_TEMPLATE,
+      { characterName }
+    );
 
     this.spawnConfetti();
     this.restartBtn.focus();
@@ -620,7 +637,7 @@ class CharacterSelectScreen extends AbstractScreen {
     selectBtn.className = "btn-accent character-select-btn";
     selectBtn.type = "button";
     selectBtn.dataset.character = character.id;
-    selectBtn.textContent = SELECT_BUTTON_LABEL;
+    selectBtn.textContent = UI_TEXT.SELECT_BUTTON_LABEL;
 
     if (!isClone) {
       selectBtn.addEventListener("click", (e) => {
@@ -987,9 +1004,11 @@ class GameplayScreen extends AbstractScreen {
     if (this.character) {
       this.tutorialAvatar.src = getCharacterAvatarImage(this.character);
       this.tutorialAvatar.alt = this.character.name;
-      this.tutorialSpeaker.textContent = `${this.character.name} says:`;
+      this.tutorialSpeaker.textContent = formatTemplate(UI_TEXT.TUTORIAL_SPEAKER_TEMPLATE, {
+        name: this.character.name,
+      });
     } else {
-      this.tutorialSpeaker.textContent = "Your guide says:";
+      this.tutorialSpeaker.textContent = UI_TEXT.TUTORIAL_SPEAKER_FALLBACK;
     }
     this.showTutorialStep(1);
   }
@@ -1051,9 +1070,13 @@ class GameplayScreen extends AbstractScreen {
   createPinPanelContent(index) {
     const loc = this.locations[index];
     const content = cloneTemplate("tpl-pin-panel");
-    content.querySelector(".panel-label").textContent = `Stop ${index + 1} of ${this.locations.length}`;
+    content.querySelector(".panel-label").textContent = formatTemplate(UI_TEXT.STOP_PANEL_TEMPLATE, {
+      current: index + 1,
+      total: this.locations.length,
+    });
     content.querySelector(".panel-title").textContent = loc.name;
     content.querySelector(".panel-description").textContent = loc.description || "";
+    content.querySelector(".pin-details-btn").textContent = UI_TEXT.PIN_DETAILS_CTA_TEXT;
     content.querySelector(".pin-details-btn").addEventListener("click", (event) => {
       event.stopPropagation();
       this.showDetailsPopup(loc);
@@ -1077,7 +1100,10 @@ class GameplayScreen extends AbstractScreen {
       return;
     }
 
-    this.progressTrailLabel.textContent = `Stop ${this.currentIndex + 1} of ${total}`;
+    this.progressTrailLabel.textContent = formatTemplate(UI_TEXT.STOP_PANEL_TEMPLATE, {
+      current: this.currentIndex + 1,
+      total,
+    });
     this.progressTrailDots.replaceChildren();
 
     this.locations.forEach((loc, index) => {
@@ -1148,7 +1174,12 @@ class GameplayScreen extends AbstractScreen {
 
     this.clearedLocations.add(loc.name);
     const itemsName = getCharacterCollectibleName(this.character);
-    this.showAchievementToast(`All ${itemsName} found at ${loc.name}!`);
+    this.showAchievementToast(
+      formatTemplate(UI_TEXT.ACHIEVEMENT_ALL_ITEMS_AT_LOCATION, {
+        itemsName,
+        locationName: loc.name,
+      })
+    );
   }
 
   buildFinalizeSummary() {
@@ -1173,9 +1204,12 @@ class GameplayScreen extends AbstractScreen {
     this.prevBtn.disabled = isFirstLocation || this.isFlying;
 
     this.nextBtn.classList.toggle("finalize-btn", isFinalLocation);
-    this.nextBtn.textContent = isFinalLocation ? "Finalize" : "\u2192";
-    this.nextBtn.setAttribute("aria-label", isFinalLocation ? "Finalize game" : "Next location");
-    this.nextBtn.title = isFinalLocation ? "Finalize" : "Next (right arrow)";
+    this.nextBtn.textContent = isFinalLocation ? UI_TEXT.NAV_EXIT_FINALIZE_TEXT : "\u2192";
+    this.nextBtn.setAttribute(
+      "aria-label",
+      isFinalLocation ? UI_TEXT.NAV_FINALIZE_ARIA_LABEL : UI_TEXT.NAV_NEXT_LOCATION_ARIA_LABEL
+    );
+    this.nextBtn.title = isFinalLocation ? UI_TEXT.NAV_EXIT_FINALIZE_TEXT : UI_TEXT.NAV_NEXT_LOCATION_TITLE;
   }
 
   showDetailsPopup(loc) {
@@ -1243,7 +1277,9 @@ class GameplayScreen extends AbstractScreen {
     const images = loc ? loc.images || [] : [];
 
     if (images.length === 0) {
-      this.detailsSlideshow.replaceChildren(cloneTemplate("tpl-slideshow-empty"));
+      const empty = cloneTemplate("tpl-slideshow-empty");
+      empty.textContent = UI_TEXT.SLIDESHOW_EMPTY_TEXT;
+      this.detailsSlideshow.replaceChildren(empty);
       if (this.tutorialActive && this.tutorialStep === 3) {
         this.endTutorial();
       }
@@ -1254,21 +1290,34 @@ class GameplayScreen extends AbstractScreen {
     const frame = cloneTemplate("tpl-slideshow-frame");
     const img = frame.querySelector("img");
     img.src = images[this.slideshowIndex];
-    img.alt = `${loc.name} image ${this.slideshowIndex + 1}`;
+    img.alt = formatTemplate(UI_TEXT.SLIDESHOW_IMG_ALT_TEMPLATE, {
+      locationName: loc.name,
+      current: this.slideshowIndex + 1,
+    });
     frame.querySelector(".collectibles-layer").append(...this.buildCollectibles(loc));
-    frame.querySelector(".slideshow-btn-previous").addEventListener("click", () => this.changeSlide(-1));
-    frame.querySelector(".slideshow-btn-next").addEventListener("click", () => this.changeSlide(1));
+    const prevBtn = frame.querySelector(".slideshow-btn-previous");
+    const nextBtn = frame.querySelector(".slideshow-btn-next");
+    prevBtn?.setAttribute("aria-label", UI_TEXT.SLIDESHOW_BTN_PREV_ARIA_LABEL);
+    nextBtn?.setAttribute("aria-label", UI_TEXT.SLIDESHOW_BTN_NEXT_ARIA_LABEL);
+    prevBtn?.addEventListener("click", () => this.changeSlide(-1));
+    nextBtn?.addEventListener("click", () => this.changeSlide(1));
 
     // Counter: "1 / 3"
     const meta = cloneTemplate("tpl-slideshow-meta");
-    meta.textContent = `${this.slideshowIndex + 1} / ${images.length}`;
+    meta.textContent = formatTemplate(UI_TEXT.SLIDESHOW_META_TEMPLATE, {
+      current: this.slideshowIndex + 1,
+      total: images.length,
+    });
 
     // Thumbnail strip
     const thumbnails = cloneTemplate("tpl-slideshow-thumbnails");
     images.forEach((url, index) => {
       const btn = cloneTemplate("tpl-thumbnail-btn");
       if (index === this.slideshowIndex) btn.classList.add("active");
-      btn.setAttribute("aria-label", `Show image ${index + 1}`);
+      btn.setAttribute(
+        "aria-label",
+        formatTemplate(UI_TEXT.SLIDESHOW_THUMB_ARIA_LABEL_TEMPLATE, { current: index + 1 })
+      );
       btn.querySelector("img").src = url;
       btn.addEventListener("click", () => {
         this.slideshowIndex = index;
@@ -1307,17 +1356,19 @@ class GameplayScreen extends AbstractScreen {
     }
 
     const overlay = cloneTemplate("tpl-slide-complete");
+    const labelEl = overlay.querySelector(".slide-complete-label");
+    if (labelEl) labelEl.textContent = UI_TEXT.SLIDE_COMPLETE_LABEL_TEXT;
     const btn = overlay.querySelector(".slide-complete-btn");
     const isLastImage = this.slideshowIndex === images.length - 1;
 
     if (isLastImage) {
-      btn.textContent = "On to the next stop!";
+      btn.textContent = UI_TEXT.SLIDE_COMPLETE_BTN_TEXT_NEXT_STOP;
       btn.addEventListener("click", () => {
         this.hideDetailsPopup({ restoreCamera: false });
         this.goNext();
       });
     } else {
-      btn.textContent = "See the next picture!";
+      btn.textContent = UI_TEXT.SLIDE_COMPLETE_BTN_TEXT_NEXT_PICTURE;
       btn.addEventListener("click", () => this.changeSlide(1));
     }
 
@@ -1336,7 +1387,10 @@ class GameplayScreen extends AbstractScreen {
       const btn = cloneTemplate("tpl-collectible");
       btn.style.left = `${item.x}%`;
       btn.style.top = `${item.y}%`;
-      btn.setAttribute("aria-label", `Collect ${singular} for 1 point`);
+      btn.setAttribute(
+        "aria-label",
+        formatTemplate(UI_TEXT.COLLECTIBLE_ARIA_LABEL_TEMPLATE, { singular })
+      );
       btn.querySelector("img").src = imageUrl;
       btn.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -1785,10 +1839,6 @@ class GameController {
 
 const EMBED_MIN_WIDTH = 280;
 const EMBED_MIN_HEIGHT = 400;
-const EMBED_PROMPT_FULLSCREEN =
-  "Oh no, the window is too small for our journey! Tap the button to go full screen and begin the adventure.";
-const EMBED_PROMPT_NEWTAB =
-  "Oh no, the window is too small for our journey! Tap the button to open the adventure in a new tab.";
 
 class EmbedFullscreenController {
   constructor() {
@@ -1852,7 +1902,7 @@ class EmbedFullscreenController {
       this.btn.removeAttribute("title");
     } catch (e) {
       console.error(e);
-      this.btn.title = "Full screen was blocked. Try opening this page in a new tab.";
+      this.btn.title = UI_TEXT.EMBED_FULLSCREEN_TITLE_BLOCKED;
     }
     this.update();
   }
@@ -1865,10 +1915,10 @@ class EmbedFullscreenController {
 
     if (this.newTabMode) {
       this.btn.setAttribute("aria-pressed", "false");
-      this.btn.setAttribute("aria-label", "Open in new tab");
-      this.btn.title = "Open in new tab";
+      this.btn.setAttribute("aria-label", UI_TEXT.EMBED_BTN_OPEN_NEW_TAB_ARIA_LABEL);
+      this.btn.title = UI_TEXT.EMBED_BTN_OPEN_NEW_TAB_TITLE;
       if (this.promptText) {
-        this.promptText.textContent = EMBED_PROMPT_NEWTAB;
+        this.promptText.textContent = UI_TEXT.EMBED_PROMPT_NEWTAB;
       }
       return;
     }
@@ -1877,11 +1927,13 @@ class EmbedFullscreenController {
     this.btn.setAttribute("aria-pressed", String(fullscreen));
     this.btn.setAttribute(
       "aria-label",
-      fullscreen ? "Exit full screen" : "Enter full screen"
+      fullscreen ? UI_TEXT.EMBED_BTN_ARIA_LABEL_EXIT_FULLSCREEN : UI_TEXT.EMBED_BTN_ARIA_LABEL_ENTER_FULLSCREEN
     );
-    this.btn.title = fullscreen ? "Exit full screen" : "Full screen";
+    this.btn.title = fullscreen
+      ? UI_TEXT.EMBED_BTN_TITLE_EXIT_FULLSCREEN
+      : UI_TEXT.EMBED_BTN_TITLE_ENTER_FULLSCREEN;
     if (this.promptText) {
-      this.promptText.textContent = EMBED_PROMPT_FULLSCREEN;
+      this.promptText.textContent = UI_TEXT.EMBED_PROMPT_FULLSCREEN;
     }
   }
 }
@@ -1890,7 +1942,7 @@ function showStartupLoading() {
   const loadingScreen = document.getElementById("loading-screen");
   if (!loadingScreen) return;
   const loadingText = loadingScreen.querySelector(".loading-text");
-  if (loadingText) loadingText.textContent = "Gathering your guides...";
+  if (loadingText) loadingText.textContent = UI_TEXT.START_LOADING_TEXT;
   loadingScreen.classList.remove("hidden");
   loadingScreen.setAttribute("aria-hidden", "false");
 }
@@ -1901,11 +1953,66 @@ function hideStartupLoading() {
   loadingScreen.classList.add("hidden");
   loadingScreen.setAttribute("aria-hidden", "true");
   const loadingText = loadingScreen.querySelector(".loading-text");
-  if (loadingText) loadingText.textContent = "Preparing your adventure...";
+  if (loadingText) loadingText.textContent = UI_TEXT.MAP_LOADING_TEXT;
+}
+
+function applyStaticUILabels() {
+  const scoreLabel = document.getElementById("score-label");
+  if (scoreLabel) scoreLabel.textContent = UI_TEXT.SCORE_LABEL_FALLBACK;
+
+  const startTitle = document.querySelector("#start-screen .storybook-screen h1");
+  if (startTitle) startTitle.textContent = UI_TEXT.START_SCREEN_TITLE;
+
+  const startDesc = document.querySelector("#start-screen .storybook-screen p");
+  if (startDesc) startDesc.textContent = UI_TEXT.START_SCREEN_DESCRIPTION;
+
+  const startBtn = document.getElementById("start-btn");
+  if (startBtn) startBtn.textContent = UI_TEXT.START_BUTTON_TEXT;
+
+  const characterSelectTitle = document.querySelector("#character-select-screen .character-select-content h1");
+  if (characterSelectTitle) characterSelectTitle.textContent = UI_TEXT.CHARACTER_SELECT_TITLE;
+
+  const characterSelectInstruction = document.querySelector(
+    "#character-select-screen .character-select-instruction"
+  );
+  if (characterSelectInstruction) {
+    characterSelectInstruction.innerHTML = formatTemplate(
+      UI_TEXT.CHARACTER_SELECT_INSTRUCTION_TEMPLATE,
+      { selectButton: UI_TEXT.SELECT_BUTTON_LABEL }
+    );
+  }
+
+  const goBackLabel = document.querySelector("#character-select-go-back-btn .go-back-label");
+  if (goBackLabel) goBackLabel.textContent = UI_TEXT.GO_BACK_LABEL;
+
+  const tutorialSkipBtn = document.getElementById("tutorial-skip-btn");
+  if (tutorialSkipBtn) tutorialSkipBtn.textContent = UI_TEXT.TUTORIAL_SKIP_BTN_TEXT;
+
+  const exitBtn = document.getElementById("exit-btn");
+  if (exitBtn) exitBtn.textContent = UI_TEXT.EXIT_BTN_TEXT;
+
+  const exitConfirmTitle = document.getElementById("exit-confirm-title");
+  if (exitConfirmTitle) exitConfirmTitle.textContent = UI_TEXT.EXIT_CONFIRM_TITLE;
+
+  const exitConfirmBodyP = document.querySelector("#exit-confirm-modal .exit-confirm-dialog p");
+  if (exitConfirmBodyP) exitConfirmBodyP.textContent = UI_TEXT.EXIT_CONFIRM_BODY;
+
+  const exitCancelBtn = document.getElementById("exit-cancel-btn");
+  if (exitCancelBtn) exitCancelBtn.textContent = UI_TEXT.EXIT_CANCEL_BTN_TEXT;
+
+  const exitConfirmBtn = document.getElementById("exit-confirm-btn");
+  if (exitConfirmBtn) exitConfirmBtn.textContent = UI_TEXT.EXIT_CONFIRM_BTN_TEXT;
+
+  const finalKicker = document.querySelector("#final-screen .game-kicker");
+  if (finalKicker) finalKicker.textContent = UI_TEXT.FINAL_SCREEN_KICKER;
+
+  const restartBtn = document.getElementById("restart-btn");
+  if (restartBtn) restartBtn.textContent = UI_TEXT.RESTART_BTN_TEXT;
 }
 
 // Initialize the application controller
 document.addEventListener("DOMContentLoaded", async () => {
+  applyStaticUILabels();
   new EmbedFullscreenController();
   showStartupLoading();
   try {
@@ -1925,7 +2032,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   if (!CHARACTERS.length) {
     document.body.innerHTML =
-      "<p style='padding:2rem;font-family:sans-serif'>Could not load adventure data. Please try again later.</p>";
+      UI_TEXT.DATA_LOAD_ERROR_HTML;
     return;
   }
   new GameController();
