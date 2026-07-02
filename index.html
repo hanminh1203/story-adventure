@@ -23,12 +23,12 @@
     <div class="ui">
       <div id="score-panel" class="score-panel-layout">
         <div>
-          <img id="avatar" src="" alt="Character avatar" class="avatar">
+          <img id="avatar" src="" alt="Character avatar" class="avatar" referrerpolicy="no-referrer">
         </div>
         <div>
           <div id="score-label" class="panel-label">Treasures found!</div>
           <div class="score-row">
-            <img id="score-collectible-icon" class="score-collectible-icon" src="assets/collectible-lantern.svg" alt="" aria-hidden="true">
+            <img id="score-collectible-icon" class="score-collectible-icon" src="assets/collectible-lantern.svg" alt="" aria-hidden="true" referrerpolicy="no-referrer">
             <div id="score-value">0</div>
           </div>
         </div>
@@ -145,7 +145,7 @@
   <!-- Slideshow frame: image, collectibles layer, prev/next slide buttons -->
   <template id="tpl-slideshow-frame">
     <div class="slideshow-frame">
-      <img alt="">
+      <img alt="" referrerpolicy="no-referrer">
       <div class="collectibles-layer"></div>
       <button type="button" class="slideshow-btn slideshow-btn-previous" aria-label="previous image">&#8592;</button>
       <button type="button" class="slideshow-btn slideshow-btn-next"      aria-label="next image">&#8594;</button>
@@ -164,13 +164,13 @@
 
   <!-- Single thumbnail button (cloned once per image) -->
   <template id="tpl-thumbnail-btn">
-    <button type="button"><img alt="" loading="lazy"></button>
+    <button type="button"><img alt="" loading="lazy" referrerpolicy="no-referrer"></button>
   </template>
 
   <!-- Single collectible item button (cloned once per collectible) -->
   <template id="tpl-collectible">
     <button type="button" class="collectible-item" aria-label="Collect item for 1 point">
-      <img alt="">
+      <img alt="" referrerpolicy="no-referrer">
     </button>
   </template>
 
