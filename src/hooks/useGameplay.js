@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as Cesium from "cesium";
 import {
   FLIGHT_DURATION_SECONDS,
   DETAIL_FLIGHT_DURATION_SECONDS,
@@ -23,8 +24,6 @@ import {
   makeCollectibleId,
   getTutorialSteps,
 } from "../lib/collectibles";
-
-/* global Cesium */
 
 export function useGameplay({ character, active, onFinalize, onExit }) {
   const viewerRef = useRef(null);
