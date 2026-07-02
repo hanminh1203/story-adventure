@@ -18,10 +18,10 @@ Navigation does not wrap: **Previous** is hidden on the first stop, and **Next**
 
 | Path | Purpose |
 |------|---------|
-| `index.html` | Page layout, screen markup, HTML `<template>` elements |
-| `script.js` | Game flow, Cesium viewer, camera flights, slideshow, scoring |
-| `style.css` | Screens, HUD, pin panel, details modal, collectibles |
-| `assets/` | Character avatars, collectible icons, and background images |
+| `index.html` | Vite entry HTML (Cesium CDN, root mount) |
+| `src/` | React app — screens, gameplay UI, Cesium hook, utilities |
+| `src/style.css` | Screens, HUD, pin panel, details modal, collectibles |
+| `public/assets/` | Character avatars, collectible icons, and background images |
 | `apps-script/` | Google Apps Script source + sheet column reference |
 
 ## Editing content (manager guide)
@@ -55,7 +55,7 @@ Full column reference: [apps-script/SHEET-SCHEMA.md](apps-script/SHEET-SCHEMA.md
 1. Create the Sheet with `Characters`, `Locations`, and `Images` tabs per [apps-script/SHEET-SCHEMA.md](apps-script/SHEET-SCHEMA.md) (including the `Character` / `Location` dropdowns).
 2. Paste [apps-script/Code.gs](apps-script/Code.gs) into the Sheet's Apps Script editor.
 3. Deploy as a Web App (Execute as **Me**, access **Anyone**) — see [apps-script/README.md](apps-script/README.md).
-4. Set `CHARACTERS_DATA_URL` in `script.js` to the deployed `/exec` URL.
+4. Set `VITE_CHARACTERS_DATA_URL` in `.env` (or the GitHub Actions secret `CHARACTERS_DATA_URL` for deploys) to the deployed `/exec` URL.
 5. Share the Sheet with **Editor** access for managers who should edit content.
 
 ## Data format reference
@@ -91,17 +91,27 @@ The Apps Script Web App returns nested JSON consumed by the game:
 
 ## Running locally
 
-No build step. Asset paths are relative (e.g. `assets/avatar-tjingeling.png`), so they resolve whether the page is served over HTTP or opened as a `file://` URL. Serving over HTTP is still recommended:
+Install dependencies and start the Vite dev server:
 
 ```bash
-# Python 3
-python -m http.server 8080
-
-# Node (npx)
-npx serve .
+npm install
+npm run dev
 ```
 
-Then open `http://localhost:8080` (or the port shown).
+Open the URL shown (typically `http://localhost:5173`).
+
+Create a `.env` file to set `VITE_CHARACTERS_DATA_URL`:
+
+```bash
+VITE_CHARACTERS_DATA_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+```
+
+Production build:
+
+```bash
+npm run build
+npm run preview
+```
 
 ## Controls
 
@@ -126,7 +136,7 @@ Buttons disable during camera flights so animations cannot overlap.
 For elevation (mountains, valleys):
 
 1. Sign up at [cesium.com/ion](https://cesium.com/ion) and create an access token
-2. In `script.js`, set `Cesium.Ion.defaultAccessToken = "<your token>";`
+2. In `src/hooks/useGameplay.js`, set `Cesium.Ion.defaultAccessToken = "<your token>";`
 3. Replace `terrainProvider: new Cesium.EllipsoidTerrainProvider()` with `await Cesium.createWorldTerrainAsync()` (wrap viewer setup in an `async` function)
 
 The free ion tier has a monthly usage cap but is enough for personal or portfolio use.
@@ -156,4 +166,4 @@ The map, character select, slideshows, and scoring all run inside the iframe.
 - CesiumJS: [github.com/CesiumGS/cesium](https://github.com/CesiumGS/cesium) (Apache 2.0)
 - Slideshow images come from the Google Sheet's **Images** tab (one photo per row, linked to a location by the `Location` name); add them as in-cell images (`imageCell`) or as `https://` URLs (`imageUrl`)
 - If the Sheet is temporarily unreachable, the app may use the last successful load cached in the browser
-- To tune `lat` / `lon` values, append `?debug` to the URL (e.g. `http://localhost:8080/?debug`). Map clicks then log coordinates to the browser console via `onCanvasClicked` in `script.js`
+- To tune `lat` / `lon` values, append `?debug` to the URL (e.g. `http://localhost:5173/?debug`). Map clicks then log coordinates to the browser console via the debug handler in `src/hooks/useGameplay.js`
