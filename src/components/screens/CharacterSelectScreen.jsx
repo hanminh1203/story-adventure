@@ -192,7 +192,7 @@ export default function CharacterSelectScreen({
             type="button"
             className="carousel-arrow carousel-arrow-prev"
             id="character-prev-btn"
-            aria-label="Previous character"
+            aria-label={UI_TEXT.CHARACTER_CAROUSEL_PREV_ARIA_LABEL}
             onClick={() => scrollCharacters(-1)}
           >
             &#8249;
@@ -217,7 +217,7 @@ export default function CharacterSelectScreen({
             type="button"
             className="carousel-arrow carousel-arrow-next"
             id="character-next-btn"
-            aria-label="Next character"
+            aria-label={UI_TEXT.CHARACTER_CAROUSEL_NEXT_ARIA_LABEL}
             onClick={() => scrollCharacters(1)}
           >
             &#8250;

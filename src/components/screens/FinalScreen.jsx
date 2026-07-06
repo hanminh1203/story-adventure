@@ -92,7 +92,7 @@ export default function FinalScreen({ active, summary, onRestart }) {
       <div className="container game-screen-content final-content storybook-screen">
         <StorybookDecor />
         <div className="game-kicker">{UI_TEXT.FINAL_SCREEN_KICKER}</div>
-        <div className="final-stars" aria-label="Star rating">
+        <div className="final-stars" aria-label={UI_TEXT.FINAL_STARS_ARIA_LABEL}>
           {[1, 2, 3].map((i) => (
             <span
               key={i}

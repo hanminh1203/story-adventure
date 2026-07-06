@@ -1,0 +1,43 @@
+---
+description: British English, kid-friendly tone for all player-facing UI copy
+globs: src/**/*.{js,jsx},index.html
+alwaysApply: false
+---
+
+# UI copy — British English, kid-friendly
+
+This app is for children. All player-facing labels, buttons, toasts, tutorials, errors, and `aria-label` text must feel warm, encouraging, and easy to understand.
+
+## Where copy lives
+
+- Put strings in `src/uiText.js` (`UI_TEXT`). Do not hardcode user-facing text in components.
+- Sheet-driven content (`Characters`, `Locations`, `Images`) is edited by content managers; code-owned copy stays in `uiText.js`.
+
+## British English
+
+- Spellings: **favourite**, **colour**, **traveller**, **centre**, **organise**, **recognise**, etc.
+- **Full screen** (two words), not *fullscreen*.
+- Avoid American-only words where a simpler British alternative fits: prefer **finish** over *finalize*, **leave** over *exit*, **picture/photo** over *screenshot/image* in kid-facing text.
+
+## Kid-friendly voice
+
+- Short, upbeat sentences. Light exclamations are welcome (`Hooray!`, `Well done!`, `Oh no!`).
+- Use **tap** (not *click*). Say **treasure**, **stop**, **adventure**, **guide** — not jargon like *collectible*, *progress*, *finalize*, *understood*.
+- Errors stay gentle: *Oops! We couldn't…* rather than technical failure messages.
+- Accessibility labels should match the same tone (`Previous picture`, `Leave adventure`).
+
+## Examples
+
+```js
+// ❌ BAD
+NAV_EXIT_FINALIZE_TEXT: "Finalize",
+EXIT_CONFIRM_BODY: "Your progress will be lost. Are you sure you want to exit?",
+COLLECTIBLE_ARIA_LABEL_TEMPLATE: "Collect {singular} for 1 point",
+
+// ✅ GOOD
+NAV_EXIT_FINALIZE_TEXT: "Finish!",
+EXIT_CONFIRM_BODY: "Your treasure hunt won't be saved. Are you sure you want to leave?",
+COLLECTIBLE_ARIA_LABEL_TEMPLATE: "Tap to collect a {singular}!",
+```
+
+When adding new UI strings, follow existing `UI_TEXT` key naming and add the constant to `uiText.js` first.
