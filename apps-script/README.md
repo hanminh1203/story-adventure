@@ -13,7 +13,7 @@
    - Execute as: **Me**
    - Who has access: **Anyone**
 7. Copy the Web App URL (ends in `/exec`).
-8. In [script.js](../script.js), set `CHARACTERS_DATA_URL` to that URL.
+8. Set `VITE_CHARACTERS_DATA_URL` in `.env` (or the `CHARACTERS_DATA_URL` GitHub Actions secret) to that URL.
 9. Push to GitHub — no redeploy is needed for future sheet edits; only refresh the game page.
 
 ## Verify
