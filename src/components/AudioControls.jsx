@@ -1,6 +1,22 @@
 import { useSyncExternalStore } from "react";
 import { UI_TEXT } from "../uiText";
-import { getAudioSettings, subscribeAudioSettings, toggleSfxEnabled } from "../lib/audio";
+import {
+  getAudioSettings,
+  subscribeAudioSettings,
+  toggleMusicEnabled,
+  toggleSfxEnabled,
+} from "../lib/audio";
+
+function MusicIcon({ muted }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+      <path d="M9 18V5l12-2v13" />
+      {muted && <path d="M4 20 20 4" />}
+    </svg>
+  );
+}
 
 function SfxIcon({ muted }) {
   if (muted) {
@@ -23,7 +39,7 @@ function SfxIcon({ muted }) {
 }
 
 export default function AudioControls() {
-  const { sfxEnabled } = useSyncExternalStore(
+  const { sfxEnabled, musicEnabled } = useSyncExternalStore(
     subscribeAudioSettings,
     getAudioSettings,
     getAudioSettings
@@ -31,6 +47,19 @@ export default function AudioControls() {
 
   return (
     <div className="audio-controls">
+      <button
+        type="button"
+        className="btn-glass audio-toggle-btn"
+        aria-label={musicEnabled ? UI_TEXT.AUDIO_MUSIC_ON_ARIA_LABEL : UI_TEXT.AUDIO_MUSIC_OFF_ARIA_LABEL}
+        aria-pressed={String(musicEnabled)}
+        title={musicEnabled ? UI_TEXT.AUDIO_MUSIC_ON_TITLE : UI_TEXT.AUDIO_MUSIC_OFF_TITLE}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={toggleMusicEnabled}
+      >
+        <span className="audio-toggle-icon" aria-hidden="true">
+          <MusicIcon muted={!musicEnabled} />
+        </span>
+      </button>
       <button
         type="button"
         className="btn-glass audio-toggle-btn"

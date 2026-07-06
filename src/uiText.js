@@ -46,6 +46,11 @@ export const UI_TEXT = {
   AUDIO_SFX_ON_TITLE: "Sound effects on",
   AUDIO_SFX_OFF_TITLE: "Sound effects off",
 
+  AUDIO_MUSIC_ON_ARIA_LABEL: "Turn music off",
+  AUDIO_MUSIC_OFF_ARIA_LABEL: "Turn music on",
+  AUDIO_MUSIC_ON_TITLE: "Music on",
+  AUDIO_MUSIC_OFF_TITLE: "Music off",
+
   NAV_NEXT_LOCATION_TITLE: "Next (right arrow)",
   NAV_EXIT_FINALIZE_TEXT: "Finalize",
   NAV_NEXT_LOCATION_ARIA_LABEL: "Next location",

@@ -20,14 +20,15 @@ let unlockHandler = null;
 let backgroundMusicPlayGeneration = 0;
 let preloadPromise = null;
 let sfxEnabled = true;
-let audioSettingsSnapshot = { sfxEnabled };
+let musicEnabled = true;
+let audioSettingsSnapshot = { sfxEnabled, musicEnabled };
 
 function notifySettingsListeners() {
   settingsListeners.forEach((listener) => listener());
 }
 
 function publishAudioSettings() {
-  audioSettingsSnapshot = { sfxEnabled };
+  audioSettingsSnapshot = { sfxEnabled, musicEnabled };
   notifySettingsListeners();
 }
 
@@ -124,6 +125,26 @@ export function toggleSfxEnabled() {
   setSfxEnabled(!sfxEnabled);
 }
 
+export function setMusicEnabled(enabled) {
+  if (musicEnabled === enabled) return;
+
+  musicEnabled = enabled;
+
+  if (enabled) {
+    tryPlayBackgroundMusic();
+  } else {
+    forEachBackgroundMusicInstance((audio) => {
+      audio.pause();
+    });
+  }
+
+  publishAudioSettings();
+}
+
+export function toggleMusicEnabled() {
+  setMusicEnabled(!musicEnabled);
+}
+
 export function preloadAudio() {
   if (preloadPromise) return preloadPromise;
 
@@ -170,6 +191,8 @@ function detachBackgroundMusicUnlockListener() {
 }
 
 function tryPlayBackgroundMusic() {
+  if (!musicEnabled) return;
+
   const audio = getBackgroundMusic();
   if (!audio.paused) return;
 
