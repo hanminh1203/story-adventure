@@ -37,6 +37,13 @@ jobs:
       
       - name: Dump All Environment Variables
         run: printenv
+      - name: Check Secret Presence
+        run: |
+          if [ -z "${{ secrets.CHARACTERS_DATA_URL }}" ]; then
+            echo "Secret is empty."
+          else
+            echo "Secret is populated."
+          fi
 
       - name: Build Site
         env:
