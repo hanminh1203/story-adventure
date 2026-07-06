@@ -9,6 +9,7 @@ import {
 } from "../constants";
 import { UI_TEXT } from "../uiText";
 import { formatTemplate } from "../lib/format";
+import { playFlightWhoosh, playCollectPickup, playApplause } from "../lib/audio";
 import { flightDuration } from "../lib/motion";
 import {
   generateBalancedPositions,
@@ -376,6 +377,10 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
       setIsFlying(true);
       hidePinPanel();
 
+      if (flightDuration(FLIGHT_DURATION_SECONDS) > 0) {
+        playFlightWhoosh();
+      }
+
       flyToLocationCamera(loc, {
         onComplete: () => {
           setIsFlying(false);
@@ -563,6 +568,7 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
   const goNext = useCallback(() => {
     if (!active || isFlying) return;
     if (currentIndex === locations.length - 1) {
+      playApplause();
       onFinalize(buildFinalizeSummary());
       return;
     }
@@ -628,6 +634,7 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     (itemId, position) => {
       if (collectedItems.has(itemId)) return;
 
+      playCollectPickup();
       setCollectedItems((prev) => new Set(prev).add(itemId));
       setScore((prev) => {
         const newScore = prev + 1;

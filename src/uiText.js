@@ -41,6 +41,11 @@ export const UI_TEXT = {
   EMBED_BTN_TITLE_ENTER_FULLSCREEN: "Full screen",
   EMBED_BTN_TITLE_EXIT_FULLSCREEN: "Exit full screen",
 
+  AUDIO_SFX_ON_ARIA_LABEL: "Turn sound effects off",
+  AUDIO_SFX_OFF_ARIA_LABEL: "Turn sound effects on",
+  AUDIO_SFX_ON_TITLE: "Sound effects on",
+  AUDIO_SFX_OFF_TITLE: "Sound effects off",
+
   NAV_NEXT_LOCATION_TITLE: "Next (right arrow)",
   NAV_EXIT_FINALIZE_TEXT: "Finalize",
   NAV_NEXT_LOCATION_ARIA_LABEL: "Next location",

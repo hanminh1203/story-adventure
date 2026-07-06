@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadCharacters, loadCharactersFromCache } from "./lib/characterData";
 import { UI_TEXT } from "./uiText";
+import { preloadAudio, startBackgroundMusic, stopBackgroundMusic } from "./lib/audio";
 import EmbedPrompt from "./components/EmbedPrompt";
+import AudioControls from "./components/AudioControls";
 import LoadingScreen from "./components/LoadingScreen";
 import StartScreen from "./components/screens/StartScreen";
 import CharacterSelectScreen from "./components/screens/CharacterSelectScreen";
@@ -15,6 +17,19 @@ export default function App() {
   const [currentState, setCurrentState] = useState("start");
   const [selectedCharacterId, setSelectedCharacterId] = useState(null);
   const [gameSummary, setGameSummary] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    preloadAudio().then(() => {
+      if (active) startBackgroundMusic();
+    });
+
+    return () => {
+      active = false;
+      stopBackgroundMusic();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -105,6 +120,7 @@ export default function App() {
       />
       <FinalScreen active={currentState === "final"} summary={gameSummary} onRestart={onRestart} />
       <LoadingScreen visible={startupLoading} text={UI_TEXT.START_LOADING_TEXT} />
+      <AudioControls />
       <EmbedPrompt />
     </>
   );
