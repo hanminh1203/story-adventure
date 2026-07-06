@@ -1,13 +1,17 @@
 import whooshUrl from "../assets/sounds/WHSH_Whoosh_SNDBTS_JW_191.wav";
-import pickupUrl from "../assets/sounds/678385__deltacode__item-pickup-v2.wav";
+import coin1Url from "../assets/sounds/coin-1.mp3";
+import coin2Url from "../assets/sounds/coin-2.mp3";
+import coin3Url from "../assets/sounds/coin-3.mp3";
+import coin4Url from "../assets/sounds/coin-4.wav";
 import applauseUrl from "../assets/sounds/403061__modestos1994__applause.wav";
 import buttonClickUrl from "../assets/sounds/622060__rydra_wong__button-click.wav";
 import backgroundMusicUrl from "../assets/sounds/Lukrembo - Storybook (freetouse.com).mp3";
 import { AUDIO_SETTINGS_KEY } from "../constants";
 
+const COIN_SOUND_URLS = [coin1Url, coin2Url, coin3Url, coin4Url];
+
 const SOUND_URLS = {
   whoosh: whooshUrl,
-  pickup: pickupUrl,
   applause: applauseUrl,
   buttonClick: buttonClickUrl,
 };
@@ -130,16 +134,28 @@ function forEachBackgroundMusicInstance(callback) {
   callback(getBackgroundMusic());
 }
 
-function waitForAudioReady(audio) {
-  return new Promise((resolve) => {
+function waitForAudioReady(audio, label) {
+  return new Promise((resolve, reject) => {
     if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
       resolve();
       return;
     }
 
-    const done = () => resolve();
-    audio.addEventListener("canplaythrough", done, { once: true });
-    audio.addEventListener("error", done, { once: true });
+    const onReady = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(new Error(`Failed to preload audio: ${label}`));
+    };
+    const cleanup = () => {
+      audio.removeEventListener("canplaythrough", onReady);
+      audio.removeEventListener("error", onError);
+    };
+
+    audio.addEventListener("canplaythrough", onReady, { once: true });
+    audio.addEventListener("error", onError, { once: true });
     audio.load();
   });
 }
@@ -186,9 +202,30 @@ export function toggleMusicEnabled() {
 export function preloadAudio() {
   if (preloadPromise) return preloadPromise;
 
-  const sfxAudio = Object.values(SOUND_URLS).map((url) => getOrCreateAudio(url));
+  const items = [
+    { audio: getBackgroundMusic(), label: "background music" },
+    ...Object.entries(SOUND_URLS).map(([name, url]) => ({
+      audio: getOrCreateAudio(url),
+      label: name,
+    })),
+    ...COIN_SOUND_URLS.map((url, index) => ({
+      audio: getOrCreateAudio(url),
+      label: `coin-${index + 1}`,
+    })),
+  ];
 
-  preloadPromise = Promise.all([getBackgroundMusic(), ...sfxAudio].map(waitForAudioReady));
+  preloadPromise = Promise.allSettled(
+    items.map(({ audio, label }) => waitForAudioReady(audio, label))
+  ).then((results) => {
+    const failures = results.filter((result) => result.status === "rejected");
+    if (failures.length > 0) {
+      console.warn(
+        `[audio] ${failures.length} asset(s) failed to preload:`,
+        failures.map((result) => result.reason?.message ?? result.reason)
+      );
+    }
+  });
+
   return preloadPromise;
 }
 
@@ -263,7 +300,8 @@ export function playFlightWhoosh() {
 }
 
 export function playCollectPickup() {
-  playSound(SOUND_URLS.pickup);
+  const url = COIN_SOUND_URLS[Math.floor(Math.random() * COIN_SOUND_URLS.length)];
+  playSound(url);
 }
 
 export function playApplause() {

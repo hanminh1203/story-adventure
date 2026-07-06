@@ -781,6 +781,9 @@ body {
 /* ==========================================================================
    3. GAMEPLAY SCREEN - HUD & CONTROLS
    ========================================================================== */
+.cesium-viewer-bottom {
+  display: none;
+}
 
 .avatar {
   width: 48px;
@@ -2081,10 +2084,6 @@ body {
 
 .audio-toggle-btn[aria-pressed="false"] {
   opacity: 0.72;
-}
-
-body.embed-constrained .audio-controls {
-  display: none;
 }
 
 body.embed-constrained {

@@ -1,6 +1,7 @@
 import { useGameplay } from "../../hooks/useGameplay";
 import { UI_TEXT } from "../../uiText";
 import { formatTemplate } from "../../lib/format";
+import { playButtonClick } from "../../lib/audio";
 import LoadingScreen from "../LoadingScreen";
 import { DetailsModal } from "../gameplay/DetailsModal";
 
@@ -218,6 +219,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
                     className={`btn-accent pin-details-btn${tutorialSpotlightSelector === ".pin-details-btn" ? " tutorial-spotlight" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation();
+                      playButtonClick();
                       showDetailsPopup(currentLoc);
                     }}
                   >
