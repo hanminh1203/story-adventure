@@ -789,11 +789,18 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     if (!active) return;
 
     const handleKeyDown = (e) => {
-      if (exitConfirmVisible && e.key === "Escape") {
-        hideExitConfirm();
+      if (exitConfirmVisible) {
+        if (e.key === "Escape") {
+          hideExitConfirm();
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          confirmExit();
+          return;
+        }
         return;
       }
-      if (exitConfirmVisible) return;
 
       if (detailsVisible && e.key === "ArrowRight") {
         const images = slideshowLocation ? slideshowLocation.images || [] : [];
@@ -813,7 +820,7 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
 
       if (e.key === "ArrowRight") goNext();
       if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "Escape") hideDetailsPopup();
+      if (e.key === "Escape") showExitConfirm();
       if (e.key === " " && pinPanelOpen && locations[currentIndex]) {
         e.preventDefault();
         showDetailsPopup(locations[currentIndex]);
@@ -833,6 +840,8 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     currentIndex,
     hideExitConfirm,
     hideDetailsPopup,
+    showExitConfirm,
+    confirmExit,
     goNext,
     goPrev,
     changeSlide,

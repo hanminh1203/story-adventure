@@ -137,6 +137,16 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     if (card) observer.observe(card);
 
     const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        scrollSteps(-1);
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        scrollSteps(1);
+        return;
+      }
       if (e.key === "Enter") onContinue();
     };
 
@@ -154,6 +164,7 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     active,
     onContinue,
     resetCarouselPosition,
+    scrollSteps,
     updateEdgePadding,
     getCenteredCarouselStepIndex,
     scrollToCarouselStep,
