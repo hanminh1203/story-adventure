@@ -6,6 +6,7 @@ import EmbedPrompt from "./components/EmbedPrompt";
 import AudioControls from "./components/AudioControls";
 import LoadingScreen from "./components/LoadingScreen";
 import StartScreen from "./components/screens/StartScreen";
+import HowToPlayScreen from "./components/screens/HowToPlayScreen";
 import CharacterSelectScreen from "./components/screens/CharacterSelectScreen";
 import GameplayScreen from "./components/screens/GameplayScreen";
 import FinalScreen from "./components/screens/FinalScreen";
@@ -68,11 +69,19 @@ export default function App() {
   }, []);
 
   const onStart = useCallback(() => {
+    transitionTo("howToPlay");
+  }, [transitionTo]);
+
+  const onHowToContinue = useCallback(() => {
     transitionTo("characterSelect");
   }, [transitionTo]);
 
-  const onGoBack = useCallback(() => {
+  const onHowToGoBack = useCallback(() => {
     transitionTo("start");
+  }, [transitionTo]);
+
+  const onGoBack = useCallback(() => {
+    transitionTo("howToPlay");
   }, [transitionTo]);
 
   const onCharacterSelected = useCallback(
@@ -112,6 +121,11 @@ export default function App() {
         onExit={onExit}
       />
       <StartScreen active={currentState === "start"} onStart={onStart} />
+      <HowToPlayScreen
+        active={currentState === "howToPlay"}
+        onContinue={onHowToContinue}
+        onGoBack={onHowToGoBack}
+      />
       <CharacterSelectScreen
         active={currentState === "characterSelect"}
         characters={characters}

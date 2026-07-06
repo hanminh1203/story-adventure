@@ -60,6 +60,43 @@ export const UI_TEXT = {
   START_SCREEN_DESCRIPTION:
     "Step into a world where children can explore countries, cultures, landmarks, stories, and magical adventures through an interactive online journey inspired by Google Earth.",
   START_BUTTON_TEXT: "LET'S GO!",
+  HOW_TO_PLAY_TITLE: "How to Play",
+  HOW_TO_PLAY_BEGIN_BTN_TEXT: "I understood, let's begin",
+  HOW_TO_PLAY_PREV_STEP_ARIA_LABEL: "Previous step",
+  HOW_TO_PLAY_NEXT_STEP_ARIA_LABEL: "Next step",
+  HOW_TO_PLAY_SCREENSHOT_ALT_TEMPLATE: "Screenshot {number}",
+  HOW_TO_PLAY_STEPS: [
+    {
+      title: "Choose your guide",
+      description:
+        "Watch each guide's story, then tap Pick me! to choose who leads your adventure.",
+      screenshotNumber: 1,
+    },
+    {
+      title: "Explore the globe",
+      description:
+        "Your guide flies you to magical stops around the world. Use the arrow buttons to move between destinations.",
+      screenshotNumber: 2,
+    },
+    {
+      title: "Look closer!",
+      description:
+        "Tap Look closer! on each stop to open a slideshow of photos from that place.",
+      screenshotNumber: 3,
+    },
+    {
+      title: "Find hidden treasures",
+      description:
+        "Hidden collectibles are tucked inside the pictures. Tap them to collect treasure and earn points!",
+      screenshotNumber: 4,
+    },
+    {
+      title: "Finish your journey",
+      description:
+        "Visit every stop, then tap Finalize to see how many treasures you found. Ready? Let's go!",
+      screenshotNumber: 5,
+    },
+  ],
   CHARACTER_SELECT_TITLE: "Meet your guides",
   CHARACTER_SELECT_INSTRUCTION_TEMPLATE:
     "Watch their stories, choose your favourite guide, then tap <strong>{selectButton}</strong> to begin your adventure!",
