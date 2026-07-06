@@ -1,12 +1,15 @@
 import whooshUrl from "../assets/sounds/WHSH_Whoosh_SNDBTS_JW_191.wav";
 import pickupUrl from "../assets/sounds/678385__deltacode__item-pickup-v2.wav";
 import applauseUrl from "../assets/sounds/403061__modestos1994__applause.wav";
+import buttonClickUrl from "../assets/sounds/622060__rydra_wong__button-click.wav";
 import backgroundMusicUrl from "../assets/sounds/Lukrembo - Storybook (freetouse.com).mp3";
+import { AUDIO_SETTINGS_KEY } from "../constants";
 
 const SOUND_URLS = {
   whoosh: whooshUrl,
   pickup: pickupUrl,
   applause: applauseUrl,
+  buttonClick: buttonClickUrl,
 };
 
 const BACKGROUND_MUSIC_VOLUME = 0.25;
@@ -19,16 +22,51 @@ let backgroundMusic = null;
 let unlockHandler = null;
 let backgroundMusicPlayGeneration = 0;
 let preloadPromise = null;
-let sfxEnabled = true;
-let musicEnabled = true;
+let buttonClickHandler = null;
+
+function readStoredBoolean(value, defaultValue) {
+  return typeof value === "boolean" ? value : defaultValue;
+}
+
+function loadPersistedAudioSettings() {
+  try {
+    const stored = localStorage.getItem(AUDIO_SETTINGS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        sfxEnabled: readStoredBoolean(parsed.sfxEnabled, true),
+        musicEnabled: readStoredBoolean(parsed.musicEnabled, true),
+      };
+    }
+  } catch {
+    // localStorage may be unavailable in some embed contexts
+  }
+  return { sfxEnabled: true, musicEnabled: true };
+}
+
+const persistedAudioSettings = loadPersistedAudioSettings();
+let sfxEnabled = persistedAudioSettings.sfxEnabled;
+let musicEnabled = persistedAudioSettings.musicEnabled;
 let audioSettingsSnapshot = { sfxEnabled, musicEnabled };
 
 function notifySettingsListeners() {
   settingsListeners.forEach((listener) => listener());
 }
 
+function persistAudioSettings() {
+  try {
+    localStorage.setItem(
+      AUDIO_SETTINGS_KEY,
+      JSON.stringify({ sfxEnabled, musicEnabled })
+    );
+  } catch {
+    // localStorage may be unavailable in some embed contexts
+  }
+}
+
 function publishAudioSettings() {
   audioSettingsSnapshot = { sfxEnabled, musicEnabled };
+  persistAudioSettings();
   notifySettingsListeners();
 }
 
@@ -148,9 +186,7 @@ export function toggleMusicEnabled() {
 export function preloadAudio() {
   if (preloadPromise) return preloadPromise;
 
-  const sfxAudio = [SOUND_URLS.whoosh, SOUND_URLS.pickup, SOUND_URLS.applause].map((url) =>
-    getOrCreateAudio(url)
-  );
+  const sfxAudio = Object.values(SOUND_URLS).map((url) => getOrCreateAudio(url));
 
   preloadPromise = Promise.all([getBackgroundMusic(), ...sfxAudio].map(waitForAudioReady));
   return preloadPromise;
@@ -232,4 +268,33 @@ export function playCollectPickup() {
 
 export function playApplause() {
   playSound(SOUND_URLS.applause);
+}
+
+export function playButtonClick() {
+  playSound(SOUND_URLS.buttonClick);
+}
+
+function getClickedButton(event) {
+  const button = event.target?.closest?.("button");
+  if (!button || button.disabled || button.getAttribute("aria-hidden") === "true") {
+    return null;
+  }
+  return button;
+}
+
+export function attachButtonClickSounds() {
+  if (buttonClickHandler) return;
+
+  buttonClickHandler = (event) => {
+    if (!getClickedButton(event)) return;
+    playButtonClick();
+  };
+
+  document.addEventListener("click", buttonClickHandler);
+}
+
+export function detachButtonClickSounds() {
+  if (!buttonClickHandler) return;
+  document.removeEventListener("click", buttonClickHandler);
+  buttonClickHandler = null;
 }

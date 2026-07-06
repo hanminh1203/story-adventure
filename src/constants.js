@@ -10,6 +10,7 @@ export const CHARACTERS_DATA_URL =
   import.meta.env.VITE_CHARACTERS_DATA_URL;
 
 export const CHARACTERS_CACHE_KEY = "charactersCache";
+export const AUDIO_SETTINGS_KEY = "audioSettings";
 
 export const COLLECTIBLES_PER_SLIDE = 3;
 export const COLLECTIBLE_X_EDGE_PAD = 6;

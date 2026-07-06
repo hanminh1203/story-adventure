@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadCharacters, loadCharactersFromCache } from "./lib/characterData";
 import { UI_TEXT } from "./uiText";
-import { preloadAudio, startBackgroundMusic, stopBackgroundMusic } from "./lib/audio";
+import {
+  attachButtonClickSounds,
+  detachButtonClickSounds,
+  preloadAudio,
+  startBackgroundMusic,
+  stopBackgroundMusic,
+} from "./lib/audio";
 import EmbedPrompt from "./components/EmbedPrompt";
 import AudioControls from "./components/AudioControls";
 import LoadingScreen from "./components/LoadingScreen";
@@ -22,12 +28,14 @@ export default function App() {
   useEffect(() => {
     let active = true;
 
+    attachButtonClickSounds();
     preloadAudio().then(() => {
       if (active) startBackgroundMusic();
     });
 
     return () => {
       active = false;
+      detachButtonClickSounds();
       stopBackgroundMusic();
     };
   }, []);
