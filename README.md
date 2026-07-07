@@ -160,6 +160,20 @@ In the sheet:
 - Production/CI uses Node 20 in GitHub Actions.
 - Media URL sanitization and shape normalization happen in `src/lib/characterData.js`.
 
+## Audio Credits
+
+Background music and sound effects used in the app:
+
+| Asset | Source | License / terms |
+|-------|--------|-----------------|
+| `Lukrembo - Storybook (freetouse.com).mp3` | [freetouse.com](https://freetouse.com) — Lukrembo | Free to use per freetouse.com terms |
+| `WHSH_Whoosh_SNDBTS_JW_191.wav` | Sound library asset (bundled in repo) | Verify license before redistribution |
+| `678385__deltacode__item-pickup-v2.wav` | [Freesound — deltacode](https://freesound.org/people/deltacode/sounds/678385/) | See Freesound license on sound page |
+| `403061__modestos1994__applause.wav` | [Freesound — modestos1994](https://freesound.org/people/modestos1994/sounds/403061/) | See Freesound license on sound page |
+| `622060__rydra_wong__button-click.wav` | [Freesound — rydra_wong](https://freesound.org/people/rydra_wong/sounds/622060/) | See Freesound license on sound page |
+
+Unused audio files in `src/assets/sounds/` are not wired into the app and are kept for evaluation only.
+
 ## Critical Handover Items
 
 - Keep Apps Script deployment URL current in both:

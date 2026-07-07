@@ -9,6 +9,7 @@ import {
 } from "../constants";
 import { UI_TEXT } from "../uiText";
 import { formatTemplate } from "../lib/format";
+import { playFlightWhoosh, playCollectPickup, playApplause } from "../lib/audio";
 import { flightDuration } from "../lib/motion";
 import {
   generateBalancedPositions,
@@ -376,6 +377,10 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
       setIsFlying(true);
       hidePinPanel();
 
+      if (flightDuration(FLIGHT_DURATION_SECONDS) > 0) {
+        playFlightWhoosh();
+      }
+
       flyToLocationCamera(loc, {
         onComplete: () => {
           setIsFlying(false);
@@ -563,6 +568,7 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
   const goNext = useCallback(() => {
     if (!active || isFlying) return;
     if (currentIndex === locations.length - 1) {
+      playApplause();
       onFinalize(buildFinalizeSummary());
       return;
     }
@@ -628,6 +634,7 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     (itemId, position) => {
       if (collectedItems.has(itemId)) return;
 
+      playCollectPickup();
       setCollectedItems((prev) => new Set(prev).add(itemId));
       setScore((prev) => {
         const newScore = prev + 1;
@@ -782,11 +789,18 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     if (!active) return;
 
     const handleKeyDown = (e) => {
-      if (exitConfirmVisible && e.key === "Escape") {
-        hideExitConfirm();
+      if (exitConfirmVisible) {
+        if (e.key === "Escape") {
+          hideExitConfirm();
+          return;
+        }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          confirmExit();
+          return;
+        }
         return;
       }
-      if (exitConfirmVisible) return;
 
       if (detailsVisible && e.key === "ArrowRight") {
         const images = slideshowLocation ? slideshowLocation.images || [] : [];
@@ -806,7 +820,7 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
 
       if (e.key === "ArrowRight") goNext();
       if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "Escape") hideDetailsPopup();
+      if (e.key === "Escape") showExitConfirm();
       if (e.key === " " && pinPanelOpen && locations[currentIndex]) {
         e.preventDefault();
         showDetailsPopup(locations[currentIndex]);
@@ -826,6 +840,8 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     currentIndex,
     hideExitConfirm,
     hideDetailsPopup,
+    showExitConfirm,
+    confirmExit,
     goNext,
     goPrev,
     changeSlide,

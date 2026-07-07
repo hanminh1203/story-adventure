@@ -205,7 +205,7 @@ export function DetailsModal({
           id="details-close-btn"
           className="details-close-btn"
           type="button"
-          aria-label="Close details"
+          aria-label={UI_TEXT.DETAILS_CLOSE_ARIA_LABEL}
           onClick={onClose}
         >
           &#215;

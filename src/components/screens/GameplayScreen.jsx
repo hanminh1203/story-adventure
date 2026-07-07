@@ -1,6 +1,7 @@
 import { useGameplay } from "../../hooks/useGameplay";
 import { UI_TEXT } from "../../uiText";
 import { formatTemplate } from "../../lib/format";
+import { playButtonClick } from "../../lib/audio";
 import LoadingScreen from "../LoadingScreen";
 import { DetailsModal } from "../gameplay/DetailsModal";
 
@@ -76,7 +77,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
             <img
               id="avatar"
               src={avatarSrc}
-              alt="Character avatar"
+              alt={UI_TEXT.AVATAR_ALT_TEXT}
               className="avatar"
               referrerPolicy="no-referrer"
             />
@@ -99,7 +100,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
           </div>
         </div>
 
-        <div id="progress-trail" className="progress-trail" aria-label="Adventure progress">
+        <div id="progress-trail" className="progress-trail" aria-label={UI_TEXT.PROGRESS_TRAIL_ARIA_LABEL}>
           <div id="progress-trail-label" className="progress-trail-label">
             {locations.length > 0
               ? formatTemplate(UI_TEXT.STOP_PANEL_TEMPLATE, {
@@ -174,7 +175,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
           id="exit-btn"
           className="btn-glass exit-btn"
           type="button"
-          aria-label="Exit game"
+          aria-label={UI_TEXT.EXIT_BTN_ARIA_LABEL}
           onClick={showExitConfirm}
         >
           {UI_TEXT.EXIT_BTN_TEXT}
@@ -194,8 +195,8 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
           <button
             id="prev-btn"
             className={`btn-glass nav-button${isFirstLocation ? " hidden" : ""}`}
-            aria-label="Previous location"
-            title="Previous (left arrow)"
+            aria-label={UI_TEXT.NAV_PREV_LOCATION_ARIA_LABEL}
+            title={UI_TEXT.NAV_PREV_LOCATION_TITLE}
             disabled={isFirstLocation || isFlying}
             onClick={goPrev}
           >
@@ -218,6 +219,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
                     className={`btn-accent pin-details-btn${tutorialSpotlightSelector === ".pin-details-btn" ? " tutorial-spotlight" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation();
+                      playButtonClick();
                       showDetailsPopup(currentLoc);
                     }}
                   >

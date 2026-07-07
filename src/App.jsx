@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadCharacters, loadCharactersFromCache } from "./lib/characterData";
 import { UI_TEXT } from "./uiText";
+import {
+  attachButtonClickSounds,
+  detachButtonClickSounds,
+  preloadAudio,
+  startBackgroundMusic,
+  stopBackgroundMusic,
+} from "./lib/audio";
 import EmbedPrompt from "./components/EmbedPrompt";
+import AudioControls from "./components/AudioControls";
 import LoadingScreen from "./components/LoadingScreen";
 import StartScreen from "./components/screens/StartScreen";
+import HowToPlayScreen from "./components/screens/HowToPlayScreen";
 import CharacterSelectScreen from "./components/screens/CharacterSelectScreen";
 import GameplayScreen from "./components/screens/GameplayScreen";
 import FinalScreen from "./components/screens/FinalScreen";
@@ -15,6 +24,21 @@ export default function App() {
   const [currentState, setCurrentState] = useState("start");
   const [selectedCharacterId, setSelectedCharacterId] = useState(null);
   const [gameSummary, setGameSummary] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    attachButtonClickSounds();
+    preloadAudio().then(() => {
+      if (active) startBackgroundMusic();
+    });
+
+    return () => {
+      active = false;
+      detachButtonClickSounds();
+      stopBackgroundMusic();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,11 +77,19 @@ export default function App() {
   }, []);
 
   const onStart = useCallback(() => {
+    transitionTo("howToPlay");
+  }, [transitionTo]);
+
+  const onHowToContinue = useCallback(() => {
     transitionTo("characterSelect");
   }, [transitionTo]);
 
-  const onGoBack = useCallback(() => {
+  const onHowToGoBack = useCallback(() => {
     transitionTo("start");
+  }, [transitionTo]);
+
+  const onGoBack = useCallback(() => {
+    transitionTo("howToPlay");
   }, [transitionTo]);
 
   const onCharacterSelected = useCallback(
@@ -97,6 +129,11 @@ export default function App() {
         onExit={onExit}
       />
       <StartScreen active={currentState === "start"} onStart={onStart} />
+      <HowToPlayScreen
+        active={currentState === "howToPlay"}
+        onContinue={onHowToContinue}
+        onGoBack={onHowToGoBack}
+      />
       <CharacterSelectScreen
         active={currentState === "characterSelect"}
         characters={characters}
@@ -105,6 +142,7 @@ export default function App() {
       />
       <FinalScreen active={currentState === "final"} summary={gameSummary} onRestart={onRestart} />
       <LoadingScreen visible={startupLoading} text={UI_TEXT.START_LOADING_TEXT} />
+      <AudioControls />
       <EmbedPrompt />
     </>
   );

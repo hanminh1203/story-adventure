@@ -380,6 +380,180 @@ body {
 }
 
 /* ==========================================================================
+   2.4. HOW TO PLAY SCREEN
+   ========================================================================== */
+
+.how-to-content {
+  animation: screenRise 0.8s ease both;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+  max-width: 1400px;
+  text-align: left;
+  width: 100%;
+}
+
+.how-to-content h1 {
+  flex-shrink: 0;
+  font-size: clamp(28px, 4vw, 48px);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.how-to-carousel {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  gap: 16px;
+  margin-bottom: 16px;
+  min-height: 0;
+  width: 100%;
+}
+
+.how-to-steps {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  gap: 20px;
+  list-style: none;
+  margin: 0;
+  min-width: 0;
+  overflow-x: auto;
+  padding-inline: var(--how-to-edge-padding, 0px);
+  scroll-padding-inline: var(--how-to-edge-padding, 0px);
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.how-to-steps::-webkit-scrollbar {
+  display: none;
+}
+
+.how-to-step {
+  background: rgba(15, 20, 30, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-panel);
+  display: flex;
+  flex: 0 0 min(600px, 60vw);
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 14px;
+  scroll-snap-align: center;
+}
+
+.how-to-step-text p {
+  font-size: clamp(15px, 1.5vw, 18px);
+  line-height: 1.45;
+  margin: 6px 0 0;
+  max-width: none;
+  text-align: center;
+}
+
+.how-to-step-title {
+  align-items: center;
+  display: flex;
+  font-family: var(--font-body);
+  font-size: clamp(17px, 2vw, 22px);
+  font-weight: 800;
+  gap: 10px;
+  justify-content: center;
+  line-height: 1.25;
+  margin: 0;
+  text-align: center;
+}
+
+.how-to-step-number {
+  align-items: center;
+  background: var(--color-sunshine);
+  border-radius: 50%;
+  color: var(--color-text-dark);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 800;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.how-to-screenshot {
+  flex: 1 1 auto;
+  min-height: min(38vh, 450px);
+  width: 100%;
+}
+
+.how-to-screenshot-image,
+.how-to-screenshot-placeholder {
+  border-radius: 12px;
+  display: block;
+  height: 100%;
+  min-height: min(38vh, 450px);
+  width: 100%;
+}
+
+.how-to-screenshot-image {
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  object-fit: cover;
+}
+
+.how-to-screenshot-placeholder {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px dashed rgba(255, 255, 255, 0.22);
+  color: var(--color-text-muted);
+  display: flex;
+  font-family: var(--font-display);
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800;
+  justify-content: center;
+}
+
+.how-to-footer {
+  flex-shrink: 0;
+  text-align: center;
+}
+
+@media (max-width: 899px) {
+  .how-to-step {
+    flex: 0 0 min(290px, 76vw);
+  }
+
+  .how-to-screenshot {
+    flex: none;
+    min-height: 0;
+  }
+
+  .how-to-screenshot-image,
+  .how-to-screenshot-placeholder {
+    aspect-ratio: 4 / 3;
+    height: auto;
+    min-height: 0;
+  }
+
+  .how-to-step-text p {
+    font-size: 15px;
+  }
+
+  .how-to-step-title {
+    font-size: 17px;
+  }
+
+  .how-to-step-number {
+    font-size: 13px;
+    height: 26px;
+    width: 26px;
+  }
+}
+
+@media (max-width: 768px) {
+  .how-to-content h1 {
+    margin-bottom: 10px;
+  }
+}
+
+/* ==========================================================================
    2.5. CHARACTER SELECT SCREEN
    ========================================================================== */
 
@@ -452,6 +626,11 @@ body {
 
 .carousel-arrow:active {
   animation: btnBounce 0.35s ease;
+}
+
+.carousel-arrow.how-to-carousel-arrow {
+  display: flex;
+  flex-shrink: 0;
 }
 
 .character-card.character-card-clone {
@@ -602,6 +781,9 @@ body {
 /* ==========================================================================
    3. GAMEPLAY SCREEN - HUD & CONTROLS
    ========================================================================== */
+.cesium-viewer-bottom {
+  display: none;
+}
 
 .avatar {
   width: 48px;
@@ -1577,7 +1759,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .game-screen-content,
-  .character-select-content {
+  .character-select-content,
+  .how-to-content {
     animation: none;
   }
 
@@ -1858,6 +2041,51 @@ body {
   background: rgba(111, 168, 255, 0.32);
 }
 
+.audio-controls {
+  position: fixed;
+  bottom: 16px;
+  right: calc(16px + 44px + 8px);
+  left: auto;
+  z-index: 50;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.audio-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.audio-toggle-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.audio-toggle-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.audio-toggle-btn[aria-pressed="true"] {
+  background: rgba(111, 168, 255, 0.22);
+  border-color: var(--color-accent);
+}
+
+.audio-toggle-btn[aria-pressed="true"]:hover {
+  background: rgba(111, 168, 255, 0.32);
+}
+
+.audio-toggle-btn[aria-pressed="false"] {
+  opacity: 0.72;
+}
+
 body.embed-constrained {
   background:
     radial-gradient(circle at 30% 25%, rgba(111, 168, 255, 0.28), transparent 30%),
@@ -1866,6 +2094,7 @@ body.embed-constrained {
 }
 
 body.embed-constrained #start-screen,
+body.embed-constrained #how-to-play-screen,
 body.embed-constrained #character-select-screen,
 body.embed-constrained #final-screen,
 body.embed-constrained #gameplay-screen {
