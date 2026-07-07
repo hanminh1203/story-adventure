@@ -7,20 +7,14 @@ export default function StartScreen({ active, onStart }) {
   useEffect(() => {
     if (!active) return;
 
-    const handleKeyDown = (e) => {
-      if (e.key === "Enter") onStart();
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
     startBtnRef.current?.focus();
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
       if (document.activeElement === startBtnRef.current) {
         startBtnRef.current?.blur();
       }
     };
-  }, [active, onStart]);
+  }, [active]);
 
   return (
     <div
