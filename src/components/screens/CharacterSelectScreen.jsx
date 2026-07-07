@@ -18,9 +18,18 @@ export default function CharacterSelectScreen({
     typeof window !== "undefined" ? window.matchMedia(CAROUSEL_MEDIA_QUERY) : null
   );
   const [focusedCharacterIndex, setFocusedCharacterIndex] = useState(null);
+  const [previewsEnabled, setPreviewsEnabled] = useState(true);
   const screenRef = useRef(null);
   const { getItems: getCarouselCards, getCenteredIndex, scrollToItem: scrollToCarouselCard } =
     useCenteredCarousel(gridRef, ".character-card");
+
+  const handleCharacterSelected = useCallback(
+    (characterId) => {
+      setPreviewsEnabled(false);
+      onCharacterSelected(characterId);
+    },
+    [onCharacterSelected]
+  );
 
   const isCarouselActive = useCallback(() => {
     return carouselMediaQueryRef.current?.matches && characters.length > 0;
@@ -134,8 +143,12 @@ export default function CharacterSelectScreen({
   }, [resetCarouselPosition, resetFocusedCharacterIndex]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active) {
+      setPreviewsEnabled(false);
+      return;
+    }
 
+    setPreviewsEnabled(true);
     resetFocusedCharacterIndex();
     requestAnimationFrame(() => {
       resetCarouselPosition();
@@ -204,16 +217,27 @@ export default function CharacterSelectScreen({
             ref={gridRef}
             onScroll={handleCarouselScroll}
           >
-            <CharacterCard character={lastCharacter} isClone onSelect={() => {}} />
+            <CharacterCard
+              character={lastCharacter}
+              isClone
+              previewsEnabled={previewsEnabled}
+              onSelect={() => {}}
+            />
             {characters.map((character, index) => (
               <CharacterCard
                 key={character.id}
                 character={character}
                 isKeyboardFocused={focusedCharacterIndex === index}
-                onSelect={onCharacterSelected}
+                previewsEnabled={previewsEnabled}
+                onSelect={handleCharacterSelected}
               />
             ))}
-            <CharacterCard character={firstCharacter} isClone onSelect={() => {}} />
+            <CharacterCard
+              character={firstCharacter}
+              isClone
+              previewsEnabled={previewsEnabled}
+              onSelect={() => {}}
+            />
           </div>
           <button
             type="button"

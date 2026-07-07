@@ -5,9 +5,10 @@ export default function CharacterCard({
   character,
   isClone = false,
   isKeyboardFocused = false,
+  previewsEnabled = true,
   onSelect,
 }) {
-  const embedUrl = isClone ? "" : getYouTubeEmbedUrl(character);
+  const embedUrl = !isClone && previewsEnabled ? getYouTubeEmbedUrl(character) : "";
   const cardClass = [
     "character-card",
     isClone ? "character-card-clone" : "",
