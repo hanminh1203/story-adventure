@@ -192,20 +192,10 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
             top: locationUiStyle.top,
           }}
         >
-          <button
-            id="prev-btn"
-            className={`btn-glass nav-button${isFirstLocation ? " hidden" : ""}`}
-            aria-label={UI_TEXT.NAV_PREV_LOCATION_ARIA_LABEL}
-            title={UI_TEXT.NAV_PREV_LOCATION_TITLE}
-            disabled={isFirstLocation || isFlying}
-            onClick={goPrev}
-          >
-            &#8592;
-          </button>
           <div id="pin-panel" className="pin-panel">
             <div id="pin-panel-body" className="pin-panel-body" ref={pinPanelBodyRef}>
               {currentLoc && (
-                <div>
+                <div className="pin-panel-content">
                   <div className="panel-label">
                     {formatTemplate(UI_TEXT.STOP_PANEL_TEMPLATE, {
                       current: currentIndex + 1,
@@ -213,36 +203,56 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
                     })}
                   </div>
                   <h2 className="panel-title">{currentLoc.name}</h2>
-                  <p className="panel-description">{currentLoc.description || ""}</p>
-                  <button
-                    type="button"
-                    className={`btn-accent pin-details-btn${tutorialSpotlightSelector === ".pin-details-btn" ? " tutorial-spotlight" : ""}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      playButtonClick();
-                      showDetailsPopup(currentLoc);
-                    }}
-                  >
-                    {UI_TEXT.PIN_DETAILS_CTA_TEXT}
-                  </button>
+                  <div className="pin-panel-description-scroll">
+                    <p className="panel-description">{currentLoc.description || ""}</p>
+                  </div>
+                  <div className="pin-panel-actions">
+                    <button
+                      id="prev-btn"
+                      type="button"
+                      className={`nav-button${isFirstLocation ? " hidden" : ""}`}
+                      aria-label={UI_TEXT.NAV_PREV_LOCATION_ARIA_LABEL}
+                      title={UI_TEXT.NAV_PREV_LOCATION_TITLE}
+                      disabled={isFirstLocation || isFlying}
+                      onClick={goPrev}
+                    >
+                      &#8592;
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn-accent pin-details-btn${tutorialSpotlightSelector === ".pin-details-btn" ? " tutorial-spotlight" : ""}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playButtonClick();
+                        showDetailsPopup(currentLoc);
+                      }}
+                    >
+                      {UI_TEXT.PIN_DETAILS_CTA_TEXT}
+                    </button>
+                    <button
+                      id="next-btn"
+                      type="button"
+                      className={`nav-button${isFinalLocation ? " finalize-btn" : ""}`}
+                      aria-label={
+                        isFinalLocation
+                          ? UI_TEXT.NAV_FINALIZE_ARIA_LABEL
+                          : UI_TEXT.NAV_NEXT_LOCATION_ARIA_LABEL
+                      }
+                      title={
+                        isFinalLocation
+                          ? UI_TEXT.NAV_EXIT_FINALIZE_TEXT
+                          : UI_TEXT.NAV_NEXT_LOCATION_TITLE
+                      }
+                      disabled={isFlying}
+                      onClick={goNext}
+                    >
+                      {isFinalLocation ? UI_TEXT.NAV_EXIT_FINALIZE_TEXT : "\u2192"}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           </div>
-          <button
-            id="next-btn"
-            className={`btn-glass nav-button${isFinalLocation ? " finalize-btn" : ""}`}
-            aria-label={
-              isFinalLocation ? UI_TEXT.NAV_FINALIZE_ARIA_LABEL : UI_TEXT.NAV_NEXT_LOCATION_ARIA_LABEL
-            }
-            title={
-              isFinalLocation ? UI_TEXT.NAV_EXIT_FINALIZE_TEXT : UI_TEXT.NAV_NEXT_LOCATION_TITLE
-            }
-            disabled={isFlying}
-            onClick={goNext}
-          >
-            {isFinalLocation ? UI_TEXT.NAV_EXIT_FINALIZE_TEXT : "\u2192"}
-          </button>
         </div>
 
         <DetailsModal

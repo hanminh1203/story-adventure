@@ -1270,14 +1270,32 @@ body {
   z-index: 10;
 }
 
-/* nav-button: round map nav arrow built on .btn-glass (add btn-glass in markup) */
+/* nav-button: round map nav arrow (matches .carousel-arrow) */
 .nav-button {
-  flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
+  align-items: center;
+  background: rgba(15, 20, 30, 0.6);
+  border: 3px solid var(--color-panel-border-light);
   border-radius: 50%;
+  box-shadow: var(--shadow-panel);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  flex: 0 0 auto;
   font-size: 18px;
+  height: 44px;
+  justify-content: center;
   line-height: 1;
+  transition: background 0.18s ease, transform 0.18s ease;
+  width: 44px;
+}
+
+.nav-button:hover {
+  background: rgba(255, 216, 77, 0.25);
+  transform: translateY(-2px);
+}
+
+.nav-button:focus-visible {
+  outline: none;
 }
 
 .nav-button.hidden {
@@ -1290,9 +1308,15 @@ body {
   font-size: 13px;
   font-weight: 700;
   height: 44px;
-  padding: 0 18px;
+  padding: 0 14px;
   text-transform: uppercase;
   width: auto;
+}
+
+.nav-button:disabled {
+  cursor: default;
+  opacity: 0.35;
+  transform: none;
 }
 
 .nav-button:active {
@@ -1307,7 +1331,8 @@ body {
 .pin-panel {
   position: relative;
   flex: 0 1 auto;
-  max-width: min(300px, calc(100vw - 72px));
+  max-width: min(640px, calc(100vw - 128px));
+  max-height: min(480px, calc(66vh - 128px));
   background: var(--color-panel-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -1319,17 +1344,50 @@ body {
   opacity: 1;
   transform: translateY(-6px);
   transition: opacity 0.35s ease, transform 0.35s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .pin-panel-body {
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pin-panel-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.pin-panel-content > .panel-label,
+.pin-panel-content > .panel-title {
+  flex-shrink: 0;
+}
+
+.pin-panel-description-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pin-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-top: 8px;
 }
 
 /* pin-details-btn: built on .btn-accent (add btn-accent in markup) */
 .pin-details-btn {
-  display: block;
-  width: 100%;
-  margin-top: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
   border-radius: 14px;
   font-size: 14px;
   font-weight: 700;
