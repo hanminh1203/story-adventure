@@ -212,6 +212,8 @@ export default function CharacterSelectScreen({
           id="character-select-go-back-btn"
           className="btn-glass go-back-btn"
           type="button"
+          data-tooltip={UI_TEXT.GO_BACK_LABEL}
+          data-tooltip-pos="bottom"
           onClick={onGoBack}
         >
           &#8592; <span className="go-back-label">{UI_TEXT.GO_BACK_LABEL}</span>
@@ -233,6 +235,7 @@ export default function CharacterSelectScreen({
             className="carousel-arrow carousel-arrow-prev"
             id="character-prev-btn"
             aria-label={UI_TEXT.CHARACTER_CAROUSEL_PREV_ARIA_LABEL}
+            data-tooltip={UI_TEXT.CHARACTER_CAROUSEL_PREV_TITLE}
             onClick={() => {
               const nextIndex = scrollCharacters(-1);
               if (nextIndex !== null) setFocusedCharacterIndex(nextIndex);
@@ -262,6 +265,7 @@ export default function CharacterSelectScreen({
             className="carousel-arrow carousel-arrow-next"
             id="character-next-btn"
             aria-label={UI_TEXT.CHARACTER_CAROUSEL_NEXT_ARIA_LABEL}
+            data-tooltip={UI_TEXT.CHARACTER_CAROUSEL_NEXT_TITLE}
             onClick={() => {
               const nextIndex = scrollCharacters(1);
               if (nextIndex !== null) setFocusedCharacterIndex(nextIndex);

@@ -164,6 +164,8 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
           id="how-to-go-back-btn"
           className="btn-glass go-back-btn"
           type="button"
+          data-tooltip={UI_TEXT.GO_BACK_LABEL}
+          data-tooltip-pos="bottom"
           onClick={onGoBack}
         >
           &#8592; <span className="go-back-label">{UI_TEXT.GO_BACK_LABEL}</span>
@@ -178,6 +180,7 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
             className="carousel-arrow carousel-arrow-prev how-to-carousel-arrow"
             id="how-to-prev-btn"
             aria-label={UI_TEXT.HOW_TO_PLAY_PREV_STEP_ARIA_LABEL}
+            data-tooltip={UI_TEXT.HOW_TO_PLAY_PREV_STEP_TITLE}
             onClick={() => scrollSteps(-1)}
           >
             &#8249;
@@ -192,6 +195,7 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
             className="carousel-arrow carousel-arrow-next how-to-carousel-arrow"
             id="how-to-next-btn"
             aria-label={UI_TEXT.HOW_TO_PLAY_NEXT_STEP_ARIA_LABEL}
+            data-tooltip={UI_TEXT.HOW_TO_PLAY_NEXT_STEP_TITLE}
             onClick={() => scrollSteps(1)}
           >
             &#8250;

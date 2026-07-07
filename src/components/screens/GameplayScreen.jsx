@@ -105,6 +105,8 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
           className="btn-glass exit-btn"
           type="button"
           aria-label={UI_TEXT.EXIT_BTN_ARIA_LABEL}
+          data-tooltip={UI_TEXT.EXIT_BTN_TITLE}
+          data-tooltip-pos="bottom"
           onClick={showExitConfirm}
         >
           <span className="exit-btn-icon" aria-hidden="true">
@@ -221,7 +223,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
                       type="button"
                       className={`nav-button${isFirstLocation ? " hidden" : ""}`}
                       aria-label={UI_TEXT.NAV_PREV_LOCATION_ARIA_LABEL}
-                      title={UI_TEXT.NAV_PREV_LOCATION_TITLE}
+                      data-tooltip={UI_TEXT.NAV_PREV_LOCATION_TITLE}
                       disabled={isFirstLocation || isFlying}
                       onClick={goPrev}
                     >
@@ -247,7 +249,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
                           ? UI_TEXT.NAV_FINALIZE_ARIA_LABEL
                           : UI_TEXT.NAV_NEXT_LOCATION_ARIA_LABEL
                       }
-                      title={
+                      data-tooltip={
                         isFinalLocation
                           ? UI_TEXT.NAV_EXIT_FINALIZE_TEXT
                           : UI_TEXT.NAV_NEXT_LOCATION_TITLE

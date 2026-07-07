@@ -72,6 +72,8 @@ export const UI_TEXT = {
   HOW_TO_PLAY_BEGIN_BTN_TEXT: "Got it — let's go!",
   HOW_TO_PLAY_PREV_STEP_ARIA_LABEL: "Previous step",
   HOW_TO_PLAY_NEXT_STEP_ARIA_LABEL: "Next step",
+  HOW_TO_PLAY_PREV_STEP_TITLE: "Previous step",
+  HOW_TO_PLAY_NEXT_STEP_TITLE: "Next step",
   HOW_TO_PLAY_SCREENSHOT_ALT_TEMPLATE: "How-to picture {number}",
   HOW_TO_PLAY_STEPS: [
     {
@@ -108,10 +110,13 @@ export const UI_TEXT = {
     "Watch their stories, choose your favourite guide, then tap <strong>{selectButton}</strong> to begin your adventure!",
   CHARACTER_CAROUSEL_PREV_ARIA_LABEL: "Previous guide",
   CHARACTER_CAROUSEL_NEXT_ARIA_LABEL: "Next guide",
+  CHARACTER_CAROUSEL_PREV_TITLE: "Previous guide",
+  CHARACTER_CAROUSEL_NEXT_TITLE: "Next guide",
   GO_BACK_LABEL: "Go back",
   TUTORIAL_SKIP_BTN_TEXT: "Skip intro",
   EXIT_BTN_TEXT: "Leave",
   EXIT_BTN_ARIA_LABEL: "Leave adventure",
+  EXIT_BTN_TITLE: "Leave adventure",
   EXIT_CONFIRM_TITLE: "Leaving already?",
   EXIT_CONFIRM_BODY: "Your treasure hunt won't be saved. Are you sure you want to leave?",
   EXIT_CANCEL_BTN_TEXT: "Keep playing",
@@ -128,6 +133,7 @@ export const UI_TEXT = {
   SLIDESHOW_META_TEMPLATE: "{current} / {total}",
   SLIDESHOW_IMG_ALT_TEMPLATE: "{locationName} picture {current}",
   SLIDESHOW_THUMB_ARIA_LABEL_TEMPLATE: "Show picture {current}",
+  SLIDESHOW_THUMB_TITLE_TEMPLATE: "Show picture {current}",
 
   SLIDE_COMPLETE_BTN_TEXT_NEXT_STOP: "On to the next stop!",
   SLIDE_COMPLETE_BTN_TEXT_NEXT_PICTURE: "See the next picture!",
@@ -137,7 +143,10 @@ export const UI_TEXT = {
   SLIDESHOW_EMPTY_TEXT: "Our photos are still on their way — check back soon!",
   SLIDESHOW_BTN_PREV_ARIA_LABEL: "Previous picture",
   SLIDESHOW_BTN_NEXT_ARIA_LABEL: "Next picture",
+  SLIDESHOW_BTN_PREV_TITLE: "Previous picture",
+  SLIDESHOW_BTN_NEXT_TITLE: "Next picture",
   DETAILS_CLOSE_ARIA_LABEL: "Close",
+  DETAILS_CLOSE_TITLE: "Close",
 
   COLLECTIBLE_ARIA_LABEL_TEMPLATE: "Tap to collect a {singular}!",
 };

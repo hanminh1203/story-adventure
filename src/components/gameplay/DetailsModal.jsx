@@ -108,6 +108,8 @@ export default function Slideshow({
           type="button"
           className="slideshow-btn slideshow-btn-previous"
           aria-label={UI_TEXT.SLIDESHOW_BTN_PREV_ARIA_LABEL}
+          data-tooltip={UI_TEXT.SLIDESHOW_BTN_PREV_TITLE}
+          data-tooltip-pos="right"
           onClick={() => onChangeSlide(-1)}
         >
           &#8592;
@@ -116,6 +118,8 @@ export default function Slideshow({
           type="button"
           className="slideshow-btn slideshow-btn-next"
           aria-label={UI_TEXT.SLIDESHOW_BTN_NEXT_ARIA_LABEL}
+          data-tooltip={UI_TEXT.SLIDESHOW_BTN_NEXT_TITLE}
+          data-tooltip-pos="left"
           onClick={() => onChangeSlide(1)}
         >
           &#8594;
@@ -148,6 +152,9 @@ export default function Slideshow({
             type="button"
             className={index === slideshowIndex ? "active" : ""}
             aria-label={formatTemplate(UI_TEXT.SLIDESHOW_THUMB_ARIA_LABEL_TEMPLATE, {
+              current: index + 1,
+            })}
+            data-tooltip={formatTemplate(UI_TEXT.SLIDESHOW_THUMB_TITLE_TEMPLATE, {
               current: index + 1,
             })}
             onClick={() => onSetSlideIndex(index)}
@@ -206,6 +213,8 @@ export function DetailsModal({
           className="details-close-btn"
           type="button"
           aria-label={UI_TEXT.DETAILS_CLOSE_ARIA_LABEL}
+          data-tooltip={UI_TEXT.DETAILS_CLOSE_TITLE}
+          data-tooltip-pos="bottom"
           onClick={onClose}
         >
           &#215;
