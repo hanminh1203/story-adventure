@@ -716,6 +716,12 @@ body {
   animation: btnBounce 0.35s ease;
 }
 
+.carousel-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
+
 .carousel-arrow.how-to-carousel-arrow {
   display: flex;
   flex-shrink: 0;
