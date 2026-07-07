@@ -476,7 +476,7 @@ body {
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 48px);
-  max-width: 1400px;
+  max-width: 1000px;
   text-align: left;
   width: 100%;
 }
