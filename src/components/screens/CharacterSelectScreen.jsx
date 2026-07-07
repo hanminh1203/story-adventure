@@ -19,21 +19,6 @@ export default function CharacterSelectScreen({
   );
   const [focusedCharacterIndex, setFocusedCharacterIndex] = useState(null);
   const screenRef = useRef(null);
-  const focusedCharacterIndexRef = useRef(focusedCharacterIndex);
-  const charactersRef = useRef(characters);
-  const onCharacterSelectedRef = useRef(onCharacterSelected);
-
-  useEffect(() => {
-    focusedCharacterIndexRef.current = focusedCharacterIndex;
-  }, [focusedCharacterIndex]);
-
-  useEffect(() => {
-    charactersRef.current = characters;
-  }, [characters]);
-
-  useEffect(() => {
-    onCharacterSelectedRef.current = onCharacterSelected;
-  }, [onCharacterSelected]);
 
   const isCarouselActive = useCallback(() => {
     return carouselMediaQueryRef.current?.matches && characters.length > 0;
@@ -181,39 +166,6 @@ export default function CharacterSelectScreen({
     ]
   );
 
-  const moveFocusedCharacter = useCallback(
-    (direction) => {
-      if (characters.length === 0) return;
-
-      if (isCarouselActive()) {
-        const nextIndex = scrollCharacters(direction);
-        if (nextIndex !== null) {
-          setFocusedCharacterIndex(nextIndex);
-        }
-        return;
-      }
-
-      setFocusedCharacterIndex((prev) => {
-        if (prev === null) {
-          return direction === 1 ? 0 : characters.length - 1;
-        }
-
-        const next = prev + direction;
-        if (next < 0) return characters.length - 1;
-        if (next >= characters.length) return 0;
-        return next;
-      });
-    },
-    [characters.length, isCarouselActive, scrollCharacters]
-  );
-
-  const confirmCharacterSelection = useCallback(() => {
-    const index = focusedCharacterIndexRef.current;
-    if (index === null) return;
-    const character = charactersRef.current[index];
-    if (character) onCharacterSelectedRef.current(character.id);
-  }, []);
-
   useEffect(() => {
     const mq = carouselMediaQueryRef.current;
     if (!mq) return;
@@ -236,36 +188,6 @@ export default function CharacterSelectScreen({
       screenRef.current?.focus({ preventScroll: true });
     });
   }, [active, characters, resetCarouselPosition, resetFocusedCharacterIndex, syncFocusedFromCarousel]);
-
-  useEffect(() => {
-    if (!active) return;
-
-    const handleKeyDown = (e) => {
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        moveFocusedCharacter(-1);
-        return;
-      }
-
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        moveFocusedCharacter(1);
-        return;
-      }
-
-      if (e.key === "Enter" || e.key === " ") {
-        if (e.target.closest(".character-select-btn, .go-back-btn, .carousel-arrow")) return;
-        e.preventDefault();
-        confirmCharacterSelection();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [active, confirmCharacterSelection, moveFocusedCharacter]);
 
   useEffect(() => {
     requestAnimationFrame(() => resetCarouselPosition());

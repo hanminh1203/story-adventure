@@ -136,35 +136,17 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     const card = list.querySelector(".how-to-step");
     if (card) observer.observe(card);
 
-    const handleKeyDown = (e) => {
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        scrollSteps(-1);
-        return;
-      }
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        scrollSteps(1);
-        return;
-      }
-      if (e.key === "Enter") onContinue();
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
     continueBtnRef.current?.focus();
 
     return () => {
       observer.disconnect();
-      document.removeEventListener("keydown", handleKeyDown);
       if (document.activeElement === continueBtnRef.current) {
         continueBtnRef.current?.blur();
       }
     };
   }, [
     active,
-    onContinue,
     resetCarouselPosition,
-    scrollSteps,
     updateEdgePadding,
     getCenteredCarouselStepIndex,
     scrollToCarouselStep,

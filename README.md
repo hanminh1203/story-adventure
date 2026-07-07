@@ -54,13 +54,6 @@ See:
 7. Click **Finalize** to view total score.
 8. Click **RESTART** to play again.
 
-### Keyboard controls
-
-- `ArrowRight`: next location or next slideshow image
-- `ArrowLeft`: previous location or previous slideshow image
-- `Escape`: close modal / exit confirmation
-- `Enter`: activate focused button on menu screens
-
 ## How To Setup For Local Development
 
 ### Prerequisites

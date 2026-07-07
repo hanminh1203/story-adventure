@@ -785,69 +785,6 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     endTutorial,
   ]);
 
-  useEffect(() => {
-    if (!active) return;
-
-    const handleKeyDown = (e) => {
-      if (exitConfirmVisible) {
-        if (e.key === "Escape") {
-          hideExitConfirm();
-          return;
-        }
-        if (e.key === "Enter") {
-          e.preventDefault();
-          confirmExit();
-          return;
-        }
-        return;
-      }
-
-      if (detailsVisible && e.key === "ArrowRight") {
-        const images = slideshowLocation ? slideshowLocation.images || [] : [];
-        if (images.length > 0 && slideshowIndex === images.length - 1) {
-          hideDetailsPopup({ restoreCamera: false });
-          goNext();
-        } else {
-          changeSlide(1);
-        }
-        return;
-      }
-
-      if (detailsVisible && e.key === "ArrowLeft") {
-        changeSlide(-1);
-        return;
-      }
-
-      if (e.key === "ArrowRight") goNext();
-      if (e.key === "ArrowLeft") goPrev();
-      if (e.key === "Escape") showExitConfirm();
-      if (e.key === " " && pinPanelOpen && locations[currentIndex]) {
-        e.preventDefault();
-        showDetailsPopup(locations[currentIndex]);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    active,
-    exitConfirmVisible,
-    detailsVisible,
-    slideshowLocation,
-    slideshowIndex,
-    pinPanelOpen,
-    locations,
-    currentIndex,
-    hideExitConfirm,
-    hideDetailsPopup,
-    showExitConfirm,
-    confirmExit,
-    goNext,
-    goPrev,
-    changeSlide,
-    showDetailsPopup,
-  ]);
-
   const currentLoc = locations[currentIndex];
   const slideAllCollected =
     slideshowLocation &&
