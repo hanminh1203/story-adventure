@@ -1433,9 +1433,12 @@ body {
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow-panel);
   color: var(--color-text);
-  max-height: min(920px, calc(100vh - 44px));
-  max-width: 1180px;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  max-height: min(920px, calc(100vh - 128px));
+  max-width: 980px;
+  min-height: 0;
+  overflow: hidden;
   padding: 22px;
   position: relative;
   width: min(1180px, calc(100vw - 44px));
@@ -1471,6 +1474,7 @@ body {
   background: color-mix(in srgb, var(--guide-accent, var(--color-panel-border)) 14%, transparent);
   border-left: 4px solid var(--guide-accent, var(--color-panel-border-light));
   border-radius: 10px;
+  flex-shrink: 0;
   font-family: var(--font-display);
   font-size: 17px;
   font-weight: 600;
@@ -1484,6 +1488,7 @@ body {
 }
 
 #details-title {
+  flex-shrink: 0;
   font-size: 28px;
   line-height: 1.2;
   margin: 0 48px 8px 0;
@@ -1493,18 +1498,27 @@ body {
   color: var(--color-text-muted);
   font-size: 18px;
   line-height: 1.5;
-  margin: 0 48px 18px 0;
+  margin: 0;
+}
+
+.details-description-scroll {
+  flex: 1 1 auto;
+  margin: 0 0 18px 0;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .details-slideshow {
   display: grid;
+  flex: 0 0 auto;
   gap: 12px;
+  min-height: 0;
 }
 
 .slideshow-frame {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  min-height: min(620px, 55vh);
   overflow: hidden;
   position: relative;
 }
@@ -1512,7 +1526,7 @@ body {
 .slideshow-frame>img {
   aspect-ratio: 16 / 9;
   display: block;
-  height: min(620px, 55vh);
+  height: min(620px, 50vh);
   object-fit: cover;
   width: 100%;
 }

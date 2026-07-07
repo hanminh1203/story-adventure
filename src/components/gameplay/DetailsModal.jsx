@@ -216,7 +216,9 @@ export function DetailsModal({
           </p>
         )}
         <h2 id="details-title">{location.name}</h2>
-        <p id="details-description">{location.description || ""}</p>
+        <div className="details-description-scroll">
+          <p id="details-description">{location.description || ""}</p>
+        </div>
         <div id="details-slideshow" className="details-slideshow" ref={detailsSlideshowRef}>
           <Slideshow
             location={location}
