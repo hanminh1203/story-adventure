@@ -864,14 +864,36 @@ body {
 /* exit-btn: built on .btn-glass (add btn-glass in markup) */
 .exit-btn {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 10;
-  padding: 10px 18px;
+  top: 32px;
+  left: 32px;
+  z-index: 11;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  transform: translate(-50%, -50%);
   font-family: var(--font-body);
-  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+}
+
+.exit-btn:hover {
+  transform: translate(-50%, -50%) translateY(-2px);
+}
+
+.exit-btn-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+}
+
+.exit-btn-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1);
 }
 
 .exit-confirm-modal {
@@ -954,8 +976,8 @@ body {
 
 #score-panel {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 24px;
+  left: 24px;
   min-width: 140px;
   background: var(--color-panel-bg);
   backdrop-filter: blur(10px);
@@ -994,8 +1016,8 @@ body {
 
 .progress-trail {
   position: absolute;
-  top: 88px;
-  left: 16px;
+  top: 96px;
+  left: 24px;
   z-index: 10;
   min-width: 140px;
   background: var(--color-panel-bg);
@@ -1933,7 +1955,7 @@ body {
   }
 
   .progress-trail {
-    top: 82px;
+    top: 90px;
     min-width: 120px;
     padding: 8px 12px;
   }
