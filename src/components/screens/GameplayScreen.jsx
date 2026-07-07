@@ -18,8 +18,6 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
     visitedLocations,
     scorePulse,
     locationUiRef,
-    pinPanelBodyRef,
-    detailsSlideshowRef,
     locationUiStyle,
     detailsVisible,
     exitConfirmVisible,
@@ -204,7 +202,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
           }}
         >
           <div id="pin-panel" className="pin-panel">
-            <div id="pin-panel-body" className="pin-panel-body" ref={pinPanelBodyRef}>
+            <div id="pin-panel-body" className="pin-panel-body">
               {currentLoc && (
                 <div className="pin-panel-content">
                   <div className="panel-label">
@@ -276,7 +274,6 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
           tutorialSpotlightSelector={tutorialSpotlightSelector}
           collectFeedback={collectFeedback}
           collectibleImage={collectibleImage}
-          detailsSlideshowRef={detailsSlideshowRef}
           getCollectiblesForSlide={getCollectiblesForSlide}
           makeCollectibleId={makeCollectibleId}
           getCollectibleSingular={getCollectibleSingular}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useCenteredCarousel } from "../../hooks/useCenteredCarousel";
 import StorybookDecor from "../StorybookDecor";
 import { formatTemplate } from "../../lib/format";
-import { prefersReducedMotion } from "../../lib/motion";
 import { UI_TEXT } from "../../uiText";
 
 function HowToStepCard({ step, index }) {
@@ -44,55 +44,14 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
   const continueBtnRef = useRef(null);
   const stepsRef = useRef(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const { getItems: getCarouselSteps, getCenteredIndex, scrollToItem: scrollToCarouselStep } =
+    useCenteredCarousel(stepsRef, ".how-to-step");
 
   const steps = UI_TEXT.HOW_TO_PLAY_STEPS;
 
-  const getCarouselSteps = useCallback(() => {
-    if (!stepsRef.current) return [];
-    return [...stepsRef.current.querySelectorAll(".how-to-step")];
-  }, []);
-
-  const getCenteredCarouselStepIndex = useCallback(() => {
-    const cards = getCarouselSteps();
-    if (cards.length === 0) return 0;
-
-    const list = stepsRef.current;
-    const center = list.scrollLeft + list.clientWidth / 2;
-    let bestIndex = 0;
-    let bestDistance = Infinity;
-
-    cards.forEach((card, index) => {
-      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const distance = Math.abs(center - cardCenter);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = index;
-      }
-    });
-
-    return bestIndex;
-  }, [getCarouselSteps]);
-
   const syncCurrentStepIndex = useCallback(() => {
-    setCurrentStepIndex(getCenteredCarouselStepIndex());
-  }, [getCenteredCarouselStepIndex]);
-
-  const scrollToCarouselStep = useCallback(
-    (stepIndex, behavior = "smooth") => {
-      const cards = getCarouselSteps();
-      const card = cards[stepIndex];
-      if (!card) return;
-
-      const resolvedBehavior =
-        behavior === "instant" || prefersReducedMotion() ? "auto" : "smooth";
-      card.scrollIntoView({
-        behavior: resolvedBehavior,
-        inline: "center",
-        block: "nearest",
-      });
-    },
-    [getCarouselSteps]
-  );
+    setCurrentStepIndex(getCenteredIndex());
+  }, [getCenteredIndex]);
 
   const resetCarouselPosition = useCallback(() => {
     if (steps.length === 0) return;
@@ -112,13 +71,13 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
   const scrollSteps = useCallback(
     (direction) => {
       const cards = getCarouselSteps();
-      const centeredIndex = getCenteredCarouselStepIndex();
+      const centeredIndex = getCenteredIndex();
       const targetIndex = centeredIndex + direction;
       if (targetIndex < 0 || targetIndex >= cards.length) return;
 
       scrollToCarouselStep(targetIndex);
     },
-    [getCarouselSteps, getCenteredCarouselStepIndex, scrollToCarouselStep]
+    [getCarouselSteps, getCenteredIndex, scrollToCarouselStep]
   );
 
   useEffect(() => {
@@ -134,7 +93,7 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     });
 
     const observer = new ResizeObserver(() => {
-      const index = getCenteredCarouselStepIndex();
+      const index = getCenteredIndex();
       setCurrentStepIndex(index);
       updateEdgePadding();
       scrollToCarouselStep(index, "instant");
@@ -157,7 +116,7 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     resetCarouselPosition,
     syncCurrentStepIndex,
     updateEdgePadding,
-    getCenteredCarouselStepIndex,
+    getCenteredIndex,
     scrollToCarouselStep,
   ]);
 

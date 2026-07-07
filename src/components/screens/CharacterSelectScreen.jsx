@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CAROUSEL_MEDIA_QUERY } from "../../constants";
 import { formatTemplate } from "../../lib/format";
-import { prefersReducedMotion } from "../../lib/motion";
+import { useCenteredCarousel } from "../../hooks/useCenteredCarousel";
 import { UI_TEXT } from "../../uiText";
 import CharacterCard from "./CharacterCard";
 
@@ -19,36 +19,12 @@ export default function CharacterSelectScreen({
   );
   const [focusedCharacterIndex, setFocusedCharacterIndex] = useState(null);
   const screenRef = useRef(null);
+  const { getItems: getCarouselCards, getCenteredIndex, scrollToItem: scrollToCarouselCard } =
+    useCenteredCarousel(gridRef, ".character-card");
 
   const isCarouselActive = useCallback(() => {
     return carouselMediaQueryRef.current?.matches && characters.length > 0;
   }, [characters.length]);
-
-  const getCarouselCards = useCallback(() => {
-    if (!gridRef.current) return [];
-    return [...gridRef.current.querySelectorAll(".character-card")];
-  }, []);
-
-  const getCenteredCarouselCardIndex = useCallback(() => {
-    const cards = getCarouselCards();
-    if (cards.length === 0) return 0;
-
-    const grid = gridRef.current;
-    const center = grid.scrollLeft + grid.clientWidth / 2;
-    let bestIndex = 0;
-    let bestDistance = Infinity;
-
-    cards.forEach((card, index) => {
-      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const distance = Math.abs(center - cardCenter);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = index;
-      }
-    });
-
-    return bestIndex;
-  }, [getCarouselCards]);
 
   const getRealCharacterIndexFromCarouselCard = useCallback(
     (cardIndex) => {
@@ -63,13 +39,9 @@ export default function CharacterSelectScreen({
 
   const syncFocusedFromCarousel = useCallback(() => {
     if (!isCarouselActive()) return;
-    const centeredIndex = getCenteredCarouselCardIndex();
+    const centeredIndex = getCenteredIndex();
     setFocusedCharacterIndex(getRealCharacterIndexFromCarouselCard(centeredIndex));
-  }, [
-    getCenteredCarouselCardIndex,
-    getRealCharacterIndexFromCarouselCard,
-    isCarouselActive,
-  ]);
+  }, [getCenteredIndex, getRealCharacterIndexFromCarouselCard, isCarouselActive]);
 
   const resetFocusedCharacterIndex = useCallback(() => {
     if (isCarouselActive()) {
@@ -78,23 +50,6 @@ export default function CharacterSelectScreen({
     }
     setFocusedCharacterIndex(null);
   }, [isCarouselActive]);
-
-  const scrollToCarouselCard = useCallback(
-    (cardIndex, behavior = "smooth") => {
-      const cards = getCarouselCards();
-      const card = cards[cardIndex];
-      if (!card) return;
-
-      const resolvedBehavior =
-        behavior === "instant" || prefersReducedMotion() ? "auto" : "smooth";
-      card.scrollIntoView({
-        behavior: resolvedBehavior,
-        inline: "center",
-        block: "nearest",
-      });
-    },
-    [getCarouselCards]
-  );
 
   const resetCarouselPosition = useCallback(() => {
     if (!isCarouselActive()) return;
@@ -110,7 +65,7 @@ export default function CharacterSelectScreen({
     const realCount = characters.length;
     if (cards.length < realCount + 2) return;
 
-    const centeredIndex = getCenteredCarouselCardIndex();
+    const centeredIndex = getCenteredIndex();
     if (centeredIndex === 0) {
       isCarouselJumpingRef.current = true;
       scrollToCarouselCard(realCount, "instant");
@@ -126,7 +81,7 @@ export default function CharacterSelectScreen({
   }, [
     characters.length,
     getCarouselCards,
-    getCenteredCarouselCardIndex,
+    getCenteredIndex,
     isCarouselActive,
     scrollToCarouselCard,
   ]);
@@ -150,7 +105,7 @@ export default function CharacterSelectScreen({
       if (!isCarouselActive()) return null;
 
       const cards = getCarouselCards();
-      const centeredIndex = getCenteredCarouselCardIndex();
+      const centeredIndex = getCenteredIndex();
       const targetIndex = centeredIndex + direction;
       if (targetIndex < 0 || targetIndex >= cards.length) return null;
 
@@ -159,7 +114,7 @@ export default function CharacterSelectScreen({
     },
     [
       getCarouselCards,
-      getCenteredCarouselCardIndex,
+      getCenteredIndex,
       getRealCharacterIndexFromCarouselCard,
       isCarouselActive,
       scrollToCarouselCard,

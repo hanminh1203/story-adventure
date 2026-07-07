@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { UI_TEXT } from "../uiText";
 import { formatTemplate } from "../lib/format";
 import { playCollectPickup } from "../lib/audio";
@@ -12,6 +12,9 @@ import {
 export function useSlideshow({ character, cesium, getTutorial }) {
   const collectiblePositionsRef = useRef(new Map());
   const achievementToastTimerRef = useRef(null);
+  const collectFeedbackTimerRef = useRef(null);
+  const scorePulseTimerRef = useRef(null);
+  const removalTimerRefs = useRef(new Map());
 
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [slideshowLocation, setSlideshowLocation] = useState(null);
@@ -24,6 +27,23 @@ export function useSlideshow({ character, cesium, getTutorial }) {
   const [collectFeedback, setCollectFeedback] = useState(null);
   const [removingCollectibleIds, setRemovingCollectibleIds] = useState(() => new Set());
   const [achievementToast, setAchievementToast] = useState({ visible: false, message: "" });
+
+  const clearTransientTimers = useCallback(() => {
+    if (collectFeedbackTimerRef.current) {
+      window.clearTimeout(collectFeedbackTimerRef.current);
+      collectFeedbackTimerRef.current = null;
+    }
+
+    if (scorePulseTimerRef.current) {
+      window.clearTimeout(scorePulseTimerRef.current);
+      scorePulseTimerRef.current = null;
+    }
+
+    removalTimerRefs.current.forEach((timerId) => {
+      window.clearTimeout(timerId);
+    });
+    removalTimerRefs.current.clear();
+  }, []);
 
   const hideAchievementToast = useCallback(() => {
     if (achievementToastTimerRef.current) {
@@ -169,19 +189,37 @@ export function useSlideshow({ character, cesium, getTutorial }) {
           left: position.x,
           top: position.y,
         });
-        window.setTimeout(() => setCollectFeedback(null), 600);
+        if (collectFeedbackTimerRef.current) {
+          window.clearTimeout(collectFeedbackTimerRef.current);
+        }
+        collectFeedbackTimerRef.current = window.setTimeout(() => {
+          collectFeedbackTimerRef.current = null;
+          setCollectFeedback(null);
+        }, 600);
         return newScore;
       });
       setScorePulse(true);
-      window.setTimeout(() => setScorePulse(false), 400);
+      if (scorePulseTimerRef.current) {
+        window.clearTimeout(scorePulseTimerRef.current);
+      }
+      scorePulseTimerRef.current = window.setTimeout(() => {
+        scorePulseTimerRef.current = null;
+        setScorePulse(false);
+      }, 400);
       setRemovingCollectibleIds((prev) => new Set(prev).add(itemId));
-      window.setTimeout(() => {
+      const existingRemovalTimer = removalTimerRefs.current.get(itemId);
+      if (existingRemovalTimer) {
+        window.clearTimeout(existingRemovalTimer);
+      }
+      const removalTimerId = window.setTimeout(() => {
+        removalTimerRefs.current.delete(itemId);
         setRemovingCollectibleIds((prev) => {
           const next = new Set(prev);
           next.delete(itemId);
           return next;
         });
       }, 220);
+      removalTimerRefs.current.set(itemId, removalTimerId);
 
       if (slideshowLocation) {
         checkLocationCompletion(slideshowLocation);
@@ -193,14 +231,20 @@ export function useSlideshow({ character, cesium, getTutorial }) {
   );
 
   const resetSlideshow = useCallback(() => {
+    clearTransientTimers();
     setScore(0);
     setCollectedItems(new Set());
     setClearedLocations(new Set());
+    setScorePulse(false);
+    setCollectFeedback(null);
+    setRemovingCollectibleIds(new Set());
     collectiblePositionsRef.current = new Map();
     hideAchievementToast();
     closeDetailsModal();
     cesium.clearOverviewCamera();
-  }, [hideAchievementToast, closeDetailsModal, cesium]);
+  }, [clearTransientTimers, hideAchievementToast, closeDetailsModal, cesium]);
+
+  useEffect(() => clearTransientTimers, [clearTransientTimers]);
 
   const slideAllCollected =
     slideshowLocation &&

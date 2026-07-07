@@ -7,11 +7,11 @@ import {
 } from "../../constants";
 import { flightDuration } from "../motion";
 
-export function getCameraOffset(loc) {
+function getCameraOffset(loc) {
   return new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-50), loc.height);
 }
 
-export function applyTargetVerticalOffset(viewer, range) {
+function applyTargetVerticalOffset(viewer, range) {
   const fovy = viewer.camera.frustum.fovy;
   const delta = (1 - 2 * TARGET_SCREEN_POSITION_FROM_BOTTOM) * Math.tan(fovy / 2) * range;
   viewer.camera.moveUp(delta);

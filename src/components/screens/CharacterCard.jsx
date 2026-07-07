@@ -7,6 +7,7 @@ export default function CharacterCard({
   isKeyboardFocused = false,
   onSelect,
 }) {
+  const embedUrl = isClone ? "" : getYouTubeEmbedUrl(character);
   const cardClass = [
     "character-card",
     isClone ? "character-card-clone" : "",
@@ -22,16 +23,18 @@ export default function CharacterCard({
       style={character.themeColor ? { "--guide-accent": character.themeColor } : undefined}
     >
       <div className="character-video">
-        <iframe
-          width="100%"
-          height="100%"
-          src={getYouTubeEmbedUrl(character)}
-          title={character.name}
-          frameBorder="0"
-          allow="autoplay;"
-          allowFullScreen
-          tabIndex={-1}
-        />
+        {embedUrl ? (
+          <iframe
+            width="100%"
+            height="100%"
+            src={embedUrl}
+            title={character.name}
+            frameBorder="0"
+            allow="autoplay;"
+            allowFullScreen
+            tabIndex={-1}
+          />
+        ) : null}
       </div>
       <div className="character-info">
         <div className="character-name">{character.name}</div>

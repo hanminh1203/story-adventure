@@ -53,13 +53,6 @@ export default function Slideshow({
     return <p className="details-empty">{UI_TEXT.SLIDESHOW_EMPTY_TEXT}</p>;
   }
 
-  const collectibles = getCollectiblesForSlide(location, slideshowIndex)
-    .map((position, itemIndex) => {
-      const itemId = makeCollectibleId(location, slideshowIndex, itemIndex);
-      return { itemId, position, itemIndex };
-    })
-    .filter(({ itemId }) => !collectedItems.has(itemId) || removingCollectibleIds.has(itemId));
-
   const singular = getCollectibleSingular();
   const isLastImage = slideshowIndex === images.length - 1;
 
@@ -177,7 +170,6 @@ export function DetailsModal({
   tutorialSpotlightSelector,
   collectFeedback,
   collectibleImage,
-  detailsSlideshowRef,
   getCollectiblesForSlide,
   makeCollectibleId,
   getCollectibleSingular,
@@ -228,7 +220,7 @@ export function DetailsModal({
         <div className="details-description-scroll">
           <p id="details-description">{location.description || ""}</p>
         </div>
-        <div id="details-slideshow" className="details-slideshow" ref={detailsSlideshowRef}>
+        <div id="details-slideshow" className="details-slideshow">
           <Slideshow
             location={location}
             character={character}

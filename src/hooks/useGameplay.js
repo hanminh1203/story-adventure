@@ -17,8 +17,6 @@ import { useSlideshow } from "./useSlideshow";
 
 export function useGameplay({ character, active, onFinalize, onExit }) {
   const locationUiRef = useRef(null);
-  const pinPanelBodyRef = useRef(null);
-  const detailsSlideshowRef = useRef(null);
   const tutorialRef = useRef(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -182,8 +180,6 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     collectFeedback: slideshow.collectFeedback,
     pinPanelOpen: cesium.pinPanelOpen,
     locationUiRef,
-    pinPanelBodyRef,
-    detailsSlideshowRef,
     locationUiStyle: cesium.locationUiStyle,
     detailsVisible: slideshow.detailsVisible,
     exitConfirmVisible,
