@@ -1456,7 +1456,7 @@ body {
 .pin-panel {
   position: relative;
   flex: 0 1 auto;
-  max-width: min(640px, calc(100vw - 128px));
+  max-width: min(440px, calc(100vw - 128px));
   max-height: min(480px, calc(66vh - 128px));
   background: var(--color-panel-bg);
   backdrop-filter: blur(10px);
