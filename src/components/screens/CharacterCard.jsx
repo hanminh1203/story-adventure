@@ -1,8 +1,19 @@
 import { getYouTubeEmbedUrl } from "../../lib/media";
 import { UI_TEXT } from "../../uiText";
 
-export default function CharacterCard({ character, isClone = false, onSelect }) {
-  const cardClass = isClone ? "character-card character-card-clone" : "character-card";
+export default function CharacterCard({
+  character,
+  isClone = false,
+  isKeyboardFocused = false,
+  onSelect,
+}) {
+  const cardClass = [
+    "character-card",
+    isClone ? "character-card-clone" : "",
+    isKeyboardFocused ? "character-card-keyboard-focus" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div
@@ -19,7 +30,7 @@ export default function CharacterCard({ character, isClone = false, onSelect }) 
           frameBorder="0"
           allow="autoplay;"
           allowFullScreen
-          tabIndex={isClone ? -1 : 0}
+          tabIndex={-1}
         />
       </div>
       <div className="character-info">
