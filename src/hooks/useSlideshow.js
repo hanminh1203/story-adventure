@@ -110,7 +110,8 @@ export function useSlideshow({ character, cesium, getTutorial }) {
         },
         onCancel: () => {
           cesium.setIsFlying(false);
-          if (!isDetailViewActive && !cesium.getOverviewCamera()) {
+          cesium.clearOverviewCamera();
+          if (!isDetailViewActive) {
             cesium.showPinPanel();
           }
         },
@@ -173,8 +174,8 @@ export function useSlideshow({ character, cesium, getTutorial }) {
   }, []);
 
   const checkLocationCompletion = useCallback(
-    (loc) => {
-      if (!loc || !isLocationFullyCollected(loc, collectedItems)) return;
+    (loc, nextCollectedItems = collectedItems) => {
+      if (!loc || !isLocationFullyCollected(loc, nextCollectedItems)) return;
       if (clearedLocations.has(loc.name)) return;
 
       setClearedLocations((prev) => new Set(prev).add(loc.name));
@@ -192,11 +193,12 @@ export function useSlideshow({ character, cesium, getTutorial }) {
   const collectItem = useCallback(
     (itemId, position) => {
       if (collectedItems.has(itemId)) return;
+      const nextCollectedItems = new Set(collectedItems).add(itemId);
 
       setCollectibleHintActive(false);
       clearIdleHintTimer();
       playCollectPickup();
-      setCollectedItems((prev) => new Set(prev).add(itemId));
+      setCollectedItems(nextCollectedItems);
       setScore((prev) => {
         const newScore = prev + 1;
         const messages = UI_TEXT.COLLECT_MESSAGES;
@@ -238,7 +240,7 @@ export function useSlideshow({ character, cesium, getTutorial }) {
       removalTimerRefs.current.set(itemId, removalTimerId);
 
       if (slideshowLocation) {
-        checkLocationCompletion(slideshowLocation);
+        checkLocationCompletion(slideshowLocation, nextCollectedItems);
       }
 
       getTutorial()?.notifyItemCollected?.();

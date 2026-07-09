@@ -119,6 +119,8 @@ describe("useSlideshow", () => {
     expect(playCollectPickup).toHaveBeenCalledTimes(COLLECTIBLES_PER_SLIDE);
     expect(result.current.score).toBe(COLLECTIBLES_PER_SLIDE);
     expect(result.current.slideAllCollected).toBe(true);
+    expect(result.current.achievementToast.visible).toBe(true);
+    expect(result.current.achievementToast.message).toMatch(/found all the coins at Beach/i);
     expect(tutorial.notifyItemCollected).toHaveBeenCalledTimes(COLLECTIBLES_PER_SLIDE);
 
     act(() => vi.advanceTimersByTime(220));
@@ -161,6 +163,23 @@ describe("useSlideshow", () => {
 
     expect(cesium.restoreOverviewCameraView).not.toHaveBeenCalled();
     expect(cesium.clearOverviewCamera).toHaveBeenCalled();
+  });
+
+  it("restores the pin panel when the detail-view flight is cancelled", () => {
+    const cesium = createCesium();
+    cesium.flyToDetailViewCamera = vi.fn((loc, callbacks) => callbacks.onCancel());
+
+    const { result } = renderHook(() =>
+      useSlideshow({ character, cesium, getTutorial: () => null })
+    );
+
+    act(() => result.current.showDetailsPopup(location));
+
+    expect(result.current.detailsVisible).toBe(false);
+    expect(cesium.clearOverviewCamera).toHaveBeenCalledOnce();
+    expect(cesium.showPinPanel).toHaveBeenCalledOnce();
+    expect(cesium.setIsFlying).toHaveBeenNthCalledWith(1, true);
+    expect(cesium.setIsFlying).toHaveBeenNthCalledWith(2, false);
   });
 
   it("shows a collectible hint after idle time on an uncollected slide", () => {

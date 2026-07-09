@@ -2265,6 +2265,11 @@ body {
   text-transform: uppercase;
 }
 
+.map-intro-ready-text {
+  font-size: clamp(16px, 4vw, 20px);
+  max-width: min(34rem, 88vw);
+}
+
 @keyframes loadingProgressIndeterminate {
   0% {
     transform: translateX(-100%);

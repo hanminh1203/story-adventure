@@ -32,6 +32,7 @@ export const UI_TEXT = {
   START_LOADING_TEXT: "Gathering your guides...",
   MAP_LOADING_TEXT: "Preparing your adventure...",
   LOADING_PROGRESS_ARIA_LABEL: "Loading progress",
+  MAP_INTRO_READY_TEXT: "Your adventure is ready. Click Skip ahead! to start the game!",
   MAP_INTRO_SKIP_BTN_TEXT: "Skip ahead!",
   DATA_LOAD_ERROR_HTML:
     "<p style='padding:2rem;font-family:sans-serif'>Oops! We couldn't load the adventure just now. Please try again later.</p>",

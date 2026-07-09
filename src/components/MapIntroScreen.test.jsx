@@ -39,6 +39,7 @@ describe("MapIntroScreen", () => {
     );
 
     expect(screen.getByRole("button", { name: UI_TEXT.MAP_INTRO_SKIP_BTN_TEXT })).toBeInTheDocument();
+    expect(screen.getByText(UI_TEXT.MAP_INTRO_READY_TEXT)).toBeInTheDocument();
     expect(screen.queryByText(UI_TEXT.MAP_LOADING_TEXT)).not.toBeInTheDocument();
   });
 

@@ -37,13 +37,16 @@ export default function MapIntroScreen({
               <div ref={containerRef} className="map-intro-video-player" />
             </div>
             {mapReady ? (
-              <button
-                type="button"
-                className="btn-accent map-intro-skip-btn"
-                onClick={onSkip}
-              >
-                {UI_TEXT.MAP_INTRO_SKIP_BTN_TEXT}
-              </button>
+              <>
+                <p className="loading-text map-intro-ready-text">{UI_TEXT.MAP_INTRO_READY_TEXT}</p>
+                <button
+                  type="button"
+                  className="btn-accent map-intro-skip-btn"
+                  onClick={onSkip}
+                >
+                  {UI_TEXT.MAP_INTRO_SKIP_BTN_TEXT}
+                </button>
+              </>
             ) : (
               <>
                 <LoadingProgressBar progress={mapLoadProgress} />
