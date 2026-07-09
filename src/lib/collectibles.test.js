@@ -14,6 +14,7 @@ import {
   getCharacterCollectibleName,
   getCollectibleSingular,
   getStarRating,
+  getAchievementTitle,
   getTutorialSteps,
   isLocationFullyCollected,
   makeCollectibleId,
@@ -80,6 +81,12 @@ describe("collectibles helpers", () => {
     expect(getStarRating(3, 10)).toBe(1);
     expect(getStarRating(4, 10)).toBe(2);
     expect(getStarRating(8, 10)).toBe(3);
+  });
+
+  it("maps score to achievement titles", () => {
+    expect(getAchievementTitle(8, 10)).toBe(UI_TEXT.ACHIEVEMENT_TITLE_3_STAR);
+    expect(getAchievementTitle(4, 10)).toBe(UI_TEXT.ACHIEVEMENT_TITLE_2_STAR);
+    expect(getAchievementTitle(2, 10)).toBe(UI_TEXT.ACHIEVEMENT_TITLE_1_STAR);
   });
 
   it("builds tutorial steps using character data", () => {
