@@ -2131,6 +2131,35 @@ body {
   text-align: center;
 }
 
+.map-intro-content {
+  gap: 20px;
+  max-width: min(960px, 94vw);
+  width: 100%;
+}
+
+.map-intro-video {
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  width: 100%;
+}
+
+.map-intro-video-player,
+.map-intro-video-player iframe {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.map-intro-skip-btn {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  min-width: 180px;
+  text-transform: uppercase;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { playApplause } from "../lib/audio";
+import { getYouTubeVideoId } from "../lib/media";
 import {
   formatCollectibleLabel,
   getCharacterCollectibleName,
@@ -22,6 +23,9 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visitedLocations, setVisitedLocations] = useState(() => new Set());
   const [exitConfirmVisible, setExitConfirmVisible] = useState(false);
+  const [introActive, setIntroActive] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  const mapReadyRef = useRef(false);
 
   const locations = character?.locations || [];
   const isFinalLocation = currentIndex === locations.length - 1;
@@ -134,23 +138,44 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     setCurrentIndex(0);
     setVisitedLocations(new Set());
     setExitConfirmVisible(false);
+    setIntroActive(false);
+    setMapReady(false);
+    mapReadyRef.current = false;
     slideshow.resetSlideshow();
     cesium.resetTour();
     tutorial.resetTutorial();
   }, [slideshow, cesium, tutorial]);
 
+  const dismissIntro = useCallback(() => {
+    if (!mapReadyRef.current) return;
+
+    setIntroActive(false);
+    flyToLocation(0);
+  }, [flyToLocation]);
+
+  const handleIntroEnded = useCallback(() => {
+    if (mapReadyRef.current) {
+      dismissIntro();
+    }
+  }, [dismissIntro]);
+
   const start = useCallback(() => {
     resetGameplay();
     cesium.ensureViewer();
     tutorial.startTutorial();
-    cesium.setMapLoading(true);
+    setIntroActive(true);
+    setMapReady(false);
+    mapReadyRef.current = false;
     cesium.whenMapReady(() => {
-      cesium.setMapLoading(false);
-      flyToLocation(0);
+      mapReadyRef.current = true;
+      setMapReady(true);
     });
-  }, [resetGameplay, cesium, tutorial, flyToLocation]);
+  }, [resetGameplay, cesium, tutorial]);
 
   const cleanup = useCallback(() => {
+    setIntroActive(false);
+    setMapReady(false);
+    mapReadyRef.current = false;
     cesium.cleanup();
     hideExitConfirm();
     slideshow.hideDetailsPopup({ restoreCamera: false });
@@ -164,6 +189,13 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, character?.id]);
+
+  useEffect(() => {
+    if (!introActive || !mapReady) return;
+    if (!getYouTubeVideoId(character)) {
+      dismissIntro();
+    }
+  }, [introActive, mapReady, character, dismissIntro]);
 
   const currentLoc = locations[currentIndex];
 
@@ -185,7 +217,11 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     exitConfirmVisible,
     slideshowLocation: slideshow.slideshowLocation,
     slideshowIndex: slideshow.slideshowIndex,
-    mapLoading: cesium.mapLoading,
+    mapLoading: introActive,
+    mapReady,
+    mapReadyRef,
+    dismissIntro,
+    handleIntroEnded,
     achievementToast: slideshow.achievementToast,
     tutorialActive: tutorial.tutorialActive,
     tutorialConfig: tutorial.tutorialConfig,

@@ -51,3 +51,7 @@ export function getYouTubeEmbedUrl(character) {
   const id = extractYouTubeId(character?.youtubeUrl);
   return id ? `https://www.youtube.com/embed/${id}` : "";
 }
+
+export function getYouTubeVideoId(character) {
+  return extractYouTubeId(character?.youtubeUrl);
+}

@@ -2,7 +2,7 @@ import { useGameplay } from "../../hooks/useGameplay";
 import { UI_TEXT } from "../../uiText";
 import { formatTemplate } from "../../lib/format";
 import { playButtonClick } from "../../lib/audio";
-import LoadingScreen from "../LoadingScreen";
+import MapIntroScreen from "../MapIntroScreen";
 import { DetailsModal } from "../gameplay/DetailsModal";
 
 export default function GameplayScreen({ active, character, onFinalize, onExit }) {
@@ -24,6 +24,10 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
     slideshowLocation,
     slideshowIndex,
     mapLoading,
+    mapReady,
+    mapReadyRef,
+    dismissIntro,
+    handleIntroEnded,
     achievementToast,
     tutorialActive,
     tutorialConfig,
@@ -326,10 +330,14 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
         </div>
       </div>
 
-      <LoadingScreen
+      <MapIntroScreen
         visible={mapLoading}
-        text={UI_TEXT.MAP_LOADING_TEXT}
+        character={guide}
+        mapReady={mapReady}
+        mapReadyRef={mapReadyRef}
         guideAccent={guideAccent}
+        onSkip={dismissIntro}
+        onVideoEnded={handleIntroEnded}
       />
     </div>
   );
