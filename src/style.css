@@ -1913,7 +1913,7 @@ body {
    ========================================================================== */
 
 #final-score {
-  color: var(--color-sunshine);
+  color: var(--guide-accent, var(--color-sunshine));
   font-family: var(--font-display);
 }
 
@@ -1951,8 +1951,8 @@ body {
 }
 
 .final-star.filled {
-  color: var(--color-sunshine);
-  text-shadow: 0 0 12px rgba(255, 216, 77, 0.6);
+  color: var(--guide-accent, var(--color-sunshine));
+  text-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, var(--color-sunshine)) 60%, transparent);
 }
 
 #final-collect-summary {
