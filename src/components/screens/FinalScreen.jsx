@@ -41,13 +41,7 @@ export default function FinalScreen({ active, summary, onRestart }) {
 
     restartBtnRef.current?.focus();
 
-    const handleKeyDown = (e) => {
-      if (e.key === "Enter") onRestart();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
       if (confettiHideTimerRef.current) {
         window.clearTimeout(confettiHideTimerRef.current);
       }

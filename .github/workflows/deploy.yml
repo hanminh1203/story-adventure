@@ -45,6 +45,11 @@ jobs:
             echo "Secret is populated."
           fi
 
+      - name: Run tests
+        env:
+          VITE_CHARACTERS_DATA_URL: 'dummy-url'
+        run: npm test
+
       - name: Build Site
         env:
           VITE_CHARACTERS_DATA_URL: ${{ secrets.CHARACTERS_DATA_URL }}

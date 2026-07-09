@@ -21,3 +21,11 @@ export const EMBED_MIN_WIDTH = 280;
 export const EMBED_MIN_HEIGHT = 400;
 
 export const CAROUSEL_MEDIA_QUERY = "(max-width: 899px)";
+
+export const TOUR_PATH_WIDTH = 4;
+export const TOUR_PATH_UPCOMING_ALPHA = 0.35;
+export const TOUR_PATH_VISITED_ALPHA = 0.9;
+export const TOUR_PIN_SIZE_UPCOMING = 8;
+export const TOUR_PIN_SIZE_VISITED = 10;
+export const TOUR_PIN_SIZE_CURRENT = 14;
+export const TOUR_DEFAULT_ACCENT = "#ffd84d";

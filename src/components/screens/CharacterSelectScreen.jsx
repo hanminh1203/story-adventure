@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CAROUSEL_MEDIA_QUERY } from "../../constants";
 import { formatTemplate } from "../../lib/format";
-import { prefersReducedMotion } from "../../lib/motion";
+import { useCenteredCarousel } from "../../hooks/useCenteredCarousel";
 import { UI_TEXT } from "../../uiText";
 import CharacterCard from "./CharacterCard";
 
@@ -17,53 +17,48 @@ export default function CharacterSelectScreen({
   const carouselMediaQueryRef = useRef(
     typeof window !== "undefined" ? window.matchMedia(CAROUSEL_MEDIA_QUERY) : null
   );
+  const [focusedCharacterIndex, setFocusedCharacterIndex] = useState(null);
+  const [previewsEnabled, setPreviewsEnabled] = useState(true);
+  const screenRef = useRef(null);
+  const { getItems: getCarouselCards, getCenteredIndex, scrollToItem: scrollToCarouselCard } =
+    useCenteredCarousel(gridRef, ".character-card");
+
+  const handleCharacterSelected = useCallback(
+    (characterId) => {
+      setPreviewsEnabled(false);
+      onCharacterSelected(characterId);
+    },
+    [onCharacterSelected]
+  );
 
   const isCarouselActive = useCallback(() => {
     return carouselMediaQueryRef.current?.matches && characters.length > 0;
   }, [characters.length]);
 
-  const getCarouselCards = useCallback(() => {
-    if (!gridRef.current) return [];
-    return [...gridRef.current.querySelectorAll(".character-card")];
-  }, []);
-
-  const getCenteredCarouselCardIndex = useCallback(() => {
-    const cards = getCarouselCards();
-    if (cards.length === 0) return 0;
-
-    const grid = gridRef.current;
-    const center = grid.scrollLeft + grid.clientWidth / 2;
-    let bestIndex = 0;
-    let bestDistance = Infinity;
-
-    cards.forEach((card, index) => {
-      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const distance = Math.abs(center - cardCenter);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = index;
-      }
-    });
-
-    return bestIndex;
-  }, [getCarouselCards]);
-
-  const scrollToCarouselCard = useCallback(
-    (cardIndex, behavior = "smooth") => {
-      const cards = getCarouselCards();
-      const card = cards[cardIndex];
-      if (!card) return;
-
-      const resolvedBehavior =
-        behavior === "instant" || prefersReducedMotion() ? "auto" : "smooth";
-      card.scrollIntoView({
-        behavior: resolvedBehavior,
-        inline: "center",
-        block: "nearest",
-      });
+  const getRealCharacterIndexFromCarouselCard = useCallback(
+    (cardIndex) => {
+      const realCount = characters.length;
+      if (realCount === 0) return 0;
+      if (cardIndex <= 0) return realCount - 1;
+      if (cardIndex >= realCount + 1) return 0;
+      return cardIndex - 1;
     },
-    [getCarouselCards]
+    [characters.length]
   );
+
+  const syncFocusedFromCarousel = useCallback(() => {
+    if (!isCarouselActive()) return;
+    const centeredIndex = getCenteredIndex();
+    setFocusedCharacterIndex(getRealCharacterIndexFromCarouselCard(centeredIndex));
+  }, [getCenteredIndex, getRealCharacterIndexFromCarouselCard, isCarouselActive]);
+
+  const resetFocusedCharacterIndex = useCallback(() => {
+    if (isCarouselActive()) {
+      setFocusedCharacterIndex(0);
+      return;
+    }
+    setFocusedCharacterIndex(null);
+  }, [isCarouselActive]);
 
   const resetCarouselPosition = useCallback(() => {
     if (!isCarouselActive()) return;
@@ -79,7 +74,7 @@ export default function CharacterSelectScreen({
     const realCount = characters.length;
     if (cards.length < realCount + 2) return;
 
-    const centeredIndex = getCenteredCarouselCardIndex();
+    const centeredIndex = getCenteredIndex();
     if (centeredIndex === 0) {
       isCarouselJumpingRef.current = true;
       scrollToCarouselCard(realCount, "instant");
@@ -95,7 +90,7 @@ export default function CharacterSelectScreen({
   }, [
     characters.length,
     getCarouselCards,
-    getCenteredCarouselCardIndex,
+    getCenteredIndex,
     isCarouselActive,
     scrollToCarouselCard,
   ]);
@@ -110,46 +105,57 @@ export default function CharacterSelectScreen({
     carouselScrollEndTimerRef.current = window.setTimeout(() => {
       carouselScrollEndTimerRef.current = null;
       normalizeCarouselPosition();
+      syncFocusedFromCarousel();
     }, 120);
-  }, [isCarouselActive, normalizeCarouselPosition]);
+  }, [isCarouselActive, normalizeCarouselPosition, syncFocusedFromCarousel]);
 
   const scrollCharacters = useCallback(
     (direction) => {
-      if (!isCarouselActive()) return;
+      if (!isCarouselActive()) return null;
 
       const cards = getCarouselCards();
-      const centeredIndex = getCenteredCarouselCardIndex();
+      const centeredIndex = getCenteredIndex();
       const targetIndex = centeredIndex + direction;
-      if (targetIndex < 0 || targetIndex >= cards.length) return;
+      if (targetIndex < 0 || targetIndex >= cards.length) return null;
 
       scrollToCarouselCard(targetIndex);
+      return getRealCharacterIndexFromCarouselCard(targetIndex);
     },
-    [getCarouselCards, getCenteredCarouselCardIndex, isCarouselActive, scrollToCarouselCard]
+    [
+      getCarouselCards,
+      getCenteredIndex,
+      getRealCharacterIndexFromCarouselCard,
+      isCarouselActive,
+      scrollToCarouselCard,
+    ]
   );
 
   useEffect(() => {
     const mq = carouselMediaQueryRef.current;
     if (!mq) return;
 
-    const onChange = () => resetCarouselPosition();
+    const onChange = () => {
+      resetCarouselPosition();
+      resetFocusedCharacterIndex();
+    };
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [resetCarouselPosition]);
+  }, [resetCarouselPosition, resetFocusedCharacterIndex]);
 
   useEffect(() => {
-    if (!active) return;
-    requestAnimationFrame(() => resetCarouselPosition());
-    const firstBtn = gridRef.current?.querySelector(
-      ".character-card:not(.character-card-clone) .character-select-btn"
-    );
-    firstBtn?.focus();
+    if (!active) {
+      setPreviewsEnabled(false);
+      return;
+    }
 
-    return () => {
-      if (document.activeElement) {
-        document.activeElement.blur();
-      }
-    };
-  }, [active, resetCarouselPosition, characters]);
+    setPreviewsEnabled(true);
+    resetFocusedCharacterIndex();
+    requestAnimationFrame(() => {
+      resetCarouselPosition();
+      syncFocusedFromCarousel();
+      screenRef.current?.focus({ preventScroll: true });
+    });
+  }, [active, characters, resetCarouselPosition, resetFocusedCharacterIndex, syncFocusedFromCarousel]);
 
   useEffect(() => {
     requestAnimationFrame(() => resetCarouselPosition());
@@ -162,9 +168,11 @@ export default function CharacterSelectScreen({
 
   return (
     <div
+      ref={screenRef}
       id="character-select-screen"
       className={`game-screen static-background${active ? " active" : " hidden"}`}
       aria-hidden={active ? "false" : "true"}
+      tabIndex={-1}
     >
       <div className="game-screen-overlay" />
       <div className="game-screen-ui character-screen-ui">
@@ -172,6 +180,8 @@ export default function CharacterSelectScreen({
           id="character-select-go-back-btn"
           className="btn-glass go-back-btn"
           type="button"
+          data-tooltip={UI_TEXT.GO_BACK_LABEL}
+          data-tooltip-pos="bottom"
           onClick={onGoBack}
         >
           &#8592; <span className="go-back-label">{UI_TEXT.GO_BACK_LABEL}</span>
@@ -193,7 +203,11 @@ export default function CharacterSelectScreen({
             className="carousel-arrow carousel-arrow-prev"
             id="character-prev-btn"
             aria-label={UI_TEXT.CHARACTER_CAROUSEL_PREV_ARIA_LABEL}
-            onClick={() => scrollCharacters(-1)}
+            data-tooltip={UI_TEXT.CHARACTER_CAROUSEL_PREV_TITLE}
+            onClick={() => {
+              const nextIndex = scrollCharacters(-1);
+              if (nextIndex !== null) setFocusedCharacterIndex(nextIndex);
+            }}
           >
             &#8249;
           </button>
@@ -203,22 +217,38 @@ export default function CharacterSelectScreen({
             ref={gridRef}
             onScroll={handleCarouselScroll}
           >
-            <CharacterCard character={lastCharacter} isClone onSelect={() => {}} />
-            {characters.map((character) => (
+            <CharacterCard
+              character={lastCharacter}
+              isClone
+              previewsEnabled={previewsEnabled}
+              onSelect={() => {}}
+            />
+            {characters.map((character, index) => (
               <CharacterCard
                 key={character.id}
                 character={character}
-                onSelect={onCharacterSelected}
+                isKeyboardFocused={focusedCharacterIndex === index}
+                previewsEnabled={previewsEnabled}
+                onSelect={handleCharacterSelected}
               />
             ))}
-            <CharacterCard character={firstCharacter} isClone onSelect={() => {}} />
+            <CharacterCard
+              character={firstCharacter}
+              isClone
+              previewsEnabled={previewsEnabled}
+              onSelect={() => {}}
+            />
           </div>
           <button
             type="button"
             className="carousel-arrow carousel-arrow-next"
             id="character-next-btn"
             aria-label={UI_TEXT.CHARACTER_CAROUSEL_NEXT_ARIA_LABEL}
-            onClick={() => scrollCharacters(1)}
+            data-tooltip={UI_TEXT.CHARACTER_CAROUSEL_NEXT_TITLE}
+            onClick={() => {
+              const nextIndex = scrollCharacters(1);
+              if (nextIndex !== null) setFocusedCharacterIndex(nextIndex);
+            }}
           >
             &#8250;
           </button>

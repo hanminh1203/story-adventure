@@ -1,8 +1,21 @@
 import { getYouTubeEmbedUrl } from "../../lib/media";
 import { UI_TEXT } from "../../uiText";
 
-export default function CharacterCard({ character, isClone = false, onSelect }) {
-  const cardClass = isClone ? "character-card character-card-clone" : "character-card";
+export default function CharacterCard({
+  character,
+  isClone = false,
+  isKeyboardFocused = false,
+  previewsEnabled = true,
+  onSelect,
+}) {
+  const embedUrl = !isClone && previewsEnabled ? getYouTubeEmbedUrl(character) : "";
+  const cardClass = [
+    "character-card",
+    isClone ? "character-card-clone" : "",
+    isKeyboardFocused ? "character-card-keyboard-focus" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div
@@ -11,16 +24,18 @@ export default function CharacterCard({ character, isClone = false, onSelect }) 
       style={character.themeColor ? { "--guide-accent": character.themeColor } : undefined}
     >
       <div className="character-video">
-        <iframe
-          width="100%"
-          height="100%"
-          src={getYouTubeEmbedUrl(character)}
-          title={character.name}
-          frameBorder="0"
-          allow="autoplay;"
-          allowFullScreen
-          tabIndex={isClone ? -1 : 0}
-        />
+        {embedUrl ? (
+          <iframe
+            width="100%"
+            height="100%"
+            src={embedUrl}
+            title={character.name}
+            frameBorder="0"
+            allow="autoplay;"
+            allowFullScreen
+            tabIndex={-1}
+          />
+        ) : null}
       </div>
       <div className="character-info">
         <div className="character-name">{character.name}</div>

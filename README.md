@@ -41,6 +41,7 @@ The app is content-driven: non-developers can update characters, locations, and 
 See:
 - `apps-script/README.md`
 - `apps-script/SHEET-SCHEMA.md`
+- `docs/adding-sheet-fields.md` — how to add new sheet columns and wire them through Apps Script and the frontend
 
 ## How To Play
 
@@ -52,13 +53,6 @@ See:
 6. Continue until the final stop.
 7. Click **Finalize** to view total score.
 8. Click **RESTART** to play again.
-
-### Keyboard controls
-
-- `ArrowRight`: next location or next slideshow image
-- `ArrowLeft`: previous location or previous slideshow image
-- `Escape`: close modal / exit confirmation
-- `Enter`: activate focused button on menu screens
 
 ## How To Setup For Local Development
 
@@ -130,7 +124,7 @@ Game content is managed in Google Sheets with exact tab names:
 - `Locations`
 - `Images`
 
-Header names must match schema exactly (see `apps-script/SHEET-SCHEMA.md`).
+Header names must match schema exactly (see `apps-script/SHEET-SCHEMA.md`). To add new columns, follow `docs/adding-sheet-fields.md`.
 
 ### Apps Script setup
 
@@ -180,7 +174,7 @@ Unused audio files in `src/assets/sounds/` are not wired into the app and are ke
   - local `.env` (`VITE_CHARACTERS_DATA_URL`)
   - GitHub secret `CHARACTERS_DATA_URL`
 - Re-run `setupTriggers` if trigger permissions are removed or copied to a new sheet.
-- Do not rename sheet tabs or headers unless you also update Apps Script parser logic.
+- Do not rename sheet tabs or headers unless you also update Apps Script parser logic (see `docs/adding-sheet-fields.md`).
 - Keep `Locations.name` unique; image/location relationships depend on exact text match.
 - Validate data integrity periodically with `validateSheets` in Apps Script.
 - Before release: run `npm run build` and `npm run preview`.

@@ -1,0 +1,57 @@
+---
+description: Workflow for adding new Google Sheet columns and wiring them through Apps Script and the frontend
+alwaysApply: true
+---
+
+# Adding a new Google Sheet field
+
+When asked to add a sheet column or new content field, follow the full guide in `docs/adding-sheet-fields.md`. Work through **every applicable step** below — do not stop at Apps Script or only the frontend.
+
+## Data flow
+
+`Characters` / `Locations` / `Images` tabs → `apps-script/Code.gs` (JSON) → `src/lib/characterData.js` → React UI.
+
+Tab names must stay `Characters`, `Locations`, `Images`. Extra sheet columns are ignored until `Code.gs` maps them.
+
+## Required checklist
+
+1. **Schema** — Document the column in `apps-script/SHEET-SCHEMA.md` (header, description, required/unique/auto-filled).
+2. **Validation** — Add a rule in `getValidationSchema()` in `apps-script/validation.gs`. Reuse `checkImageOrUrl`, `checkYouTubeUrl`, `checkHexColor`, `checkLatitude`, `checkLongitude`, `checkNonNegativeNumber` where they fit.
+3. **JSON mapping** — Map the column in `apps-script/Code.gs`:
+   - Character fields → `readCharacters()`
+   - Location fields → `readLocationsByCharacter()`
+   - Image fields → `readImages()`
+   - Text: `String(row.col || '').trim()`
+   - Image cells: `cellToImageUrl(row.colCell)` → JSON `…Url` / `…Image`
+   - Numbers: `toNumber(row.col)`
+4. **Geocoding** — Only if the Locations column is auto-filled on `name` edit: also update `syncLocationCoordsOnEdit()` and `refreshLocationCoords()`.
+5. **Frontend** — If the field is shown in the game:
+   - URLs → `sanitizeMediaUrl()` in `src/lib/characterData.js`
+   - Numbers → coerce in `normalizeCharacters()`
+   - Render in the relevant `src/components/**/*.jsx`; style in `src/style.css` if needed
+   - Fixed UI labels stay in `src/uiText.js` (British English, kid-friendly — see `ui-copy-british-kid-friendly` rule)
+6. **Verify** — Confirm JSON at the Web App `/exec` URL; run `validateSheets` if possible; test character select → gameplay → details modal.
+
+## Naming conventions
+
+- Sheet headers: camelCase, case-sensitive, row 1.
+- Image columns on the sheet: suffix `Cell` (e.g. `bannerCell`); map to `bannerUrl` in JSON.
+- Foreign keys: `Character` → `Characters.name`, `Location` → `Locations.name`.
+- `id` is generated in `readCharacters()` — never add an `id` sheet column.
+
+## Shape changes
+
+If a field changes JSON structure (e.g. `images: string[]` → `{ url, caption }[]`), plan the shape first, then update `readImages()`, `normalizeCharacters()`, and consumers (`DetailsModal.jsx`, etc.) in the same change.
+
+## Deploy notes
+
+- **Apps Script code changes** — remind the user to redeploy the Web App (new version); `/exec` URL unchanged.
+- **Frontend changes** — `npm run build` before release.
+- **Sheet data only** — no redeploy; visitors refresh the page.
+- Do not change `VITE_CHARACTERS_DATA_URL` unless deploying a new Sheet/Web App.
+
+## Do not
+
+- Rename tabs/headers without updating `Code.gs` and validation.
+- Hardcode player-facing copy in components when it should be sheet-driven or in `uiText.js`.
+- Skip `SHEET-SCHEMA.md` or `validation.gs` when adding a column the project owns.

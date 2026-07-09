@@ -53,13 +53,6 @@ export default function Slideshow({
     return <p className="details-empty">{UI_TEXT.SLIDESHOW_EMPTY_TEXT}</p>;
   }
 
-  const collectibles = getCollectiblesForSlide(location, slideshowIndex)
-    .map((position, itemIndex) => {
-      const itemId = makeCollectibleId(location, slideshowIndex, itemIndex);
-      return { itemId, position, itemIndex };
-    })
-    .filter(({ itemId }) => !collectedItems.has(itemId) || removingCollectibleIds.has(itemId));
-
   const singular = getCollectibleSingular();
   const isLastImage = slideshowIndex === images.length - 1;
 
@@ -108,6 +101,8 @@ export default function Slideshow({
           type="button"
           className="slideshow-btn slideshow-btn-previous"
           aria-label={UI_TEXT.SLIDESHOW_BTN_PREV_ARIA_LABEL}
+          data-tooltip={UI_TEXT.SLIDESHOW_BTN_PREV_TITLE}
+          data-tooltip-pos="right"
           onClick={() => onChangeSlide(-1)}
         >
           &#8592;
@@ -116,6 +111,8 @@ export default function Slideshow({
           type="button"
           className="slideshow-btn slideshow-btn-next"
           aria-label={UI_TEXT.SLIDESHOW_BTN_NEXT_ARIA_LABEL}
+          data-tooltip={UI_TEXT.SLIDESHOW_BTN_NEXT_TITLE}
+          data-tooltip-pos="left"
           onClick={() => onChangeSlide(1)}
         >
           &#8594;
@@ -150,6 +147,9 @@ export default function Slideshow({
             aria-label={formatTemplate(UI_TEXT.SLIDESHOW_THUMB_ARIA_LABEL_TEMPLATE, {
               current: index + 1,
             })}
+            data-tooltip={formatTemplate(UI_TEXT.SLIDESHOW_THUMB_TITLE_TEMPLATE, {
+              current: index + 1,
+            })}
             onClick={() => onSetSlideIndex(index)}
           >
             <img src={url} alt="" loading="lazy" referrerPolicy="no-referrer" />
@@ -170,7 +170,6 @@ export function DetailsModal({
   tutorialSpotlightSelector,
   collectFeedback,
   collectibleImage,
-  detailsSlideshowRef,
   getCollectiblesForSlide,
   makeCollectibleId,
   getCollectibleSingular,
@@ -206,6 +205,8 @@ export function DetailsModal({
           className="details-close-btn"
           type="button"
           aria-label={UI_TEXT.DETAILS_CLOSE_ARIA_LABEL}
+          data-tooltip={UI_TEXT.DETAILS_CLOSE_TITLE}
+          data-tooltip-pos="bottom"
           onClick={onClose}
         >
           &#215;
@@ -216,8 +217,10 @@ export function DetailsModal({
           </p>
         )}
         <h2 id="details-title">{location.name}</h2>
-        <p id="details-description">{location.description || ""}</p>
-        <div id="details-slideshow" className="details-slideshow" ref={detailsSlideshowRef}>
+        <div className="details-description-scroll">
+          <p id="details-description">{location.description || ""}</p>
+        </div>
+        <div id="details-slideshow" className="details-slideshow">
           <Slideshow
             location={location}
             character={character}

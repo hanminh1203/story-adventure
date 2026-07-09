@@ -104,7 +104,7 @@ export default function EmbedPrompt() {
               : UI_TEXT.EMBED_BTN_ARIA_LABEL_ENTER_FULLSCREEN
         }
         aria-pressed={newTabMode ? "false" : String(isFullscreen)}
-        title={btnTitle}
+        {...(btnTitle ? { "data-tooltip": btnTitle } : {})}
         onClick={toggle}
       >
         <span className="fullscreen-icon" aria-hidden="true">

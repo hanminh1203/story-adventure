@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useCenteredCarousel } from "../../hooks/useCenteredCarousel";
 import StorybookDecor from "../StorybookDecor";
 import { formatTemplate } from "../../lib/format";
-import { prefersReducedMotion } from "../../lib/motion";
 import { UI_TEXT } from "../../uiText";
 
 function HowToStepCard({ step, index }) {
@@ -43,54 +43,19 @@ function HowToStepCard({ step, index }) {
 export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
   const continueBtnRef = useRef(null);
   const stepsRef = useRef(null);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const { getItems: getCarouselSteps, getCenteredIndex, scrollToItem: scrollToCarouselStep } =
+    useCenteredCarousel(stepsRef, ".how-to-step");
 
   const steps = UI_TEXT.HOW_TO_PLAY_STEPS;
 
-  const getCarouselSteps = useCallback(() => {
-    if (!stepsRef.current) return [];
-    return [...stepsRef.current.querySelectorAll(".how-to-step")];
-  }, []);
-
-  const getCenteredCarouselStepIndex = useCallback(() => {
-    const cards = getCarouselSteps();
-    if (cards.length === 0) return 0;
-
-    const list = stepsRef.current;
-    const center = list.scrollLeft + list.clientWidth / 2;
-    let bestIndex = 0;
-    let bestDistance = Infinity;
-
-    cards.forEach((card, index) => {
-      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const distance = Math.abs(center - cardCenter);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestIndex = index;
-      }
-    });
-
-    return bestIndex;
-  }, [getCarouselSteps]);
-
-  const scrollToCarouselStep = useCallback(
-    (stepIndex, behavior = "smooth") => {
-      const cards = getCarouselSteps();
-      const card = cards[stepIndex];
-      if (!card) return;
-
-      const resolvedBehavior =
-        behavior === "instant" || prefersReducedMotion() ? "auto" : "smooth";
-      card.scrollIntoView({
-        behavior: resolvedBehavior,
-        inline: "center",
-        block: "nearest",
-      });
-    },
-    [getCarouselSteps]
-  );
+  const syncCurrentStepIndex = useCallback(() => {
+    setCurrentStepIndex(getCenteredIndex());
+  }, [getCenteredIndex]);
 
   const resetCarouselPosition = useCallback(() => {
     if (steps.length === 0) return;
+    setCurrentStepIndex(0);
     scrollToCarouselStep(0, "instant");
   }, [steps.length, scrollToCarouselStep]);
 
@@ -106,13 +71,13 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
   const scrollSteps = useCallback(
     (direction) => {
       const cards = getCarouselSteps();
-      const centeredIndex = getCenteredCarouselStepIndex();
+      const centeredIndex = getCenteredIndex();
       const targetIndex = centeredIndex + direction;
       if (targetIndex < 0 || targetIndex >= cards.length) return;
 
       scrollToCarouselStep(targetIndex);
     },
-    [getCarouselSteps, getCenteredCarouselStepIndex, scrollToCarouselStep]
+    [getCarouselSteps, getCenteredIndex, scrollToCarouselStep]
   );
 
   useEffect(() => {
@@ -124,10 +89,12 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     requestAnimationFrame(() => {
       updateEdgePadding();
       resetCarouselPosition();
+      syncCurrentStepIndex();
     });
 
     const observer = new ResizeObserver(() => {
-      const index = getCenteredCarouselStepIndex();
+      const index = getCenteredIndex();
+      setCurrentStepIndex(index);
       updateEdgePadding();
       scrollToCarouselStep(index, "instant");
     });
@@ -136,37 +103,20 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     const card = list.querySelector(".how-to-step");
     if (card) observer.observe(card);
 
-    const handleKeyDown = (e) => {
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        scrollSteps(-1);
-        return;
-      }
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        scrollSteps(1);
-        return;
-      }
-      if (e.key === "Enter") onContinue();
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
     continueBtnRef.current?.focus();
 
     return () => {
       observer.disconnect();
-      document.removeEventListener("keydown", handleKeyDown);
       if (document.activeElement === continueBtnRef.current) {
         continueBtnRef.current?.blur();
       }
     };
   }, [
     active,
-    onContinue,
     resetCarouselPosition,
-    scrollSteps,
+    syncCurrentStepIndex,
     updateEdgePadding,
-    getCenteredCarouselStepIndex,
+    getCenteredIndex,
     scrollToCarouselStep,
   ]);
 
@@ -182,6 +132,8 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
           id="how-to-go-back-btn"
           className="btn-glass go-back-btn"
           type="button"
+          data-tooltip={UI_TEXT.GO_BACK_LABEL}
+          data-tooltip-pos="bottom"
           onClick={onGoBack}
         >
           &#8592; <span className="go-back-label">{UI_TEXT.GO_BACK_LABEL}</span>
@@ -196,11 +148,18 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
             className="carousel-arrow carousel-arrow-prev how-to-carousel-arrow"
             id="how-to-prev-btn"
             aria-label={UI_TEXT.HOW_TO_PLAY_PREV_STEP_ARIA_LABEL}
+            data-tooltip={UI_TEXT.HOW_TO_PLAY_PREV_STEP_TITLE}
+            disabled={currentStepIndex === 0}
             onClick={() => scrollSteps(-1)}
           >
             &#8249;
           </button>
-          <ol className="how-to-steps" id="how-to-steps" ref={stepsRef}>
+          <ol
+            className="how-to-steps"
+            id="how-to-steps"
+            ref={stepsRef}
+            onScroll={syncCurrentStepIndex}
+          >
             {steps.map((step, index) => (
               <HowToStepCard key={step.title} step={step} index={index} />
             ))}
@@ -210,6 +169,8 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
             className="carousel-arrow carousel-arrow-next how-to-carousel-arrow"
             id="how-to-next-btn"
             aria-label={UI_TEXT.HOW_TO_PLAY_NEXT_STEP_ARIA_LABEL}
+            data-tooltip={UI_TEXT.HOW_TO_PLAY_NEXT_STEP_TITLE}
+            disabled={currentStepIndex === steps.length - 1}
             onClick={() => scrollSteps(1)}
           >
             &#8250;

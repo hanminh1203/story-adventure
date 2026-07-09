@@ -52,7 +52,7 @@ export default function AudioControls() {
         className="btn-glass audio-toggle-btn"
         aria-label={musicEnabled ? UI_TEXT.AUDIO_MUSIC_ON_ARIA_LABEL : UI_TEXT.AUDIO_MUSIC_OFF_ARIA_LABEL}
         aria-pressed={String(musicEnabled)}
-        title={musicEnabled ? UI_TEXT.AUDIO_MUSIC_ON_TITLE : UI_TEXT.AUDIO_MUSIC_OFF_TITLE}
+        data-tooltip={musicEnabled ? UI_TEXT.AUDIO_MUSIC_ON_TITLE : UI_TEXT.AUDIO_MUSIC_OFF_TITLE}
         onPointerDown={(event) => event.stopPropagation()}
         onClick={toggleMusicEnabled}
       >
@@ -65,7 +65,7 @@ export default function AudioControls() {
         className="btn-glass audio-toggle-btn"
         aria-label={sfxEnabled ? UI_TEXT.AUDIO_SFX_ON_ARIA_LABEL : UI_TEXT.AUDIO_SFX_OFF_ARIA_LABEL}
         aria-pressed={String(sfxEnabled)}
-        title={sfxEnabled ? UI_TEXT.AUDIO_SFX_ON_TITLE : UI_TEXT.AUDIO_SFX_OFF_TITLE}
+        data-tooltip={sfxEnabled ? UI_TEXT.AUDIO_SFX_ON_TITLE : UI_TEXT.AUDIO_SFX_OFF_TITLE}
         onPointerDown={(event) => event.stopPropagation()}
         onClick={toggleSfxEnabled}
       >
