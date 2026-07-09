@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { COLLECTIBLE_IDLE_HINT_DELAY_MS } from "../constants";
 import { UI_TEXT } from "../uiText";
 import { formatTemplate } from "../lib/format";
 import { playCollectPickup } from "../lib/audio";
@@ -14,7 +15,11 @@ export function useSlideshow({ character, cesium, getTutorial }) {
   const achievementToastTimerRef = useRef(null);
   const collectFeedbackTimerRef = useRef(null);
   const scorePulseTimerRef = useRef(null);
+  const idleHintTimerRef = useRef(null);
   const removalTimerRefs = useRef(new Map());
+  const getTutorialRef = useRef(getTutorial);
+
+  getTutorialRef.current = getTutorial;
 
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [slideshowLocation, setSlideshowLocation] = useState(null);
@@ -27,6 +32,14 @@ export function useSlideshow({ character, cesium, getTutorial }) {
   const [collectFeedback, setCollectFeedback] = useState(null);
   const [removingCollectibleIds, setRemovingCollectibleIds] = useState(() => new Set());
   const [achievementToast, setAchievementToast] = useState({ visible: false, message: "" });
+  const [collectibleHintActive, setCollectibleHintActive] = useState(false);
+
+  const clearIdleHintTimer = useCallback(() => {
+    if (idleHintTimerRef.current) {
+      window.clearTimeout(idleHintTimerRef.current);
+      idleHintTimerRef.current = null;
+    }
+  }, []);
 
   const clearTransientTimers = useCallback(() => {
     if (collectFeedbackTimerRef.current) {
@@ -43,7 +56,8 @@ export function useSlideshow({ character, cesium, getTutorial }) {
       window.clearTimeout(timerId);
     });
     removalTimerRefs.current.clear();
-  }, []);
+    clearIdleHintTimer();
+  }, [clearIdleHintTimer]);
 
   const hideAchievementToast = useCallback(() => {
     if (achievementToastTimerRef.current) {
@@ -179,6 +193,8 @@ export function useSlideshow({ character, cesium, getTutorial }) {
     (itemId, position) => {
       if (collectedItems.has(itemId)) return;
 
+      setCollectibleHintActive(false);
+      clearIdleHintTimer();
       playCollectPickup();
       setCollectedItems((prev) => new Set(prev).add(itemId));
       setScore((prev) => {
@@ -227,7 +243,7 @@ export function useSlideshow({ character, cesium, getTutorial }) {
 
       getTutorial()?.notifyItemCollected?.();
     },
-    [collectedItems, slideshowLocation, checkLocationCompletion, getTutorial]
+    [collectedItems, slideshowLocation, checkLocationCompletion, getTutorial, clearIdleHintTimer]
   );
 
   const resetSlideshow = useCallback(() => {
@@ -237,6 +253,7 @@ export function useSlideshow({ character, cesium, getTutorial }) {
     setClearedLocations(new Set());
     setScorePulse(false);
     setCollectFeedback(null);
+    setCollectibleHintActive(false);
     setRemovingCollectibleIds(new Set());
     collectiblePositionsRef.current = new Map();
     hideAchievementToast();
@@ -250,6 +267,37 @@ export function useSlideshow({ character, cesium, getTutorial }) {
     slideshowLocation &&
     areAllCollectiblesCollectedForSlide(slideshowLocation, slideshowIndex, collectedItems);
 
+  useEffect(() => {
+    const suppressCollectibleHint = getTutorialRef.current?.()?.tutorialActive;
+    const shouldTrackHint =
+      detailsVisible &&
+      !suppressCollectibleHint &&
+      slideshowLocation &&
+      !slideAllCollected;
+
+    if (!shouldTrackHint) {
+      setCollectibleHintActive(false);
+      clearIdleHintTimer();
+      return undefined;
+    }
+
+    setCollectibleHintActive(false);
+    clearIdleHintTimer();
+    idleHintTimerRef.current = window.setTimeout(() => {
+      idleHintTimerRef.current = null;
+      setCollectibleHintActive(true);
+    }, COLLECTIBLE_IDLE_HINT_DELAY_MS);
+
+    return clearIdleHintTimer;
+  }, [
+    detailsVisible,
+    slideshowLocation,
+    slideshowIndex,
+    collectedItems,
+    slideAllCollected,
+    clearIdleHintTimer,
+  ]);
+
   return {
     detailsVisible,
     slideshowLocation,
@@ -261,6 +309,7 @@ export function useSlideshow({ character, cesium, getTutorial }) {
     removingCollectibleIds,
     achievementToast,
     slideAllCollected,
+    collectibleHintActive,
     showDetailsPopup,
     hideDetailsPopup,
     closeIfOpen,

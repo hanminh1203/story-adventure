@@ -18,7 +18,7 @@ vi.mock("../lib/collectibles", async () => {
 });
 
 import { playCollectPickup } from "../lib/audio";
-import { COLLECTIBLES_PER_SLIDE } from "../constants";
+import { COLLECTIBLES_PER_SLIDE, COLLECTIBLE_IDLE_HINT_DELAY_MS } from "../constants";
 import { useSlideshow } from "./useSlideshow";
 
 function createCesium() {
@@ -161,5 +161,40 @@ describe("useSlideshow", () => {
 
     expect(cesium.restoreOverviewCameraView).not.toHaveBeenCalled();
     expect(cesium.clearOverviewCamera).toHaveBeenCalled();
+  });
+
+  it("shows a collectible hint after idle time on an uncollected slide", () => {
+    const cesium = createCesium();
+    const { result } = renderHook(() =>
+      useSlideshow({ character, cesium, getTutorial: () => null })
+    );
+
+    act(() => result.current.showDetailsPopup(location));
+    expect(result.current.collectibleHintActive).toBe(false);
+
+    act(() => vi.advanceTimersByTime(COLLECTIBLE_IDLE_HINT_DELAY_MS - 1));
+    expect(result.current.collectibleHintActive).toBe(false);
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current.collectibleHintActive).toBe(true);
+
+    act(() => result.current.collectItem("Beach:0:0", { x: 1, y: 2 }));
+    expect(result.current.collectibleHintActive).toBe(false);
+  });
+
+  it("does not show collectible hints while the tutorial is active", () => {
+    const cesium = createCesium();
+    const { result } = renderHook(() =>
+      useSlideshow({
+        character,
+        cesium,
+        getTutorial: () => ({ tutorialActive: true }),
+      })
+    );
+
+    act(() => result.current.showDetailsPopup(location));
+    act(() => vi.advanceTimersByTime(COLLECTIBLE_IDLE_HINT_DELAY_MS));
+
+    expect(result.current.collectibleHintActive).toBe(false);
   });
 });

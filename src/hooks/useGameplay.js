@@ -253,6 +253,7 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     isLocationFullyCollected: (loc) =>
       isLocationFullyCollected(loc, slideshow.collectedItems),
     slideAllCollected: slideshow.slideAllCollected,
+    collectibleHintActive: slideshow.collectibleHintActive,
     makeCollectibleId,
   };
 }

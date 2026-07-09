@@ -12,6 +12,7 @@ export const UI_TEXT = {
   SCORE_LABEL_FALLBACK: "Treasures found!",
   COLLECTIBLE_FOUND_LABEL_TEMPLATE: "{collectibleName} found!",
   COLLECT_GOAL_TEMPLATE: "Find {count} hidden {name} in these pictures!",
+  COLLECT_IDLE_HINT: "Keep looking! Something sparkly is hidden in the picture.",
   COLLECTIBLE_SINGULAR_FALLBACK: "treasure",
   COLLECTIBLE_SINGULAR_MUSIC_NOTES: "music note",
 

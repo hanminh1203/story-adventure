@@ -58,6 +58,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
     countCollectedForLocation,
     isLocationFullyCollected: isLocFullyCollected,
     slideAllCollected,
+    collectibleHintActive,
     character: guide,
   } = gameplay;
 
@@ -291,6 +292,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
             goNext();
           }}
           slideAllCollected={slideAllCollected}
+          collectibleHintActive={collectibleHintActive}
         />
 
         <div
