@@ -1994,8 +1994,9 @@ body {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--guide-accent, #ffd84d) 75%, transparent);
   }
 
-  .loading-spinner {
+  .loading-progress--indeterminate .loading-progress-bar {
     animation: none;
+    width: 50%;
   }
 }
 
@@ -2113,13 +2114,27 @@ body {
   z-index: 1;
 }
 
-.loading-spinner {
-  border: 4px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  border-top-color: var(--guide-accent, var(--color-sunshine));
-  height: 56px;
-  width: 56px;
-  animation: spin 0.9s linear infinite;
+.loading-progress {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+  width: min(280px, 80vw);
+}
+
+.loading-progress-bar {
+  background: var(--guide-accent, var(--color-sunshine));
+  border-radius: inherit;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--guide-accent, var(--color-sunshine)) 60%, transparent);
+  height: 100%;
+  transition: width 0.3s ease;
+  width: 0;
+}
+
+.loading-progress--indeterminate .loading-progress-bar {
+  animation: loadingProgressIndeterminate 1.4s ease-in-out infinite;
+  width: 40%;
 }
 
 .loading-text {
@@ -2160,9 +2175,13 @@ body {
   text-transform: uppercase;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@keyframes loadingProgressIndeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(350%);
   }
 }
 

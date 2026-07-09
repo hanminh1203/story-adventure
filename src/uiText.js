@@ -30,7 +30,8 @@ export const UI_TEXT = {
 
   START_LOADING_TEXT: "Gathering your guides...",
   MAP_LOADING_TEXT: "Preparing your adventure...",
-  MAP_INTRO_SKIP_BTN_TEXT: "Skip intro",
+  LOADING_PROGRESS_ARIA_LABEL: "Loading progress",
+  MAP_INTRO_SKIP_BTN_TEXT: "Skip ahead!",
   DATA_LOAD_ERROR_HTML:
     "<p style='padding:2rem;font-family:sans-serif'>Oops! We couldn't load the adventure just now. Please try again later.</p>",
 
@@ -114,7 +115,7 @@ export const UI_TEXT = {
   CHARACTER_CAROUSEL_PREV_TITLE: "Previous guide",
   CHARACTER_CAROUSEL_NEXT_TITLE: "Next guide",
   GO_BACK_LABEL: "Go back",
-  TUTORIAL_SKIP_BTN_TEXT: "Skip intro",
+  TUTORIAL_SKIP_BTN_TEXT: "Skip ahead!",
   EXIT_BTN_TEXT: "Leave",
   EXIT_BTN_ARIA_LABEL: "Leave adventure",
   EXIT_BTN_TITLE: "Leave adventure",

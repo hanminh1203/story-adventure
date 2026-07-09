@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadCharacters, loadCharactersFromCache } from "./lib/characterData";
+import { useSimulatedLoadingProgress } from "./hooks/useSimulatedLoadingProgress";
 import { UI_TEXT } from "./uiText";
 import {
   attachButtonClickSounds,
@@ -21,6 +22,7 @@ export default function App() {
   const [characters, setCharacters] = useState([]);
   const [startupLoading, setStartupLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const startupProgress = useSimulatedLoadingProgress(startupLoading);
   const [currentState, setCurrentState] = useState("start");
   const [selectedCharacterId, setSelectedCharacterId] = useState(null);
   const [gameSummary, setGameSummary] = useState(null);
@@ -141,7 +143,11 @@ export default function App() {
         onGoBack={onGoBack}
       />
       <FinalScreen active={currentState === "final"} summary={gameSummary} onRestart={onRestart} />
-      <LoadingScreen visible={startupLoading} text={UI_TEXT.START_LOADING_TEXT} />
+      <LoadingScreen
+        visible={startupLoading}
+        text={UI_TEXT.START_LOADING_TEXT}
+        progress={startupProgress}
+      />
       <AudioControls />
       <EmbedPrompt />
     </>

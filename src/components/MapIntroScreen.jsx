@@ -1,11 +1,13 @@
 import { getYouTubeVideoId } from "../lib/media";
 import { useYouTubeIntroPlayer } from "../hooks/useYouTubeIntroPlayer";
 import { UI_TEXT } from "../uiText";
+import LoadingProgressBar from "./LoadingProgressBar";
 
 export default function MapIntroScreen({
   visible,
   character,
   mapReady,
+  mapLoadProgress,
   mapReadyRef,
   guideAccent,
   onSkip,
@@ -44,14 +46,14 @@ export default function MapIntroScreen({
               </button>
             ) : (
               <>
-                <div className="loading-spinner" aria-hidden="true" />
+                <LoadingProgressBar progress={mapLoadProgress} />
                 <p className="loading-text">{UI_TEXT.MAP_LOADING_TEXT}</p>
               </>
             )}
           </>
         ) : (
           <>
-            <div className="loading-spinner" aria-hidden="true" />
+            <LoadingProgressBar progress={mapLoadProgress} />
             <p className="loading-text">{UI_TEXT.MAP_LOADING_TEXT}</p>
           </>
         )}

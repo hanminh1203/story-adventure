@@ -32,6 +32,7 @@ export function useCesiumTour({
 
   const [isFlying, setIsFlying] = useState(false);
   const [mapLoading, setMapLoading] = useState(false);
+  const [mapLoadProgress, setMapLoadProgress] = useState(0);
   const [pinPanelOpen, setPinPanelOpen] = useState(false);
   const [locationUiStyle, setLocationUiStyle] = useState({
     display: "none",
@@ -170,16 +171,30 @@ export function useCesiumTour({
     const globe = viewer.scene.globe;
     let done = false;
     let removeListener = null;
+    let maxQueued = 0;
+
+    const updateProgress = (queued) => {
+      maxQueued = Math.max(maxQueued, queued, 1);
+      if (globe.tilesLoaded && queued === 0) {
+        setMapLoadProgress(100);
+        return;
+      }
+
+      const next = Math.round(((maxQueued - queued) / maxQueued) * 95);
+      setMapLoadProgress(Math.max(5, next));
+    };
 
     const finish = () => {
       if (done) return;
       done = true;
       if (removeListener) removeListener();
       window.clearTimeout(timer);
+      setMapLoadProgress(100);
       onReady();
     };
 
     const timer = window.setTimeout(finish, 15000);
+    setMapLoadProgress(5);
 
     Promise.resolve(imageryProviderPromiseRef.current)
       .catch(() => {})
@@ -190,6 +205,7 @@ export function useCesiumTour({
           return;
         }
         removeListener = globe.tileLoadProgressEvent.addEventListener((queued) => {
+          updateProgress(queued);
           if (queued === 0 && globe.tilesLoaded) finish();
         });
       });
@@ -295,12 +311,14 @@ export function useCesiumTour({
   const resetTour = useCallback(() => {
     setIsFlying(false);
     setMapLoading(false);
+    setMapLoadProgress(0);
     hidePinPanel();
     clearOverviewCamera();
   }, [hidePinPanel, clearOverviewCamera]);
 
   const cleanup = useCallback(() => {
     setMapLoading(false);
+    setMapLoadProgress(0);
     const viewer = viewerRef.current;
     if (viewer) {
       viewer.camera.cancelFlight();
@@ -318,6 +336,7 @@ export function useCesiumTour({
     setIsFlying,
     mapLoading,
     setMapLoading,
+    mapLoadProgress,
     pinPanelOpen,
     locationUiStyle,
     ensureViewer,

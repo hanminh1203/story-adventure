@@ -42,7 +42,7 @@ describe("MapIntroScreen", () => {
     expect(screen.queryByText(UI_TEXT.MAP_LOADING_TEXT)).not.toBeInTheDocument();
   });
 
-  it("falls back to the loading spinner when the guide has no intro video", () => {
+  it("falls back to the loading progress bar when the guide has no intro video", () => {
     render(
       <MapIntroScreen
         visible

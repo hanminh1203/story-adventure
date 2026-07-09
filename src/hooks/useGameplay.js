@@ -219,6 +219,7 @@ export function useGameplay({ character, active, onFinalize, onExit }) {
     slideshowIndex: slideshow.slideshowIndex,
     mapLoading: introActive,
     mapReady,
+    mapLoadProgress: cesium.mapLoadProgress,
     mapReadyRef,
     dismissIntro,
     handleIntroEnded,

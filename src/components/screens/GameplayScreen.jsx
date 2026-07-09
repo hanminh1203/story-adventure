@@ -25,6 +25,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
     slideshowIndex,
     mapLoading,
     mapReady,
+    mapLoadProgress,
     mapReadyRef,
     dismissIntro,
     handleIntroEnded,
@@ -334,6 +335,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
         visible={mapLoading}
         character={guide}
         mapReady={mapReady}
+        mapLoadProgress={mapLoadProgress}
         mapReadyRef={mapReadyRef}
         guideAccent={guideAccent}
         onSkip={dismissIntro}
