@@ -12,6 +12,7 @@ export const UI_TEXT = {
   SCORE_LABEL_FALLBACK: "Treasures found!",
   COLLECTIBLE_FOUND_LABEL_TEMPLATE: "{collectibleName} found!",
   COLLECT_GOAL_TEMPLATE: "Find {count} hidden {name} in these pictures!",
+  COLLECT_IDLE_HINT: "Keep looking! Something sparkly is hidden in the picture.",
   COLLECTIBLE_SINGULAR_FALLBACK: "treasure",
   COLLECTIBLE_SINGULAR_MUSIC_NOTES: "music note",
 
@@ -30,6 +31,9 @@ export const UI_TEXT = {
 
   START_LOADING_TEXT: "Gathering your guides...",
   MAP_LOADING_TEXT: "Preparing your adventure...",
+  LOADING_PROGRESS_ARIA_LABEL: "Loading progress",
+  MAP_INTRO_READY_TEXT: "Your adventure is ready. Click Skip ahead! to start the game!",
+  MAP_INTRO_SKIP_BTN_TEXT: "Skip ahead!",
   DATA_LOAD_ERROR_HTML:
     "<p style='padding:2rem;font-family:sans-serif'>Oops! We couldn't load the adventure just now. Please try again later.</p>",
 
@@ -113,7 +117,7 @@ export const UI_TEXT = {
   CHARACTER_CAROUSEL_PREV_TITLE: "Previous guide",
   CHARACTER_CAROUSEL_NEXT_TITLE: "Next guide",
   GO_BACK_LABEL: "Go back",
-  TUTORIAL_SKIP_BTN_TEXT: "Skip intro",
+  TUTORIAL_SKIP_BTN_TEXT: "Skip ahead!",
   EXIT_BTN_TEXT: "Leave",
   EXIT_BTN_ARIA_LABEL: "Leave adventure",
   EXIT_BTN_TITLE: "Leave adventure",
@@ -123,6 +127,16 @@ export const UI_TEXT = {
   EXIT_CONFIRM_BTN_TEXT: "Leave",
   FINAL_SCREEN_KICKER: "Your score!",
   FINAL_STARS_ARIA_LABEL: "Stars you earned",
+  ACHIEVEMENT_TITLE_3_STAR: "Super Explorer!",
+  ACHIEVEMENT_TITLE_2_STAR: "Brave Adventurer!",
+  ACHIEVEMENT_TITLE_1_STAR: "Curious Explorer!",
+  BADGE_CONGRATULATIONS_TEXT: "Hooray!",
+  BADGE_SCORE_SUMMARY_TEMPLATE: "{score} of {maxScore} {itemsName}",
+  EXPORT_BADGE_BTN_TEXT: "Save your badge!",
+  EXPORT_BADGE_BTN_ARIA_LABEL: "Save your adventure badge as a picture",
+  EXPORT_BADGE_LOADING_TEXT: "Saving your badge...",
+  EXPORT_BADGE_FILENAME_TEMPLATE: "adventure-badge-{characterName}.png",
+  EXPORT_BADGE_ERROR: "Oops! We couldn't save your badge just now. Please try again.",
   RESTART_BTN_TEXT: "Play again!",
   LOADING_SCREEN_VISIBILITY_TEXT: "Preparing your adventure...",
 

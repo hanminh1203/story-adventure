@@ -2,7 +2,7 @@ import { useGameplay } from "../../hooks/useGameplay";
 import { UI_TEXT } from "../../uiText";
 import { formatTemplate } from "../../lib/format";
 import { playButtonClick } from "../../lib/audio";
-import LoadingScreen from "../LoadingScreen";
+import MapIntroScreen from "../MapIntroScreen";
 import { DetailsModal } from "../gameplay/DetailsModal";
 
 export default function GameplayScreen({ active, character, onFinalize, onExit }) {
@@ -24,6 +24,11 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
     slideshowLocation,
     slideshowIndex,
     mapLoading,
+    mapReady,
+    mapLoadProgress,
+    mapReadyRef,
+    dismissIntro,
+    handleIntroEnded,
     achievementToast,
     tutorialActive,
     tutorialConfig,
@@ -53,6 +58,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
     countCollectedForLocation,
     isLocationFullyCollected: isLocFullyCollected,
     slideAllCollected,
+    collectibleHintActive,
     character: guide,
   } = gameplay;
 
@@ -286,6 +292,7 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
             goNext();
           }}
           slideAllCollected={slideAllCollected}
+          collectibleHintActive={collectibleHintActive}
         />
 
         <div
@@ -326,10 +333,15 @@ export default function GameplayScreen({ active, character, onFinalize, onExit }
         </div>
       </div>
 
-      <LoadingScreen
+      <MapIntroScreen
         visible={mapLoading}
-        text={UI_TEXT.MAP_LOADING_TEXT}
+        character={guide}
+        mapReady={mapReady}
+        mapLoadProgress={mapLoadProgress}
+        mapReadyRef={mapReadyRef}
         guideAccent={guideAccent}
+        onSkip={dismissIntro}
+        onVideoEnded={handleIntroEnded}
       />
     </div>
   );

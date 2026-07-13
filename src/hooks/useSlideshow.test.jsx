@@ -18,7 +18,7 @@ vi.mock("../lib/collectibles", async () => {
 });
 
 import { playCollectPickup } from "../lib/audio";
-import { COLLECTIBLES_PER_SLIDE } from "../constants";
+import { COLLECTIBLES_PER_SLIDE, COLLECTIBLE_IDLE_HINT_DELAY_MS } from "../constants";
 import { useSlideshow } from "./useSlideshow";
 
 function createCesium() {
@@ -119,6 +119,8 @@ describe("useSlideshow", () => {
     expect(playCollectPickup).toHaveBeenCalledTimes(COLLECTIBLES_PER_SLIDE);
     expect(result.current.score).toBe(COLLECTIBLES_PER_SLIDE);
     expect(result.current.slideAllCollected).toBe(true);
+    expect(result.current.achievementToast.visible).toBe(true);
+    expect(result.current.achievementToast.message).toMatch(/found all the coins at Beach/i);
     expect(tutorial.notifyItemCollected).toHaveBeenCalledTimes(COLLECTIBLES_PER_SLIDE);
 
     act(() => vi.advanceTimersByTime(220));
@@ -161,5 +163,57 @@ describe("useSlideshow", () => {
 
     expect(cesium.restoreOverviewCameraView).not.toHaveBeenCalled();
     expect(cesium.clearOverviewCamera).toHaveBeenCalled();
+  });
+
+  it("restores the pin panel when the detail-view flight is cancelled", () => {
+    const cesium = createCesium();
+    cesium.flyToDetailViewCamera = vi.fn((loc, callbacks) => callbacks.onCancel());
+
+    const { result } = renderHook(() =>
+      useSlideshow({ character, cesium, getTutorial: () => null })
+    );
+
+    act(() => result.current.showDetailsPopup(location));
+
+    expect(result.current.detailsVisible).toBe(false);
+    expect(cesium.clearOverviewCamera).toHaveBeenCalledOnce();
+    expect(cesium.showPinPanel).toHaveBeenCalledOnce();
+    expect(cesium.setIsFlying).toHaveBeenNthCalledWith(1, true);
+    expect(cesium.setIsFlying).toHaveBeenNthCalledWith(2, false);
+  });
+
+  it("shows a collectible hint after idle time on an uncollected slide", () => {
+    const cesium = createCesium();
+    const { result } = renderHook(() =>
+      useSlideshow({ character, cesium, getTutorial: () => null })
+    );
+
+    act(() => result.current.showDetailsPopup(location));
+    expect(result.current.collectibleHintActive).toBe(false);
+
+    act(() => vi.advanceTimersByTime(COLLECTIBLE_IDLE_HINT_DELAY_MS - 1));
+    expect(result.current.collectibleHintActive).toBe(false);
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current.collectibleHintActive).toBe(true);
+
+    act(() => result.current.collectItem("Beach:0:0", { x: 1, y: 2 }));
+    expect(result.current.collectibleHintActive).toBe(false);
+  });
+
+  it("does not show collectible hints while the tutorial is active", () => {
+    const cesium = createCesium();
+    const { result } = renderHook(() =>
+      useSlideshow({
+        character,
+        cesium,
+        getTutorial: () => ({ tutorialActive: true }),
+      })
+    );
+
+    act(() => result.current.showDetailsPopup(location));
+    act(() => vi.advanceTimersByTime(COLLECTIBLE_IDLE_HINT_DELAY_MS));
+
+    expect(result.current.collectibleHintActive).toBe(false);
   });
 });

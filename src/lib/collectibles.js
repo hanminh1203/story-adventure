@@ -115,6 +115,13 @@ export function getStarRating(score, maxScore) {
   return 1;
 }
 
+export function getAchievementTitle(score, maxScore) {
+  const rating = getStarRating(score, maxScore);
+  if (rating >= 3) return UI_TEXT.ACHIEVEMENT_TITLE_3_STAR;
+  if (rating >= 2) return UI_TEXT.ACHIEVEMENT_TITLE_2_STAR;
+  return UI_TEXT.ACHIEVEMENT_TITLE_1_STAR;
+}
+
 export function getTutorialSteps(character) {
   const name = character?.name || UI_TEXT.FINAL_CHARACTER_FALLBACK_NAME;
   const treasures = getCharacterCollectibleName(character);

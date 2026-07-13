@@ -1,9 +1,11 @@
+import LoadingProgressBar from "./LoadingProgressBar";
 import { UI_TEXT } from "../uiText";
 
 export default function LoadingScreen({
   visible,
   text = UI_TEXT.MAP_LOADING_TEXT,
   guideAccent,
+  progress,
 }) {
   return (
     <div
@@ -14,7 +16,7 @@ export default function LoadingScreen({
     >
       <div className="game-screen-overlay" />
       <div className="loading-content">
-        <div className="loading-spinner" aria-hidden="true" />
+        <LoadingProgressBar progress={progress} />
         <p className="loading-text">{text}</p>
       </div>
     </div>

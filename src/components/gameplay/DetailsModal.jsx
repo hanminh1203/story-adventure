@@ -9,6 +9,7 @@ function CollectibleButton({
   collected,
   removing,
   spotlight,
+  hintActive,
   onCollect,
 }) {
   if (collected && !removing) return null;
@@ -16,7 +17,7 @@ function CollectibleButton({
   return (
     <button
       type="button"
-      className={`collectible-item${spotlight ? " tutorial-spotlight" : ""}${removing ? " collected" : ""}`}
+      className={`collectible-item${spotlight ? " tutorial-spotlight" : ""}${hintActive && !spotlight ? " collectible-hint" : ""}${removing ? " collected" : ""}`}
       style={{ left: `${position.x}%`, top: `${position.y}%` }}
       aria-label={ariaLabel}
       onClick={(e) => {
@@ -46,6 +47,7 @@ export default function Slideshow({
   onSetSlideIndex,
   onNextStop,
   slideAllCollected,
+  collectibleHintActive,
 }) {
   const images = location?.images || [];
 
@@ -83,10 +85,16 @@ export default function Slideshow({
                 collected={collected}
                 removing={removing}
                 spotlight={tutorialSpotlightSelector === ".collectible-item"}
+                hintActive={collectibleHintActive}
                 onCollect={onCollect}
               />
             );
           })}
+          {collectibleHintActive && (
+            <p className="collect-hint-banner" aria-live="polite">
+              {UI_TEXT.COLLECT_IDLE_HINT}
+            </p>
+          )}
           {collectFeedback && (
             <span
               className="collect-feedback"
@@ -179,6 +187,7 @@ export function DetailsModal({
   onClose,
   onNextStop,
   slideAllCollected,
+  collectibleHintActive,
 }) {
   if (!location) return null;
 
@@ -238,6 +247,7 @@ export function DetailsModal({
             onSetSlideIndex={onSetSlideIndex}
             onNextStop={onNextStop}
             slideAllCollected={slideAllCollected}
+            collectibleHintActive={collectibleHintActive}
           />
         </div>
       </div>

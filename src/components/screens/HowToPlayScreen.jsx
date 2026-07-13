@@ -42,6 +42,7 @@ function HowToStepCard({ step, index }) {
 
 export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
   const continueBtnRef = useRef(null);
+  const contentRef = useRef(null);
   const stepsRef = useRef(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const { getItems: getCarouselSteps, getCenteredIndex, scrollToItem: scrollToCarouselStep } =
@@ -68,6 +69,13 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     list.style.setProperty("--how-to-edge-padding", `${padding}px`);
   }, []);
 
+  const updateContentHeight = useCallback(() => {
+    const content = contentRef.current;
+    if (!content) return;
+
+    content.style.setProperty("--how-to-content-height", `${content.offsetHeight}px`);
+  }, []);
+
   const scrollSteps = useCallback(
     (direction) => {
       const cards = getCarouselSteps();
@@ -84,9 +92,11 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     if (!active) return;
 
     const list = stepsRef.current;
-    if (!list) return;
+    const content = contentRef.current;
+    if (!list || !content) return;
 
     requestAnimationFrame(() => {
+      updateContentHeight();
       updateEdgePadding();
       resetCarouselPosition();
       syncCurrentStepIndex();
@@ -95,9 +105,11 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     const observer = new ResizeObserver(() => {
       const index = getCenteredIndex();
       setCurrentStepIndex(index);
+      updateContentHeight();
       updateEdgePadding();
       scrollToCarouselStep(index, "instant");
     });
+    observer.observe(content);
     observer.observe(list);
 
     const card = list.querySelector(".how-to-step");
@@ -116,6 +128,7 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
     resetCarouselPosition,
     syncCurrentStepIndex,
     updateEdgePadding,
+    updateContentHeight,
     getCenteredIndex,
     scrollToCarouselStep,
   ]);
@@ -139,7 +152,10 @@ export default function HowToPlayScreen({ active, onContinue, onGoBack }) {
           &#8592; <span className="go-back-label">{UI_TEXT.GO_BACK_LABEL}</span>
         </button>
       </div>
-      <div className="container game-screen-content how-to-content storybook-screen">
+      <div
+        ref={contentRef}
+        className="container game-screen-content how-to-content storybook-screen"
+      >
         <StorybookDecor />
         <h1>{UI_TEXT.HOW_TO_PLAY_TITLE}</h1>
         <div className="how-to-carousel" id="how-to-carousel">

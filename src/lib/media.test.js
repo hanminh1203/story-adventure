@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   extractYouTubeId,
   getYouTubeEmbedUrl,
+  getYouTubeVideoId,
   isSafeMediaUrl,
   sanitizeMediaUrl,
   splitCell,
@@ -43,5 +44,10 @@ describe("media helpers", () => {
       "https://www.youtube.com/embed/dQw4w9WgXcQ"
     );
     expect(getYouTubeEmbedUrl({ youtubeUrl: "" })).toBe("");
+  });
+
+  it("reads youtube ids from character objects", () => {
+    expect(getYouTubeVideoId({ youtubeUrl: "https://youtu.be/dQw4w9WgXcQ" })).toBe("dQw4w9WgXcQ");
+    expect(getYouTubeVideoId({ youtubeUrl: "" })).toBe("");
   });
 });

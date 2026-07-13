@@ -34,9 +34,7 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-      
-      - name: Dump All Environment Variables
-        run: printenv
+
       - name: Check Secret Presence
         run: |
           if [ -z "${{ secrets.CHARACTERS_DATA_URL }}" ]; then

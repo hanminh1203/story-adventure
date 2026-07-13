@@ -1,9 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { UI_TEXT } from "../../uiText";
 import { formatTemplate } from "../../lib/format";
 import { getStarRating } from "../../lib/collectibles";
 import { getCharacterCollectibleName } from "../../lib/collectibles";
 import { prefersReducedMotion } from "../../lib/motion";
+import { exportAchievementBadge } from "../../lib/exportBadge";
 import StorybookDecor from "../StorybookDecor";
 
 export default function FinalScreen({ active, summary, onRestart }) {
@@ -11,6 +12,8 @@ export default function FinalScreen({ active, summary, onRestart }) {
   const confettiHideTimerRef = useRef(null);
   const confettiLayerRef = useRef(null);
   const finalScoreRef = useRef(null);
+  const [exportingBadge, setExportingBadge] = useState(false);
+  const [exportError, setExportError] = useState("");
 
   useEffect(() => {
     if (!active || !summary) return;
@@ -75,6 +78,20 @@ export default function FinalScreen({ active, summary, onRestart }) {
   const characterName = character ? character.name : UI_TEXT.FINAL_CHARACTER_FALLBACK_NAME;
   const guideAccent = character?.themeColor;
 
+  const handleExportBadge = async () => {
+    if (exportingBadge) return;
+
+    setExportError("");
+    setExportingBadge(true);
+    try {
+      await exportAchievementBadge(summary);
+    } catch {
+      setExportError(UI_TEXT.EXPORT_BADGE_ERROR);
+    } finally {
+      setExportingBadge(false);
+    }
+  };
+
   return (
     <div
       id="final-screen"
@@ -104,16 +121,33 @@ export default function FinalScreen({ active, summary, onRestart }) {
         <p id="final-character-message">
           {formatTemplate(UI_TEXT.FINAL_CHARACTER_PROUD_TEMPLATE, { characterName })}
         </p>
+        {exportError ? (
+          <p className="final-export-error" role="alert">
+            {exportError}
+          </p>
+        ) : null}
         <div ref={confettiLayerRef} id="confetti-layer" className="confetti-layer" aria-hidden="true" />
-        <button
-          ref={restartBtnRef}
-          id="restart-btn"
-          className="btn-accent game-screen-btn"
-          type="button"
-          onClick={onRestart}
-        >
-          {UI_TEXT.RESTART_BTN_TEXT}
-        </button>
+        <div className="final-actions">
+          <button
+            id="export-badge-btn"
+            className="btn-glass game-screen-btn final-export-btn"
+            type="button"
+            onClick={handleExportBadge}
+            disabled={exportingBadge}
+            aria-label={UI_TEXT.EXPORT_BADGE_BTN_ARIA_LABEL}
+          >
+            {exportingBadge ? UI_TEXT.EXPORT_BADGE_LOADING_TEXT : UI_TEXT.EXPORT_BADGE_BTN_TEXT}
+          </button>
+          <button
+            ref={restartBtnRef}
+            id="restart-btn"
+            className="btn-accent game-screen-btn"
+            type="button"
+            onClick={onRestart}
+          >
+            {UI_TEXT.RESTART_BTN_TEXT}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ export const CHARACTERS_CACHE_KEY = "charactersCache";
 export const AUDIO_SETTINGS_KEY = "audioSettings";
 
 export const COLLECTIBLES_PER_SLIDE = 3;
+export const COLLECTIBLE_IDLE_HINT_DELAY_MS = 12000;
 export const COLLECTIBLE_X_EDGE_PAD = 6;
 export const COLLECTIBLE_Y_MIN = 18;
 export const COLLECTIBLE_Y_MAX = 78;
